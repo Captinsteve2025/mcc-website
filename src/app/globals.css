@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 210 50% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 50% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 50% 10%;
+    --primary: 210 50% 15%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 210 50% 10%;
+    --muted: 210 20% 96%;
+    --muted-foreground: 210 15% 40%;
+    --accent: 16 100% 66%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 210 15% 90%;
+    --input: 210 15% 90%;
+    --ring: 16 100% 66%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 210 50% 8%;
+    --foreground: 0 0% 98%;
+    --card: 210 45% 12%;
+    --card-foreground: 0 0% 98%;
+    --popover: 210 45% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 16 100% 66%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 30% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 210 30% 18%;
+    --muted-foreground: 210 15% 65%;
+    --accent: 16 100% 66%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 210 30% 22%;
+    --input: 210 30% 22%;
+    --ring: 16 100% 66%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Improve focus visibility for accessibility */
+  :focus-visible {
+    outline: 2px solid #FF7F50;
+    outline-offset: 2px;
+  }
+
+  /* Remove default focus outline when using focus-visible */
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Ensure minimum touch target size for accessibility */
+  button,
+  [role="button"],
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Exception for inline links */
+  p a,
+  li a,
+  span a {
+    min-height: auto;
+    min-width: auto;
+  }
+
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Optimized gradient overlay */
+  .gradient-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%);
+  }
+
+  /* Skip link for accessibility */
+  .skip-link {
+    position: absolute;
+    top: -40px;
+    left: 0;
+    background: #FF7F50;
+    color: white;
+    padding: 8px 16px;
+    z-index: 100;
+    transition: top 0.3s;
+  }
+
+  .skip-link:focus {
+    top: 0;
+  }
+
+  /* Content visibility for performance on long pages */
+  .content-auto {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 500px;
+  }
+
+  /* GPU-accelerated animations */
+  .gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* Optimized image loading placeholder */
+  .img-loading {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+}
