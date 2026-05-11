@@ -1,5 +1,4 @@
-// Structured Data Components for SEO
-// These provide rich snippets in Google Search results
+import { JsonLd } from "./JsonLd";
 
 export function OrganizationSchema() {
   const schema = {
@@ -49,12 +48,7 @@ export function OrganizationSchema() {
     ],
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+  return <JsonLd data={schema} />;
 }
 
 export function WebSiteSchema() {
@@ -78,12 +72,7 @@ export function WebSiteSchema() {
     },
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+  return <JsonLd data={schema} />;
 }
 
 export function LocalBusinessSchema() {
@@ -122,12 +111,7 @@ export function LocalBusinessSchema() {
     },
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+  return <JsonLd data={schema} />;
 }
 
 interface BreadcrumbItem {
@@ -147,12 +131,7 @@ export function BreadcrumbSchema({ items }: { items: BreadcrumbItem[] }) {
     })),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+  return <JsonLd data={schema} />;
 }
 
 interface ServiceSchemaProps {
@@ -182,12 +161,7 @@ export function ServiceSchema({ name, description, url, image, priceRange = "$$$
     priceRange,
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+  return <JsonLd data={schema} />;
 }
 
 interface FAQItem {
@@ -209,12 +183,7 @@ export function FAQSchema({ items }: { items: FAQItem[] }) {
     })),
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+  return <JsonLd data={schema} />;
 }
 
 interface CourseSchemaProps {
@@ -254,10 +223,5 @@ export function CourseSchema({ name, description, url, duration, price, location
     },
   };
 
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
-    />
-  );
+  return <JsonLd data={schema} />;
 }

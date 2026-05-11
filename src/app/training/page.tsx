@@ -9,6 +9,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { useScrollDepthTracking } from "@/hooks/useScrollDepthTracking";
 import { BreadcrumbSchema } from "@/components/StructuredData";
+import { JsonLd } from "@/components/JsonLd";
 
 // MCC Brand Colors
 const coral = "#e89d79";
@@ -85,8 +86,8 @@ export default function TrainingPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <JsonLd data={schema} />
+      <JsonLd data={faqSchema} />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://mycaribbeancharters.com" },
         { name: "Training", url: "https://mycaribbeancharters.com/training" },

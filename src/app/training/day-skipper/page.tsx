@@ -10,6 +10,7 @@ import { Footer } from "@/components/Footer";
 import EnquiryDialog from "../EnquiryDialog";
 import { useState } from "react";
 import { BreadcrumbSchema } from "@/components/StructuredData";
+import { JsonLd } from "@/components/JsonLd";
 import { NauticEdEmbed } from "@/components/NauticEdEmbed";
 
 import { useScrollDepthTracking } from "@/hooks/useScrollDepthTracking";
@@ -98,8 +99,8 @@ export default function DaySkipperPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-white">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(courseSchema) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }} />
+      <JsonLd data={courseSchema} />
+      <JsonLd data={faqSchema} />
       <BreadcrumbSchema items={[
         { name: "Home", url: "https://mycaribbeancharters.com" },
         { name: "Training", url: "https://mycaribbeancharters.com/training" },
