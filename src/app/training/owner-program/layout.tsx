@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "New Owner Training Program | Catamaran Familiarization | VIYB",
   description: "Comprehensive training for new catamaran owners. Learn your boat's systems, handling characteristics, and Caribbean cruising essentials with personalized instruction.",

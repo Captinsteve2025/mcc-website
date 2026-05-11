@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "Offshore Passage Training | Ocean Sailing Courses | VIYB",
   description: "Master offshore sailing with professional passage training. Learn ocean navigation, weather routing, and passage planning for blue water cruising adventures.",

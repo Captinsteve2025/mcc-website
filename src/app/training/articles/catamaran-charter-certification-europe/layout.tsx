@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "How to Get Certified to Charter a Catamaran in Europe | VIYB",
   description:

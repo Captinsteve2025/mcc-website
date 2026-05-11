@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "Skipper Large Powerboat Course | NauticEd | My Caribbean Charters",
   description: "Learn to skipper large powerboats and power catamarans with NauticEd certification. Engine handling, docking, and navigation for power vessels.",

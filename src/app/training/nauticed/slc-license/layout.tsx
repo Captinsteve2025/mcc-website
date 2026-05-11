@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "SLC International Sailing License | NauticEd | My Caribbean Charters",
   description: "Obtain the SLC (Sailing License Certificate) recognized internationally for bareboat chartering. Official documentation for charter companies worldwide.",

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "Bareboat Charter Master Certification | NauticEd BVI | My Caribbean Charters",
   description: "Earn your Bareboat Charter Master certification in the BVI. The gold standard for charter sailing credentials, recognized worldwide by charter companies.",

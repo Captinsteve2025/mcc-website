@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: "Captain Rank Certification | NauticEd Advanced | My Caribbean Charters",
   description: "Achieve Captain rank with NauticEd's highest certification level. Advanced sailing skills, leadership, and comprehensive maritime knowledge for experienced sailors.",

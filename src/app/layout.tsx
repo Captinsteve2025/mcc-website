@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { OrganizationSchema, WebSiteSchema, LocalBusinessSchema } from "@/components/StructuredData";
 
+export const dynamic = 'force-dynamic';
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
