@@ -78,6 +78,8 @@ export const aquanimity: ManagedYacht = {
   shareImage: "/images/aquanimity/Aquanimity-Dufour-48-Yacht-Charter-BVI.jpg",
 };
 
+export const managedYachts: ManagedYacht[] = [atlas, aquanimity];
+
 export const atlasKnownSpecs: { label: string; value: string }[] = [
   { label: "Name", value: atlas.name },
   { label: "Builder", value: atlas.builder },
