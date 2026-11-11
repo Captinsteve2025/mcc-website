@@ -70,9 +70,9 @@ export const aquanimity: ManagedYacht = {
   quickFacts: ["Dufour 48", "2021", "8 Guests", "4 Cabins", "2 Crew"],
   displayRate: "From $24,600",
   minimumNights: null,
-  heroImage: "/images/aquanimity/aquanimity-hero.jpg",
+  heroImage: "/images/aquanimity/Aquanimity-Dufour-48-Yacht-Charter-BVI.jpg",
   heroImageAlt: "Aquanimity yacht charter in the British Virgin Islands",
-  shareImage: "/images/aquanimity/aquanimity-hero.jpg",
+  shareImage: "/images/aquanimity/Aquanimity-Dufour-48-Yacht-Charter-BVI.jpg",
 };
 
 export const atlasKnownSpecs: { label: string; value: string }[] = [

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 const pageUrl = "https://www.mycaribbeancharters.com/managed-yachts/aquanimity";
-const shareImage = "https://www.mycaribbeancharters.com/images/aquanimity/aquanimity-hero.jpg";
+const shareImage = "https://www.mycaribbeancharters.com/images/aquanimity/Aquanimity-Dufour-48-Yacht-Charter-BVI.jpg";
 const title = "Aquanimity Dufour 48 Crewed Charter | British Virgin Islands";
 const description =
   "Charter Aquanimity, a 2021 Dufour 48 for up to eight guests in four cabins, with a professional two-person crew in the British Virgin Islands. Meet the crew and request availability.";
