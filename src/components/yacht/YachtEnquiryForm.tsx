@@ -97,7 +97,7 @@ export function YachtEnquiryForm({ yachtSlug, yachtName }: YachtEnquiryFormProps
   const trackStart = () => {
     if (startTracked.current) return;
     startTracked.current = true;
-    trackEvent("atlas_enquiry_start", { yacht: yachtSlug });
+    trackEvent(`${yachtSlug}_enquiry_start`, { yacht: yachtSlug });
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -145,7 +145,7 @@ export function YachtEnquiryForm({ yachtSlug, yachtName }: YachtEnquiryFormProps
     }
 
     setStatus("saved");
-    trackEvent("atlas_enquiry_success", { yacht: yachtSlug });
+    trackEvent(`${yachtSlug}_enquiry_success`, { yacht: yachtSlug });
   };
 
   if (status === "saved") {

@@ -23,7 +23,7 @@ const trustCards = [
   },
 ];
 
-export function YachtWhyMcc() {
+export function YachtWhyMcc({ yachtName }: { yachtName: string }) {
   return (
     <section className="bg-[#f8f7f4] py-20 md:py-32">
       <div className="container mx-auto px-4">
@@ -35,7 +35,7 @@ export function YachtWhyMcc() {
           <div className="space-y-4 text-lg text-[#061625]/80">
             <p>At My Caribbean Charters, we believe that a luxury yacht charter should be a personalized experience from the first enquiry to the final day aboard.</p>
             <p>Our Caribbean-based team combines yacht brokerage experience, local destination knowledge and direct involvement with the yachts we represent.</p>
-            <p>When you enquire about ATLAS, you will receive knowledgeable guidance and personal attention from a team that understands the Caribbean charter market.</p>
+            <p>When you enquire about {yachtName}, you will receive knowledgeable guidance and personal attention from a team that understands the Caribbean charter market.</p>
           </div>
         </div>
 

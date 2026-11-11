@@ -36,19 +36,19 @@ export default function AtlasPage() {
       <FAQSchema items={atlasFaqs} />
 
       <div className="flex-1">
-        <YachtHero />
+        <YachtHero yacht={atlas} />
         <YachtIntro />
         <YachtFeatures />
         <YachtDestinations />
-        <YachtPricing />
-        <YachtWhyMcc />
-        <YachtEnquirySection />
-        <YachtFAQ />
-        <YachtFinalCta />
+        <YachtPricing yacht={atlas} />
+        <YachtWhyMcc yachtName={atlas.name} />
+        <YachtEnquirySection yacht={atlas} />
+        <YachtFAQ yachtName={atlas.name} faqs={atlasFaqs} />
+        <YachtFinalCta yacht={atlas} />
       </div>
 
       <Footer />
-      <StickyCharterCTA />
+      <StickyCharterCTA yacht={atlas} />
     </div>
   );
 }
