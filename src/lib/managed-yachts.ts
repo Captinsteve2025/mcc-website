@@ -16,6 +16,7 @@ export interface ManagedYacht {
   minimumNights: number | null;
   heroImage: string;
   heroImageAlt: string;
+  heroVideo: string | null;
   shareImage: string;
 }
 
@@ -51,6 +52,7 @@ export const atlas: ManagedYacht = {
   // Placeholder: generic Caribbean water. Replace with an ATLAS-specific photograph.
   heroImage: "/images/caribbean-water-bg.webp",
   heroImageAlt: "ATLAS, Aquila 54 luxury power catamaran",
+  heroVideo: null,
   shareImage: "/images/caribbean-water-bg.webp",
 };
 
@@ -72,6 +74,7 @@ export const aquanimity: ManagedYacht = {
   minimumNights: null,
   heroImage: "/images/aquanimity/Aquanimity-Dufour-48-Yacht-Charter-BVI.jpg",
   heroImageAlt: "Aquanimity yacht charter in the British Virgin Islands",
+  heroVideo: "/video/aquanimity-hero.mp4",
   shareImage: "/images/aquanimity/Aquanimity-Dufour-48-Yacht-Charter-BVI.jpg",
 };
 
