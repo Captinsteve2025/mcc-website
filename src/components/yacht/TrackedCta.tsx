@@ -8,8 +8,32 @@ interface TrackedCtaProps {
   label: string;
   eventName?: string;
   yachtSlug: string;
-  variant?: "primary" | "secondary";
+  variant?: "primary" | "secondary" | "light";
   className?: string;
+}
+
+const variantClasses = {
+  primary: "bg-[#e89d79] text-[#061625] shadow-lg hover:bg-[#d88a66] hover:shadow-xl hover:scale-105",
+  secondary: "border border-white/60 bg-transparent text-white hover:bg-white/10",
+  light: "bg-[#061625] text-white shadow-lg hover:bg-[#0a2540] hover:shadow-xl hover:scale-105",
+};
+
+export function TrackedCta({ href, label, eventName, yachtSlug, variant = "primary", className }: TrackedCtaProps) {
+  return (
+    <a
+      href={href}
+      onClick={() => {
+        if (eventName) trackEvent(eventName, { yacht: yachtSlug });
+      }}
+      className={cn(
+        "inline-flex min-h-12 items-center justify-center gap-3 rounded-full px-8 py-4 text-base font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e89d79] focus-visible:ring-offset-2",
+        variantClasses[variant],
+        className
+      )}
+    >
+      {label}
+    </a>
+  );
 }
 
 interface TrackedLinkProps {
@@ -25,25 +49,8 @@ export function TrackedLink({ href, label, eventName, yachtSlug, className }: Tr
     <a
       href={href}
       onClick={() => trackEvent(eventName, { yacht: yachtSlug })}
-      className={cn("font-semibold underline underline-offset-4 transition-colors hover:text-[#C5A46D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A46D]", className)}
-    >
-      {label}
-    </a>
-  );
-}
-
-export function TrackedCta({ href, label, eventName, yachtSlug, variant = "primary", className }: TrackedCtaProps) {
-  return (
-    <a
-      href={href}
-      onClick={() => {
-        if (eventName) trackEvent(eventName, { yacht: yachtSlug });
-      }}
       className={cn(
-        "inline-flex h-12 items-center justify-center rounded-md px-6 text-sm font-semibold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A46D] focus-visible:ring-offset-2",
-        variant === "primary"
-          ? "bg-[#C5A46D] text-[#061625] hover:bg-[#d4b685]"
-          : "border-2 border-white bg-transparent text-white hover:bg-white hover:text-[#061625]",
+        "font-medium underline underline-offset-4 transition-colors hover:text-[#e89d79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e89d79]",
         className
       )}
     >

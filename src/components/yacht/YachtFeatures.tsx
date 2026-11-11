@@ -36,34 +36,35 @@ const features = [
 
 export function YachtFeatures() {
   return (
-    <section className="bg-white py-20 lg:py-28">
-      <div className="container mx-auto px-4 lg:px-8">
-        <div className="mx-auto max-w-3xl text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#00A7B5]">Yacht Features</p>
-          <h2 className="mt-4 font-display text-4xl font-semibold leading-[1.2] text-[#102A43] sm:text-5xl">
+    <section className="bg-white py-20 md:py-32">
+      <div className="container mx-auto px-4">
+        <div className="mx-auto mb-16 max-w-3xl text-center">
+          <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-[#061625]">Yacht Features</p>
+          <h2 className="mb-6 font-display text-4xl font-normal italic leading-[1.2] text-[#061625] md:text-5xl lg:text-6xl">
             Meet ATLAS: Luxury Without Compromise
           </h2>
-          <p className="mt-6 text-base leading-[1.5] text-[#263238] sm:text-lg">
+          <p className="text-lg text-[#061625]/80">
             ATLAS combines the generous space and stability of a modern power catamaran with the freedom of a private Caribbean yacht charter.
           </p>
         </div>
 
-        <ul className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
-            <li key={feature.title} className="rounded-2xl border border-[#E4E7EB] bg-[#F8F7F4] p-6 transition-colors duration-300 hover:border-[#C5A46D]">
-              <feature.icon className="h-7 w-7 text-[#00A7B5]" aria-hidden="true" />
-              <h3 className="mt-5 font-display text-xl font-semibold text-[#102A43]">{feature.title}</h3>
-              <p className="mt-2 text-[15px] leading-[1.5] text-[#263238]">{feature.body}</p>
+            <li key={feature.title} className="rounded-lg border border-[#061625]/10 bg-[#f8f7f4] p-8 transition-all duration-300 hover:border-[#e89d79] hover:shadow-lg">
+              <feature.icon className="h-8 w-8 text-[#061625]" aria-hidden="true" />
+              <h3 className="mt-5 font-display text-2xl font-normal italic text-[#061625]">{feature.title}</h3>
+              <p className="mt-3 text-[15px] leading-[1.5] text-[#061625]/80">{feature.body}</p>
             </li>
           ))}
         </ul>
 
-        <div className="mt-16 rounded-2xl bg-[#102A43] p-8 text-white lg:p-12">
-          <h3 className="font-display text-2xl font-semibold">Yacht Specifications</h3>
+        <div className="mt-16 rounded-lg bg-[#061625] p-8 text-white lg:p-12">
+          <h3 className="font-display text-3xl font-normal italic">Yacht Specifications</h3>
+          <div className="mx-0 my-4 h-px w-16 bg-[#e89d79]" aria-hidden="true" />
           <dl className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
             {atlasKnownSpecs.map((spec) => (
               <div key={spec.label} className="border-b border-white/15 pb-3">
-                <dt className="text-xs font-semibold uppercase tracking-wider text-[#C5A46D]">{spec.label}</dt>
+                <dt className="text-xs font-medium uppercase tracking-wider text-[#e89d79]">{spec.label}</dt>
                 <dd className="mt-1 text-base text-white">{spec.value}</dd>
               </div>
             ))}

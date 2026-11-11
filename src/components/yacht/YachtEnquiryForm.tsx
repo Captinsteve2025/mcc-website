@@ -334,7 +334,7 @@ export function YachtEnquiryForm({ yachtSlug, yachtName }: YachtEnquiryFormProps
       <button
         type="submit"
         disabled={submitting}
-        className="flex h-12 w-full items-center justify-center rounded-md bg-[#061625] px-6 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-[#0B2540] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C5A46D] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-[#e89d79] px-6 text-base font-medium text-[#061625] shadow-lg transition-all duration-300 hover:bg-[#d88a66] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e89d79] focus-visible:ring-offset-2 focus-visible:ring-offset-[#061625] disabled:cursor-not-allowed disabled:opacity-70"
       >
         {submitting ? "Sending your enquiry..." : "Check availability & get my proposal"}
       </button>
