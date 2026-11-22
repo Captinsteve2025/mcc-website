@@ -137,11 +137,9 @@ function YachtCard({ yacht, detailHref }: { yacht: Yacht; detailHref: (id: strin
 function RefinementBar({
   filters,
   basePath,
-  fetchSuggestions,
 }: {
   filters: Filters;
   basePath: string;
-  fetchSuggestions: (query: string) => Promise<string[]>;
 }) {
   const destinations = [
     { slug: "", name: "All Destinations" },
@@ -165,7 +163,7 @@ function RefinementBar({
   return (
     <form action={basePath} method="get" className="mb-10 rounded-lg bg-white p-4 shadow-sm">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
-        <YachtNameSearch defaultValue={filters.name} fetchSuggestions={fetchSuggestions} />
+        <YachtNameSearch defaultValue={filters.name} basePath="/charter-yachts" />
         <select
           name="destination"
           defaultValue={filters.destination}
@@ -225,37 +223,6 @@ function RefinementBar({
       </p>
     </form>
   );
-}
-
-// Server-side suggestion source: matches yacht names from the full catalogue
-// walk (cached), case-insensitively, for the autocomplete list.
-async function fetchNameSuggestions(query: string): Promise<string[]> {
-  const norm = (s: string) => s.toLowerCase().replace(/[\s\-–—/.,'’]+/g, " ").replace(/\s+/g, " ").trim();
-  const normed = norm(query);
-  const tokens = normed.split(" ").filter(Boolean);
-  try {
-    const session = await startYachtSearchSession(
-      { areaIds: [], areaNames: [], typeWords: [], minGuests: null, nameQuery: query },
-      { lightweight: true }
-    );
-    // The lightweight session serves page 1 of the (server-filtered or local)
-    // matches; for suggestions we take the first page and filter by name.
-    const local = await session.getPage(1, 100);
-    const names = local
-      .map((y) => (typeof y.yachtName === "string" ? y.yachtName.trim() : ""))
-      .filter((n) => {
-        if (!n) return false;
-        const name = norm(n);
-        return name.includes(normed) || tokens.every((t) => name.includes(t));
-      });
-    return [...new Set(names)].sort((a, b) => {
-      const aStarts = norm(a).startsWith(normed) ? 0 : 1;
-      const bStarts = norm(b).startsWith(normed) ? 0 : 1;
-      return aStarts - bStarts || a.localeCompare(b);
-    }).slice(0, 8);
-  } catch {
-    return [];
-  }
 }
 
 export default async function CharterYachtsPage({
@@ -392,7 +359,7 @@ export default async function CharterYachtsPage({
       </section>
 
       <main className="container mx-auto flex-1 px-4 py-16 md:py-20">
-        <RefinementBar filters={filters} basePath="/charter-yachts" fetchSuggestions={fetchNameSuggestions} />
+        <RefinementBar filters={filters} basePath="/charter-yachts" />
 
         {loadError ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">{loadError}</p>

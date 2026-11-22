@@ -1,15 +1,15 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { ChevronDown, Play, Search, MapPin, Calendar, Ship, Users } from "lucide-react";
+import { ChevronDown, Search, MapPin, Calendar, Ship, Users } from "lucide-react";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { destinations } from "@/lib/data";
+import { YachtNameSearch } from "@/components/yacht/YachtNameSearch";
 
 const VIDEO_URL = "https://www.mycaribbeancharters.com/wp-content/uploads/2025/09/BP-clipped-1080.mp4";
 
 const yachtTypes = [
-  { value: "", label: "Choose yours" },
+  { value: "", label: "All Yacht Types" },
   { value: "catamaran", label: "Catamaran" },
   { value: "monohull", label: "Monohull" },
   { value: "motor", label: "Motor Yacht" },
@@ -41,10 +41,8 @@ export function Hero() {
     return params.toString();
   };
 
-  const qs = searchParams();
-
   const handleSearch = () => {
-    window.location.href = `/charter-yachts?${qs}`;
+    window.location.href = `/charter-yachts?${searchParams()}`;
   };
 
   useEffect(() => {
@@ -59,22 +57,18 @@ export function Hero() {
     }
   }, []);
 
-  const handlePlayClick = () => {
-    const video = videoRef.current;
-    if (video) {
-      video.play().then(() => {
-        setIsPlaying(true);
-      }).catch(console.error);
-    }
-  };
-
   const scrollToContent = () => {
     const element = document.getElementById("charter-styles");
     if (element) element.scrollIntoView({ behavior: "smooth" });
   };
 
+  const selectClass =
+    "w-full h-12 pl-10 pr-4 bg-white/95 border border-white/20 rounded-md text-[#061625] text-sm focus:outline-none focus:ring-2 focus:ring-[#e89d79] appearance-none cursor-pointer";
+  const inputClass =
+    "w-full h-12 px-3 bg-white/95 border border-white/20 rounded-md text-[#061625] text-sm focus:outline-none focus:ring-2 focus:ring-[#e89d79] [color-scheme:light]";
+
   return (
-    <section className="relative h-screen min-h-[700px] max-h-[1000px] flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[640px] md:min-h-[700px] flex items-center justify-center overflow-hidden">
       {/* Background Layer - Navy base color with video */}
       <div className="absolute inset-0 bg-[#061625]">
         {!videoError && (
@@ -92,136 +86,159 @@ export function Hero() {
             <source src={VIDEO_URL} type="video/mp4" />
           </video>
         )}
-
-        {videoLoaded && !isPlaying && !videoError && (
-          <button
-            onClick={handlePlayClick}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors group"
-            aria-label="Play video"
-          >
-            <Play className="w-8 h-8 text-white ml-1 group-hover:scale-110 transition-transform" fill="white" />
-          </button>
-        )}
-
-
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 text-center text-white">
-        <p className="text-sm md:text-base uppercase tracking-[0.3em] mb-4 text-white/80 font-medium">Caribbean Yacht Charters</p>
-        <h1 className="font-display text-4xl md:text-5xl lg:text-7xl font-normal italic mb-6 leading-tight">Sail Into Luxury</h1>
-        <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto mb-10">
+      <div className="relative z-10 w-full container mx-auto px-4 py-24 text-center text-white">
+        <p className="text-xs md:text-base uppercase tracking-[0.3em] mb-3 text-white/80 font-medium">Caribbean Yacht Charters</p>
+        <h1 className="font-display text-4xl md:text-5xl lg:text-7xl font-normal italic mb-4 leading-tight">Sail Into Luxury</h1>
+        {/* Short mobile paragraph, full paragraph from md up */}
+        <p className="hidden md:block text-lg text-white/90 max-w-2xl mx-auto mb-10">
           Discover the ultimate Caribbean yacht experience. Crewed charters, bareboat adventures, and cabin cruises in the British Virgin Islands, Grenadines, St Martin, and beyond.
         </p>
+        <p className="md:hidden text-sm text-white/90 max-w-md mx-auto mb-8">
+          Crewed charters, bareboat adventures and cabin cruises across the Caribbean.
+        </p>
 
-        {/* Search Bar */}
-        <div className="max-w-5xl mx-auto mb-10">
-          <div className="bg-white/10 backdrop-blur-md rounded-lg p-2 md:p-3">
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-2 md:gap-3">
-              {/* Where to charter */}
-              <div className="relative">
-                <label className="absolute -top-6 left-2 text-xs text-white/70 font-medium">Where to charter</label>
+        {/* Search form — labels sit above their fields in a responsive grid */}
+        <div className="max-w-5xl mx-auto mb-8 md:mb-10">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSearch();
+            }}
+            className="bg-white/10 backdrop-blur-md rounded-xl p-4 md:p-5 text-left"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              {/* Yacht name — full-width with autocomplete */}
+              <div className="md:col-span-12">
+                <label htmlFor="hero-yacht-name" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-white/80">
+                  Yacht Name
+                </label>
+                <YachtNameSearch defaultValue="" basePath="/charter-yachts" />
+              </div>
+
+              {/* Destination — full-width */}
+              <div className="md:col-span-6">
+                <label htmlFor="hero-destination" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-white/80">
+                  Destination
+                </label>
                 <div className="relative">
-                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+                  <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#061625]/40" aria-hidden="true" />
                   <select
+                    id="hero-destination"
                     value={destination}
                     onChange={(e) => setDestination(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 bg-white/10 border border-white/20 rounded-md text-white text-sm focus:outline-none focus:border-white/40 appearance-none cursor-pointer"
+                    className={selectClass}
                   >
-                    <option value="" className="bg-[#061625] text-white">All Destinations</option>
+                    <option value="">All Destinations</option>
                     {destinations.map((dest) => (
-                      <option key={dest.id} value={dest.slug} className="bg-[#061625] text-white">
+                      <option key={dest.id} value={dest.slug}>
                         {dest.name}
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 pointer-events-none" />
-                </div>
-              </div>
-
-              {/* When */}
-              <div className="relative">
-                <label className="absolute -top-6 left-2 text-xs text-white/70 font-medium">When</label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
-                  <div className="flex gap-1.5">
-                    <input
-                      type="date"
-                      aria-label="Charter start date"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
-                      className="w-full h-12 min-w-0 px-2 bg-white/10 border border-white/20 rounded-md text-white text-sm focus:outline-none focus:border-white/40 [color-scheme:dark]"
-                    />
-                    <input
-                      type="date"
-                      aria-label="Charter end date"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      className="w-full h-12 min-w-0 px-2 bg-white/10 border border-white/20 rounded-md text-white text-sm focus:outline-none focus:border-white/40 [color-scheme:dark]"
-                    />
-                  </div>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#061625]/40 pointer-events-none" aria-hidden="true" />
                 </div>
               </div>
 
               {/* Yacht type */}
-              <div className="relative">
-                <label className="absolute -top-6 left-2 text-xs text-white/70 font-medium">Yacht type</label>
+              <div className="md:col-span-6">
+                <label htmlFor="hero-yacht-type" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-white/80">
+                  Yacht Type
+                </label>
                 <div className="relative">
-                  <Ship className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+                  <Ship className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#061625]/40" aria-hidden="true" />
                   <select
+                    id="hero-yacht-type"
                     value={yachtType}
                     onChange={(e) => setYachtType(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 bg-white/10 border border-white/20 rounded-md text-white text-sm focus:outline-none focus:border-white/40 appearance-none cursor-pointer"
+                    className={selectClass}
                   >
                     {yachtTypes.map((type) => (
-                      <option key={type.value} value={type.value} className="bg-[#061625] text-white">
+                      <option key={type.value} value={type.value}>
                         {type.label}
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50 pointer-events-none" />
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#061625]/40 pointer-events-none" aria-hidden="true" />
                 </div>
               </div>
 
-              {/* Guests */}
-              <div className="relative">
-                <label className="absolute -top-6 left-2 text-xs text-white/70 font-medium">Guests</label>
-                <div className="relative">
-                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
+              {/* Travel dates — two-up where space permits */}
+              <div className="grid grid-cols-2 gap-3 md:col-span-8">
+                <div>
+                  <label htmlFor="hero-start" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-white/80">
+                    Travel Dates
+                  </label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#061625]/40" aria-hidden="true" />
+                    <input
+                      id="hero-start"
+                      type="date"
+                      aria-label="Charter start date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className={`${inputClass} pl-9`}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="hero-end" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-white/80 invisible" aria-hidden="true">
+                    Travel Dates
+                  </label>
                   <input
-                    type="number"
-                    min={1}
-                    max={12}
-                    inputMode="numeric"
-                    aria-label="Number of guests"
-                    placeholder="How many"
-                    value={guests}
-                    onChange={(e) => setGuests(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 bg-white/10 border border-white/20 rounded-md text-white placeholder:text-white/50 text-sm focus:outline-none focus:border-white/40"
+                    id="hero-end"
+                    type="date"
+                    aria-label="Charter end date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className={inputClass}
                   />
                 </div>
               </div>
 
-              {/* Search Button */}
-              <button
-                onClick={handleSearch}
-                className="h-12 bg-[#e89d79] hover:bg-[#d88a66] rounded-md flex items-center justify-center transition-colors"
-                aria-label="Search yachts"
-              >
-                <Search className="w-5 h-5 text-white" />
-              </button>
+              {/* Guests */}
+              <div className="md:col-span-4">
+                <label htmlFor="hero-guests" className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-white/80">
+                  Guests
+                </label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#061625]/40" aria-hidden="true" />
+                  <input
+                    id="hero-guests"
+                    type="number"
+                    min={1}
+                    max={12}
+                    inputMode="numeric"
+                    placeholder="How many"
+                    value={guests}
+                    onChange={(e) => setGuests(e.target.value)}
+                    className={`${inputClass} pl-9 placeholder:text-[#061625]/45`}
+                  />
+                </div>
+              </div>
             </div>
-          </div>
+
+            {/* One prominent submission button */}
+            <button
+              type="submit"
+              className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-md bg-[#e89d79] text-base font-semibold text-white transition-colors hover:bg-[#d88a66]"
+            >
+              <Search className="h-5 w-5" aria-hidden="true" />
+              Search Yachts
+            </button>
+          </form>
         </div>
 
-        {/* CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-          <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-white px-8 py-6 text-base">
-            <Link href={qs ? `/charter-yachts?${qs}` : "/charter-yachts"}>Explore Yachts</Link>
-          </Button>
-          <Button asChild variant="outline" size="lg" className="border-white/50 text-white hover:bg-white/10 px-8 py-6 text-base bg-transparent">
-            <Link href="#enquire">Get Expert Advice</Link>
-          </Button>
+        {/* Secondary action only — the search button above is the primary CTA */}
+        <div className="flex justify-center">
+          <Link
+            href="#enquire"
+            className="rounded-full border border-white/50 px-8 py-3 text-base text-white transition-colors hover:bg-white/10"
+          >
+            Get Expert Advice
+          </Link>
         </div>
       </div>
 

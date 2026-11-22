@@ -549,6 +549,36 @@ export async function startYachtSearchSession(
   };
 }
 
+export async function searchYachtNameSuggestions(query: string): Promise<string[]> {
+  const norm = (s: string) => s.toLowerCase().replace(/[\s\-–—/.,'’]+/g, " ").replace(/\s+/g, " ").trim();
+  const normed = norm(query);
+  if (!normed) return [];
+  const tokens = normed.split(" ").filter(Boolean);
+  try {
+    const session = await startYachtSearchSession(
+      { areaIds: [], areaNames: [], typeWords: [], minGuests: null, nameQuery: query },
+      { lightweight: true }
+    );
+    const page = await session.getPage(1, 100);
+    const names = page
+      .map((y) => (typeof y.yachtName === "string" ? y.yachtName.trim() : ""))
+      .filter((n) => {
+        if (!n) return false;
+        const name = norm(n);
+        return name.includes(normed) || tokens.every((t) => name.includes(t));
+      });
+    return [...new Set(names)]
+      .sort((a, b) => {
+        const aStarts = norm(a).startsWith(normed) ? 0 : 1;
+        const bStarts = norm(b).startsWith(normed) ? 0 : 1;
+        return aStarts - bStarts || a.localeCompare(b);
+      })
+      .slice(0, 8);
+  } catch {
+    return [];
+  }
+}
+
 // --- Traced variants for the production diagnostic ---------------------------
 // These record the actual request path, HTTP status and a sanitized body at
 // each step so a failure is identified from the API's own response, not

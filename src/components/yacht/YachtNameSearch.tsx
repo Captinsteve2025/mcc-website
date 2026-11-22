@@ -5,11 +5,14 @@ import { Search, X } from "lucide-react";
 
 type Props = {
   defaultValue: string;
-  /** Page-size 10 local suggestions from the full catalogue; null while loading. */
-  fetchSuggestions: (query: string) => Promise<string[]>;
+  /** Screen to navigate to when a name is submitted, with this field as ?name=. */
+  basePath: string;
 };
 
-export function YachtNameSearch({ defaultValue, fetchSuggestions }: Props) {
+// Debounced yacht-name autocomplete backed by /api/yacht-name-suggestions.
+// Enter or picking a suggestion navigates to basePath?name=... (keeping any
+// other query parameters already present).
+export function YachtNameSearch({ defaultValue, basePath }: Props) {
   const [value, setValue] = useState(defaultValue);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
@@ -26,7 +29,11 @@ export function YachtNameSearch({ defaultValue, fetchSuggestions }: Props) {
     setLoading(true);
     const timer = setTimeout(async () => {
       try {
-        const names = await fetchSuggestions(query);
+        const response = await fetch(`/api/yacht-name-suggestions?q=${encodeURIComponent(query)}`);
+        const body = (await response.json().catch(() => null)) as { suggestions?: unknown } | null;
+        const names = Array.isArray(body?.suggestions)
+          ? body.suggestions.filter((n): n is string => typeof n === "string")
+          : [];
         setSuggestions(names);
         setOpen(names.length > 0);
       } catch {
@@ -37,7 +44,7 @@ export function YachtNameSearch({ defaultValue, fetchSuggestions }: Props) {
       }
     }, 250);
     return () => clearTimeout(timer);
-  }, [value, fetchSuggestions]);
+  }, [value]);
 
   useEffect(() => {
     const onClickOutside = (e: MouseEvent) => {
@@ -47,46 +54,41 @@ export function YachtNameSearch({ defaultValue, fetchSuggestions }: Props) {
     return () => document.removeEventListener("mousedown", onClickOutside);
   }, []);
 
-  const submit = (name?: string) => {
+  const go = (name: string) => {
     const params = new URLSearchParams(window.location.search);
-    if (name !== undefined) {
-      setValue(name);
-      setOpen(false);
-    }
-    const finalQuery = (name !== undefined ? name : value).trim();
-    if (finalQuery) params.set("name", finalQuery);
+    if (name) params.set("name", name);
     else params.delete("name");
     params.delete("page");
-    window.location.href = `/charter-yachts${params.toString() ? `?${params.toString()}` : ""}`;
+    window.location.href = `${basePath}${params.toString() ? `?${params.toString()}` : ""}`;
   };
 
   return (
-    <div ref={boxRef} className="relative col-span-2 md:col-span-3 lg:col-span-2">
+    <div ref={boxRef} className="relative">
       <div className="relative">
         <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#061625]/40" aria-hidden="true" />
         <input
           type="search"
-          name="name"
           value={value}
           onChange={(e) => setValue(e.target.value)}
           onFocus={() => suggestions.length > 0 && setOpen(true)}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
-              submit();
+              go(value.trim());
             }
           }}
           aria-label="Yacht name"
-          placeholder="Yacht name"
+          placeholder="Yacht name (e.g. Endless Horizon)"
           autoComplete="off"
-          className="h-11 w-full rounded-md border border-[#061625]/20 bg-white pl-9 pr-8 text-sm text-[#061625] focus:outline-none focus:ring-2 focus:ring-[#e89d79]"
+          className="h-12 w-full rounded-md border border-white/20 bg-white/95 pl-9 pr-9 text-sm text-[#061625] placeholder:text-[#061625]/45 focus:outline-none focus:ring-2 focus:ring-[#e89d79]"
         />
         {value && (
           <button
             type="button"
             onClick={() => {
               setValue("");
-              submit("");
+              setOpen(false);
+              go("");
             }}
             aria-label="Clear yacht name search"
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-[#061625]/50 transition-colors hover:bg-[#061625]/5 hover:text-[#061625]"
@@ -96,15 +98,23 @@ export function YachtNameSearch({ defaultValue, fetchSuggestions }: Props) {
         )}
       </div>
       {open && (
-        <ul className="absolute z-20 mt-1 w-full overflow-hidden rounded-md border border-[#061625]/15 bg-white shadow-lg" role="listbox">
+        <ul
+          className="absolute z-30 mt-1 w-full overflow-hidden rounded-md border border-[#061625]/15 bg-white shadow-lg"
+          role="listbox"
+          aria-label="Yacht name suggestions"
+        >
           {suggestions.map((name) => (
             <li key={name}>
               <button
                 type="button"
                 role="option"
                 aria-selected={name === value}
-                onClick={() => submit(name)}
-                className="block w-full truncate px-3 py-2 text-left text-sm text-[#061625] transition-colors hover:bg-[#e89d79]/10"
+                onClick={() => {
+                  setValue(name);
+                  setOpen(false);
+                  go(name);
+                }}
+                className="block w-full truncate px-3 py-2.5 text-left text-sm text-[#061625] transition-colors hover:bg-[#e89d79]/10"
               >
                 {name}
               </button>
