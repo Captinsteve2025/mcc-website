@@ -501,6 +501,8 @@ export async function startYachtSearchSession(
 
 export type LegacyMappingTrace = {
   requestPath: string;
+  executed: boolean;
+  skipped: boolean;
   httpStatus: number | null;
   body: unknown;
   extractedCurrentId: string | null;
@@ -525,11 +527,13 @@ export async function traceLegacyIdMapping(legacyId: string): Promise<LegacyMapp
         }
       }
     }
-    return { requestPath, httpStatus: 200, body: payload, extractedCurrentId, error: null };
+    return { requestPath, httpStatus: 200, executed: true, skipped: false, body: payload, extractedCurrentId, error: null };
   } catch (err) {
     return {
       requestPath,
       httpStatus: err instanceof CyaApiError ? err.status : null,
+      executed: true,
+      skipped: false,
       body: null,
       extractedCurrentId: null,
       error: err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
@@ -540,6 +544,8 @@ export async function traceLegacyIdMapping(legacyId: string): Promise<LegacyMapp
 export type BookingsTrace = {
   requestPath: string;
   yachtIdUsed: string;
+  executed: boolean;
+  skipped: boolean;
   httpStatus: number | null;
   bodyShape: string;
   bookingCount: number | null;
@@ -570,6 +576,8 @@ export async function traceBookings(yachtId: string): Promise<BookingsTrace> {
       requestPath,
       yachtIdUsed: yachtId,
       httpStatus: 200,
+      executed: true,
+      skipped: false,
       bodyShape: Array.isArray(payload) ? "bare array" : payload && typeof payload === "object" ? `object with keys [${Object.keys(payload).join(", ")}]` : "other",
       bookingCount: list ? list.length : null,
       sampleBookings: sample,
@@ -580,9 +588,60 @@ export async function traceBookings(yachtId: string): Promise<BookingsTrace> {
       requestPath,
       yachtIdUsed: yachtId,
       httpStatus: err instanceof CyaApiError ? err.status : null,
+      executed: true,
+      skipped: false,
       bodyShape: "unavailable",
       bookingCount: null,
       sampleBookings: [],
+      error: err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
+    };
+  }
+}
+
+// Raw GET trace for alternate routes and support endpoints. The body is
+// sanitized: objects keep their keys with truncated values, arrays are capped
+// so no credential or bulk data ever reaches the report.
+export type RawTrace = {
+  requestPath: string;
+  executed: boolean;
+  skipped: boolean;
+  httpStatus: number | null;
+  sanitizedBody: unknown;
+  error: string | null;
+};
+
+function sanitizeForReport(value: unknown, depth = 0): unknown {
+  if (value === null || typeof value !== "object") {
+    if (typeof value === "string" && value.length > 200) return `${value.slice(0, 200)}…`;
+    return value;
+  }
+  if (depth > 3) return "(truncated)";
+  if (Array.isArray(value)) return value.slice(0, 20).map((v) => sanitizeForReport(v, depth + 1));
+  return Object.fromEntries(
+    Object.entries(value as Record<string, unknown>)
+      .slice(0, 40)
+      .map(([k, v]) => [k, sanitizeForReport(v, depth + 1)])
+  );
+}
+
+export async function traceRawGet(path: string): Promise<RawTrace> {
+  try {
+    const payload = await cyaFetch<unknown>(path, { revalidate: 60 });
+    return {
+      requestPath: path,
+      executed: true,
+      skipped: false,
+      httpStatus: 200,
+      sanitizedBody: sanitizeForReport(payload),
+      error: null,
+    };
+  } catch (err) {
+    return {
+      requestPath: path,
+      executed: true,
+      skipped: false,
+      httpStatus: err instanceof CyaApiError ? err.status : null,
+      sanitizedBody: null,
       error: err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
     };
   }

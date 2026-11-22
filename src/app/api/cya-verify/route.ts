@@ -10,6 +10,7 @@ import {
   resolveLegacyYachtId,
   traceLegacyIdMapping,
   traceBookings,
+  traceRawGet,
   DESTINATION_AREA_MAPPING,
   resolveDestinationAreas,
   CyaApiError,
@@ -314,45 +315,91 @@ export async function GET(request: Request) {
     bookingTargetIds.push(...unfiltered.yachts.slice(0, 3).map((y) => y.id).filter(Boolean));
   }
   const today = new Date().toISOString().slice(0, 10);
+
+  // Configured base URL (host + path only — the key is never reported).
+  const cyaBaseConfigured = process.env.CYA_API_BASE ? new URL(process.env.CYA_API_BASE).toString().replace(/\/+$/, "") : null;
+
+  // One yacht is traced through the complete request sequence. Every step is
+  // awaited BEFORE the report is serialized: a Promise in a JSON payload
+  // serializes to {} (the empty tracedYacht bug). Every request is marked
+  // executed/skipped and carries its own status and sanitized body, so a
+  // fully-failing run still returns a populated trace.
+  const traceYachtId = bookingTargetIds[0] ?? null;
+  let tracedYacht: Record<string, unknown>;
+  if (!traceYachtId) {
+    tracedYacht = { note: "No yacht id available to trace — catalogue probe returned no records.", executed: false, skipped: true };
+  } else {
+    const mapping = await traceLegacyIdMapping(traceYachtId);
+    const resolvedId = mapping.extractedCurrentId;
+    const bookingsTarget = resolvedId ?? traceYachtId;
+    const bookings = resolvedId || !mapping.error ? await traceBookings(bookingsTarget) : await traceBookings(traceYachtId);
+    // Alternate documented route variants, run when the primary path 404s, to
+    // identify endpoint-not-found vs yacht-not-found from CYA's own replies.
+    const alternates: Array<{ requestPath: string; httpStatus: number | null; sanitizedBody: unknown; error: string | null; executed: boolean; skipped: boolean }> = [];
+    if (bookings.httpStatus === 404) {
+      alternates.push(await traceRawGet("/api/v1/bookings?yacht_id=" + encodeURIComponent(traceYachtId)));
+      alternates.push(await traceRawGet("/bookings?yacht_id=" + encodeURIComponent(traceYachtId)));
+      alternates.push(await traceRawGet(`/api/v1/yachts_get/${encodeURIComponent(traceYachtId)}?include=bookings`));
+    }
+    // The /me endpoint proves the key itself authenticates without exposing it.
+    const me = await traceRawGet("/me");
+    tracedYacht = {
+      catalogueYachtId: traceYachtId,
+      cyaBaseConfigured,
+      fullRequestPaths: {
+        legacyMapping: (cyaBaseConfigured ?? "(CYA_API_BASE unset)") + mapping.requestPath,
+        bookings: (cyaBaseConfigured ?? "(CYA_API_BASE unset)") + bookings.requestPath,
+      },
+      requestPathsTried: [mapping.requestPath, bookings.requestPath, ...alternates.map((a) => a.requestPath)],
+      step1_legacyMapping: {
+        requestPath: mapping.requestPath,
+        executed: mapping.executed,
+        skipped: mapping.skipped,
+        httpStatus: mapping.httpStatus,
+        sanitizedResponse: mapping.body,
+        extractedCurrentId: resolvedId,
+        extractionNote:
+          resolvedId
+            ? "Current id extracted from the mapping response (documented fields tried, in order: new_yacht_id, yacht_id, new_id, id, current_yacht_id)."
+            : "No current id could be extracted from the mapping response above.",
+        error: mapping.error,
+      },
+      step2_bookings: {
+        requestPath: bookings.requestPath,
+        yachtIdUsed: bookings.yachtIdUsed,
+        executed: bookings.executed,
+        skipped: bookings.skipped,
+        httpStatus: bookings.httpStatus,
+        responseBodyShape: bookings.bodyShape,
+        bookingCount: bookings.bookingCount,
+        sampleBookings: bookings.sampleBookings,
+        error: bookings.error,
+      },
+      step3_alternateRoutesWhen404: alternates.length > 0 ? alternates : { note: "Not run — primary bookings request did not return 404.", executed: false, skipped: true },
+      keyAuthentication: { endpoint: "GET /me", executed: me.executed, skipped: me.skipped, httpStatus: me.httpStatus, sanitizedResponse: me.sanitizedBody, error: me.error, note: "200 proves the API key authenticates; 401/403 means the key itself is rejected." },
+      statusLegend: {
+        endpointNotFound: "CYA replies 404 with a FastAPI {\"detail\":\"Not Found\"} body — the route does not exist on the configured host.",
+        yachtNotFound: "CYA replies 404 with a {\"detail\":\"Yacht not found\"}-style body — the route exists but the yacht has no record (calendar entry or mapping) in CYA's system.",
+        permission: "CYA replies 401/403 — the key is rejected or lacks the endpoint's permission.",
+      },
+      interpretation: (() => {
+        if (me.httpStatus !== 200) return "The key failed authentication at GET /me — resolve the key/permission issue with CYA before interpreting the bookings result.";
+        if (mapping.httpStatus === 404 && !resolvedId) return "Legacy-ID mapping found no mapping for this catalogue id (CYA's own response). Bookings were still attempted with the catalogue id as-is.";
+        if (bookings.httpStatus === 404) {
+          const alternateRouted = alternates.find((a) => a.httpStatus === 200);
+          if (alternateRouted) return `An alternate route responded 200 (${alternateRouted.requestPath}) — the primary bookings path is not the served route on this deployment's base URL.`;
+          return "Bookings 404 with a resolved/verbatim id and no alternate route answering: per CYA's own response body, this is yacht-not-found (no calendar entry) unless the body says otherwise — check sanitizedResponse/bodyShape above.";
+        }
+        if (bookings.httpStatus === 200) return bookings.bookingCount === 0 ? "Bookings succeeded; the yacht has no ongoing/future calendar records — unknown dates, never shown as available." : "Bookings retrieved; the calendar maps them by category automatically.";
+        return "See each step's own status and error above.";
+      })(),
+    };
+  }
+
   report.bookingsVerification = {
     endpoint: "GET /api/v1/bookings?yacht_id=... (documented in CYA's public OpenAPI spec)",
     today,
-    // One yacht is traced through the complete request sequence with actual
-    // statuses and sanitized bodies; the rest get the summarized probe.
-    tracedYacht: bookingTargetIds[0]
-      ? (async () => {
-          const mapping = await traceLegacyIdMapping(bookingTargetIds[0]);
-          const currentId = mapping.extractedCurrentId ?? bookingTargetIds[0];
-          const bookings = await traceBookings(currentId);
-          return {
-            catalogueYachtId: bookingTargetIds[0],
-            step1_legacyMapping: {
-              requestPath: mapping.requestPath,
-              httpStatus: mapping.httpStatus,
-              sanitizedResponse: mapping.body,
-              extractedCurrentId: mapping.extractedCurrentId,
-              error: mapping.error,
-            },
-            step2_bookings: {
-              requestPath: bookings.requestPath,
-              yachtIdUsed: bookings.yachtIdUsed,
-              httpStatus: bookings.httpStatus,
-              responseBodyShape: bookings.bodyShape,
-              bookingCount: bookings.bookingCount,
-              sampleBookings: bookings.sampleBookings,
-              error: bookings.error,
-            },
-            interpretation:
-              mapping.error
-                ? "Step 1 failed — the mapping endpoint's own status/error above identifies the cause."
-                : bookings.error
-                  ? "Step 2 failed using the resolved ID — the bookings endpoint's own status/error above identifies the cause."
-                  : bookings.bookingCount === 0
-                    ? "Both steps succeeded; the yacht has no ongoing/future calendar records in CYA — its dates legitimately show no bookings (never interpreted as confirmed available)."
-                    : "Bookings retrieved; the calendar maps them to statuses by category (booked/hold via hold_expire_date/transit/unavailable).",
-          };
-        })()
-      : Promise.resolve({ note: "No yacht id available to trace." }),
+    tracedYacht,
     yachts: await Promise.all(
       bookingTargetIds.map(async (yachtId) => {
         try {
