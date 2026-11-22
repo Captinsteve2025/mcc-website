@@ -7,6 +7,8 @@ import { trackEvent } from "@/lib/analytics";
 // scrolls to the public availability calendar — never the enquiry form. When
 // live calendar data is unavailable the secondary action reads "Check Dates"
 // and scrolls to the availability block (compact message + enquiry action).
+/* Hero CTAs: full buttons on desktop; an understated text link on mobile,
+ * where the fixed bottom bar already carries both actions. */
 export function YachtCtaButtons({
   yachtId,
   hasLiveData = false,
@@ -20,25 +22,34 @@ export function YachtCtaButtons({
   };
 
   return (
-    <div className="mt-6 flex flex-wrap items-center gap-3">
-      <button
-        type="button"
-        onClick={() => {
-          trackEvent("yacht_proposal_click", { yacht_id: yachtId });
-          scrollTo("enquire");
-        }}
-        className="inline-flex items-center gap-2 rounded-full bg-[#e89d79] px-7 py-3.5 text-base font-bold uppercase tracking-wide text-[#061625] shadow-xl transition-colors hover:bg-[#d88a66]"
+    <div className="mt-6">
+      <div className="hidden flex-wrap items-center gap-3 md:flex">
+        <button
+          type="button"
+          onClick={() => {
+            trackEvent("yacht_proposal_click", { yacht_id: yachtId });
+            scrollTo("enquire");
+          }}
+          className="inline-flex items-center gap-2 rounded-full bg-[#e89d79] px-7 py-3.5 text-base font-bold uppercase tracking-wide text-[#061625] shadow-xl transition-colors hover:bg-[#d88a66]"
+        >
+          Get My Charter Proposal
+        </button>
+        <button
+          type="button"
+          onClick={() => scrollTo("availability")}
+          className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white/10"
+        >
+          <Anchor className="h-4 w-4" aria-hidden="true" />
+          {hasLiveData ? "View Availability" : "Check Dates"}
+        </button>
+      </div>
+      <a
+        href="#availability"
+        onClick={() => trackEvent("yacht_availability_view", { yacht_id: yachtId, has_records: hasLiveData })}
+        className="text-sm font-medium text-[#e89d79] underline underline-offset-4 transition-colors hover:text-white md:hidden"
       >
-        Get My Charter Proposal
-      </button>
-      <button
-        type="button"
-        onClick={() => scrollTo("availability")}
-        className="inline-flex items-center gap-2 rounded-full border border-white/40 px-6 py-3 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:bg-white/10"
-      >
-        <Anchor className="h-4 w-4" aria-hidden="true" />
-        {hasLiveData ? "View Availability" : "Check Dates"}
-      </button>
+        {hasLiveData ? "View live availability below" : "Check available dates below"}
+      </a>
     </div>
   );
 }

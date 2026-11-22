@@ -177,15 +177,17 @@ export default async function YachtDetailPage({
 
       <main className="flex-1">
         {/* --- Yacht identity --- */}
-        <section className="bg-[#061625] px-4 pb-10 pt-32 text-white md:pb-12 md:pt-40">
+        {/* Mobile: compact identity band so photography enters the first
+            viewport; desktop keeps the taller composition. */}
+        <section className="bg-[#061625] px-4 pb-6 pt-24 text-white md:pb-12 md:pt-40">
           <div className="container mx-auto px-4">
             <Link
               href={destination ? `/charter-yachts?destination=${encodeURIComponent(destination)}` : "/charter-yachts"}
-              className="mb-6 inline-flex items-center gap-2 text-sm text-white/80 transition-colors hover:text-white"
+              className="mb-3 inline-flex items-center gap-2 text-sm text-white/80 transition-colors hover:text-white md:mb-6"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to all charter yachts
             </Link>
-            <h1 className="font-display text-4xl font-normal italic leading-tight md:text-6xl">{name}</h1>
+            <h1 className="break-words font-display text-4xl font-normal italic leading-tight md:text-6xl">{name}</h1>
             <p className="mt-2 text-white/80">
               {[builder, year !== null ? `Built ${year}` : null].filter(Boolean).join(" | ") || (yachtType ?? "Charter yacht")}
             </p>
@@ -195,7 +197,7 @@ export default async function YachtDetailPage({
         </section>
 
         {/* --- Hero gallery mosaic --- */}
-        <section className="container mx-auto px-4 py-10">
+        <section className="container mx-auto px-4 pb-10 pt-6 md:py-10">
           <div id="gallery" className="scroll-mt-32">
             <YachtHeroGallery yachtId={id} yachtName={name} images={gallery} />
           </div>

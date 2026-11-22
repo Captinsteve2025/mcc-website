@@ -101,6 +101,15 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
   const inSelection = (iso: string) =>
     selectStart && selectEnd ? iso >= selectStart && iso <= selectEnd : selectStart === iso;
 
+  const chosenStatus = useMemo(() => {
+    if (!selectStart || !selectEnd) return null;
+    for (let d = toUtcDate(selectStart); d <= toUtcDate(selectEnd); d = new Date(d.getTime() + 86_400_000)) {
+      const entry = statusMap.get(isoOf(d));
+      if (entry && entry.status !== "available") return entry.status;
+    }
+    return null;
+  }, [selectStart, selectEnd, statusMap]);
+
   const canGoBack = monthOffset > 0;
   const canGoForward = monthOffset < 11;
 
@@ -155,7 +164,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
         </div>
       </div>
 
-      <div className={`grid gap-6 ${"md:grid-cols-3"}`}>
+      <div className={`grid gap-4 md:gap-6 ${"md:grid-cols-3"}`}>
         {visibleMonths.map((month) => {
           const year = month.getUTCFullYear();
           const monthIndex = month.getUTCMonth();
@@ -196,9 +205,9 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
                       aria-pressed={selected}
                       className={`relative aspect-square rounded-md text-xs tabular-nums transition-colors ${
                         selected
-                          ? "ring-2 ring-[#e89d79] ring-offset-1"
+                          ? "bg-[#e89d79] font-bold text-[#061625] ring-2 ring-[#061625] ring-offset-1"
                           : ""
-                      } ${style && !isPast ? style.cell : "text-[#061625]/70"} ${
+                      } ${!selected && style && !isPast ? style.cell : !selected ? "text-[#061625]/70" : ""} ${
                         isPast ? "cursor-default text-[#061625]/25 line-through" : "cursor-pointer hover:ring-1 hover:ring-[#061625]/20"
                       }`}
                     >
@@ -215,7 +224,11 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
         })}
       </div>
 
-      <ul className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-[#061625]/70" aria-label="Colour legend">
+      <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-[#061625]/70" aria-label="Colour legend">
+        <li className="flex items-center gap-1.5">
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#e89d79]" aria-hidden="true" />
+          Your selected dates
+        </li>
         {(Object.keys(STATUS_STYLES) as Array<keyof typeof STATUS_STYLES>).map((key) => (
           <li key={key} className="flex items-center gap-1.5">
             <span className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_STYLES[key].dot}`} aria-hidden="true" />
@@ -230,18 +243,27 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
 
       {selectStart && (
         <div className="mt-3 rounded-lg bg-[#e89d79]/15 p-3 text-sm text-[#061625]" role="status">
-          <p>
-            {selectEnd
-              ? `Dates selected: ${selectStart} to ${selectEnd}.`
-              : "Now select your check-out date."}
-          </p>
-          {selectEnd && (
-            <a
-              href="#enquire"
-              className="mt-2 inline-block rounded-full bg-[#e89d79] px-4 py-2 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#d88a66]"
-            >
-              Request a proposal for these dates
-            </a>
+          {selectEnd ? (
+            <>
+              <p className="font-medium">
+                Proposed charter: {new Date(`${selectStart}T12:00:00Z`).toLocaleDateString("en-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" })}
+                {" "}
+                to {new Date(`${selectEnd}T12:00:00Z`).toLocaleDateString("en-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" })}
+              </p>
+              <p className="mt-0.5 text-xs text-[#061625]/70">
+                {chosenStatus
+                  ? `Heads up: part of this range is marked ${STATUS_STYLES[chosenStatus].label.toLowerCase()} in the live calendar. Our team will confirm what is possible.`
+                  : "Our team will confirm these dates with your personalized proposal."}
+              </p>
+              <a
+                href="#enquire"
+                className="mt-2 inline-block rounded-full bg-[#e89d79] px-4 py-2 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#d88a66]"
+              >
+                Continue to proposal form
+              </a>
+            </>
+          ) : (
+            <p>Now select your check-out date.</p>
           )}
         </div>
       )}
