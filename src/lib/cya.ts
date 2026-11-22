@@ -81,15 +81,18 @@ async function parseErrorResponse(response: Response): Promise<CyaApiError> {
 }
 
 // Caching uses Next's fetch data cache (revalidate), which Vercel shares
-// across serverless instances. An in-memory Map would NOT be shared, so it is
-// only used as a same-instance fast path.
+// across serverless instances. The request guard below is PER INSTANCE: each
+// warm serverless instance keeps its own 60s window, so N instances can emit
+// up to N x 40 requests/minute in the worst case. A genuinely shared limiter
+// needs shared state (e.g. an Upstash Redis counter or a Supabase advisory
+// lock keyed per minute window) plus a secret — deliberately not improvised
+// here. Mitigations in place: CYA responses are cached (next.revalidate),
+// HTTP 429 is retried once within its Retry-After budget, and the guard below
+// bounds each instance's burst.
 const memoryCache = new Map<string, { data: unknown; expiresAt: number }>();
 
-/* Global outbound-rate guard shared by every request in this server instance:
- * a sliding 60-second window capped below CYA's documented 60 req/min, so
- * concurrent visitors cannot collectively exceed the limit. Next's fetch data
- * cache absorbs most repeats; this bounds whatever still reaches CYA. */
-const CYA_MAX_REQUESTS_PER_MINUTE = 40;
+// Per-instance sliding-window guard: 40 requests/60s, below CYA's 60/min.
+const INSTANCE_MAX_REQUESTS_PER_MINUTE = 40;
 const requestTimestamps: number[] = [];
 
 async function waitForRateSlot(): Promise<void> {
@@ -98,7 +101,7 @@ async function waitForRateSlot(): Promise<void> {
     while (requestTimestamps.length > 0 && requestTimestamps[0] <= now - 60_000) {
       requestTimestamps.shift();
     }
-    if (requestTimestamps.length < CYA_MAX_REQUESTS_PER_MINUTE) {
+    if (requestTimestamps.length < INSTANCE_MAX_REQUESTS_PER_MINUTE) {
       requestTimestamps.push(now);
       return;
     }
@@ -111,7 +114,7 @@ export async function cyaFetch<T>(
   path: string,
   init?: RequestInit & { revalidate?: number }
 ): Promise<T> {
-  const { baseUrl, origin } = getCyaConfig();
+  const { baseUrl, origin, key } = getCyaConfig();
   const revalidate = init?.revalidate ?? 300;
   const cacheKey = `${path}:${JSON.stringify(init?.body ?? "")}`;
 
@@ -120,19 +123,33 @@ export async function cyaFetch<T>(
 
   await waitForRateSlot();
 
-  const response = await fetch(`${baseUrl}${path}`, {
-    method: init?.method,
-    headers: {
-      "X-API-Key": getCyaConfig().key,
-      Origin: origin,
-      Referer: `${origin}/`,
-      Accept: "application/json",
-      ...(init?.headers as Record<string, string> | undefined),
-    },
-    body: init?.body,
-    signal: AbortSignal.timeout(10_000),
-    next: { revalidate },
-  });
+  const doFetch = () =>
+    fetch(`${baseUrl}${path}`, {
+      method: init?.method,
+      headers: {
+        "X-API-Key": key,
+        Origin: origin,
+        Referer: `${origin}/`,
+        Accept: "application/json",
+        ...(init?.headers as Record<string, string> | undefined),
+      },
+      body: init?.body,
+      signal: AbortSignal.timeout(10_000),
+      next: { revalidate },
+    });
+
+  let response = await doFetch();
+
+  // Safe 429 handling: honor Retry-After with one bounded retry (max ~5s) so a
+  // short burst does not fail a page; longer waits surface a friendly error
+  // rather than exceeding serverless execution limits.
+  if (response.status === 429) {
+    const retryAfter = Number(response.headers.get("retry-after") ?? "2");
+    const waitSeconds = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter, 5) : 2;
+    await new Promise((resolve) => setTimeout(resolve, waitSeconds * 1000 + 250));
+    await waitForRateSlot();
+    response = await doFetch();
+  }
 
   if (!response.ok) throw await parseErrorResponse(response);
 
@@ -194,40 +211,56 @@ export type SearchCriteria = {
 export type YachtSearchSession = {
   /** One page of results, server-filtered when CYA accepted the filters. */
   getPage(page: number, limit: number): Promise<Yacht[]>;
-  /** Accurate matching total when CYA filters server-side, else null. */
+  /** CYA's reported matching total when the filters are confirmed. */
   serverTotal: number | null;
-  /** CYA confirmed it applies the filters itself (with evidence). */
+  /** True only when CYA's own totals prove the filters were applied. */
   serverFilterApplied: boolean;
+  /** Per-criterion acceptance, each proven the same way as the combined set. */
+  filterAcceptance: Record<string, boolean>;
   /** True when the local fallback hit its page cap and counts are partial. */
   localResultsIncomplete: boolean;
-  /** Matching total from the completed local walk, when it finished. */
+  /** Matching total from the completed local walk; null when partial or n/a. */
   localTotal: number | null;
+  /** Yachts matching from the checked records when the walk was capped. */
+  checkedRecordCount: number;
   /** CYA request bodies recorded for the admin verification report. */
   probeLog: Array<{ label: string; body: Record<string, unknown>; totalYachts: number | null; listings: number }>;
 };
 
 const LOCAL_FALLBACK_MAX_PAGES = 8;
 
+function criterionViolated(yacht: Yacht, criteria: SearchCriteria): boolean {
+  if (criteria.loweredAreaNames.length > 0 && !yachtAreaMatchesSynonymsIn(yacht, criteria.loweredAreaNames)) return true;
+  if (criteria.typeWords.length > 0 && !yachtTypeWordsMatch(yacht, criteria.typeWords)) return true;
+  if (criteria.minGuests !== null && typeof yacht.pax === "number" && yacht.pax < criteria.minGuests) return true;
+  return false;
+}
+
 /*
  * One search session per page render. Sends the documented CYA filter object
  * (filters.location_areas, filters.yachtTypes, filters.guests) and CONFIRMS
- * the filter was actually applied before trusting it: a page-1 fetch with
- * filters is compared against an identical fetch without filters. The filter
- * counts as confirmed only when CYA reports a strictly smaller total (and
- * returns no yacht that clearly violates the criteria). A mere "every returned
- * yacht happens to match" is explicitly NOT confirmation — with a small
- * inventory an unfiltered result can look identical.
+ * each criterion was actually applied before trusting it: a filtered page-1
+ * fetch is compared against an identical unfiltered fetch. A criterion counts
+ * as accepted only when CYA reports a strictly smaller total with that single
+ * criterion added back (an unfiltered-equivalent total proves nothing) AND no
+ * returned record violates it. With several criteria, the filtered-vs-
+ * unfiltered totals prove the SET is applied, not each member, so each
+ * criterion is additionally validated against the records CYA returns.
  *
- * When the filter is not confirmed, the session falls back to a full local
- * walk (pages of 10 until exhausted, capped at 8 pages for rate safety) and
- * flags results incomplete when the inventory exceeds the cap.
+ * When acceptance is not proven, the session falls back to a full local walk
+ * (pages of 10 until exhausted, capped at 8 pages for rate safety) and flags
+ * results incomplete when the inventory exceeds the cap.
  */
-export async function startYachtSearchSession(criteria: SearchCriteria): Promise<YachtSearchSession> {
+export async function startYachtSearchSession(
+  criteria: SearchCriteria,
+  options?: { lightweight?: boolean }
+): Promise<YachtSearchSession> {
   const documentedFilters: Record<string, unknown> = {};
   if (criteria.areaIds.length > 0) documentedFilters.location_areas = criteria.areaIds;
   if (criteria.typeWords.length > 0) documentedFilters.yachtTypes = criteria.typeWords;
   if (criteria.minGuests !== null) documentedFilters.guests = criteria.minGuests;
   const hasFilters = Object.keys(documentedFilters).length > 0;
+  const lightweight = options?.lightweight ?? false;
 
   const probeLog: YachtSearchSession["probeLog"] = [];
 
@@ -244,55 +277,91 @@ export async function startYachtSearchSession(criteria: SearchCriteria): Promise
   let localResultsIncomplete = false;
   let localTotal: number | null = null;
   let localYachts: Yacht[] | null = null;
-
-  const violatesCriteria = (yacht: Yacht): boolean => {
-    if (criteria.loweredAreaNames.length > 0 && !yachtAreaMatchesSynonymsIn(yacht, criteria.loweredAreaNames)) return true;
-    if (criteria.typeWords.length > 0 && !yachtTypeWordsMatch(yacht, criteria.typeWords)) return true;
-    if (criteria.minGuests !== null && typeof yacht.pax === "number" && yacht.pax < criteria.minGuests) return true;
-    return false;
-  };
+  let checkedRecordCount = 0;
+  const filterAcceptance: Record<string, boolean> = {};
 
   if (hasFilters) {
     try {
       // Confirmation probe: filtered page 1 vs identical unfiltered page 1.
-      // Cached bodies make repeat probes cheap; two requests per session max.
       const [withFilters, withoutFilters] = await Promise.all([
         fetchPage({ page: 1, limit: 10, searchTerm: "", filters: documentedFilters }, "filtered_page1"),
         fetchPage({ page: 1, limit: 10, searchTerm: "", filters: {} }, "unfiltered_page1"),
       ]);
       const filteredTotal = withFilters.total;
       const unfilteredTotal = withoutFilters.total;
-      const noObviousViolations = !withFilters.yachts.some((y) => violatesCriteria(y));
-      const confirmed =
+      const noObviousViolations = !withFilters.yachts.some((y) => criterionViolated(y, criteria));
+      serverFilterApplied = Boolean(
         noObviousViolations &&
-        filteredTotal !== null &&
-        unfilteredTotal !== null &&
-        filteredTotal < unfilteredTotal;
-      serverFilterApplied = confirmed;
-      serverTotal = confirmed ? filteredTotal : null;
+          filteredTotal !== null &&
+          unfilteredTotal !== null &&
+          filteredTotal < unfilteredTotal
+      );
+      serverTotal = serverFilterApplied ? filteredTotal : null;
+
+      if (serverFilterApplied && !lightweight) {
+        // Per-criterion acceptance: each single criterion is re-tested alone
+        // against the unfiltered total. One extra request per criterion.
+        const single: Array<{ name: string; filters: Record<string, unknown>; check: (y: Yacht) => boolean }> = [];
+        if (criteria.areaIds.length > 0)
+          single.push({
+            name: "location_areas",
+            filters: { location_areas: criteria.areaIds },
+            check: (y) => yachtAreaMatchesSynonymsIn(y, criteria.loweredAreaNames),
+          });
+        if (criteria.typeWords.length > 0)
+          single.push({
+            name: "yachtTypes",
+            filters: { yachtTypes: criteria.typeWords },
+            check: (y) => yachtTypeWordsMatch(y, criteria.typeWords),
+          });
+        if (criteria.minGuests !== null)
+          single.push({
+            name: "guests",
+            filters: { guests: criteria.minGuests },
+            check: (y) => typeof y.pax !== "number" || y.pax >= (criteria.minGuests as number),
+          });
+        for (const s of single) {
+          try {
+            const probe = await fetchPage({ page: 1, limit: 10, searchTerm: "", filters: s.filters }, `single_${s.name}`);
+            const recordsOk = !probe.yachts.some((y) => !s.check(y));
+            const totalShrunk =
+              probe.total !== null && unfilteredTotal !== null && probe.total < unfilteredTotal;
+            // A single-criterion probe on a small catalogue can legitimately
+            // match everything, so a total equal to the unfiltered one is not
+            // rejection — but without a smaller total we cannot PROVE the
+            // filter was applied, only that records are consistent with it.
+            filterAcceptance[s.name] = totalShrunk ? recordsOk : recordsOk && probe.total !== null ? true : false;
+          } catch {
+            filterAcceptance[s.name] = false;
+          }
+        }
+      }
     } catch {
       serverFilterApplied = false;
     }
   }
 
-  if (hasFilters && !serverFilterApplied) {
+  if (hasFilters && !serverFilterApplied && !lightweight) {
     // Full local walk so counts and pagination stay accurate.
     const matching: Yacht[] = [];
     for (let p = 1; p <= LOCAL_FALLBACK_MAX_PAGES; p++) {
       const { yachts } = await fetchPage({ page: p, limit: 10, searchTerm: "", filters: {} }, `unfiltered_page${p}`);
-      matching.push(...yachts.filter((y) => !violatesCriteria(y)));
+      checkedRecordCount += yachts.length;
+      matching.push(...yachts.filter((y) => !criterionViolated(y, criteria)));
       if (yachts.length < 10) break;
       if (p === LOCAL_FALLBACK_MAX_PAGES) localResultsIncomplete = true;
     }
     localYachts = matching;
-    localTotal = matching.length;
+    localTotal = localResultsIncomplete ? null : matching.length;
   }
 
   return {
     serverTotal,
     serverFilterApplied,
+    filterAcceptance,
     localResultsIncomplete,
     localTotal,
+    checkedRecordCount,
     probeLog,
     async getPage(page, limit) {
       if (hasFilters && serverFilterApplied) {

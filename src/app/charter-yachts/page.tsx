@@ -229,6 +229,8 @@ export default async function CharterYachtsPage({
   let unmatchedDestination = false;
   let loadError: string | null = null;
   let resultsIncomplete = false;
+  let checkedRecords = 0;
+  let anyCriteria = false;
 
   try {
     const areas = filters.destination ? await getOperatingAreas() : [];
@@ -237,6 +239,7 @@ export default async function CharterYachtsPage({
       unmatchedDestination = true;
     } else {
       const typeWords = filters.type ? TYPE_WORDS[filters.type] ?? [filters.type.toLowerCase()] : [];
+      anyCriteria = Boolean(filters.destination) || typeWords.length > 0 || Boolean(filters.guests);
       const session = await startYachtSearchSession({
         areaIds: matched.map((a) => a.id).filter(Boolean),
         loweredAreaNames: matched.map((a) => a.name.toLowerCase()),
@@ -244,8 +247,19 @@ export default async function CharterYachtsPage({
         minGuests: filters.guests ? Number(filters.guests) : null,
       });
       pageYachts = await session.getPage(page, PAGE_SIZE);
-      effectiveTotal = session.serverFilterApplied ? session.serverTotal : session.localTotal;
-      resultsIncomplete = session.localResultsIncomplete;
+      checkedRecords = session.checkedRecordCount;
+      if (session.serverFilterApplied) {
+        // CYA confirmed the filters: its reported total is authoritative.
+        effectiveTotal = session.serverTotal;
+      } else if (!anyCriteria) {
+        // Unfiltered catalogue: CYA's own totalYachts drives pagination.
+        effectiveTotal = session.probeLog.find((p) => p.label.startsWith("unfiltered_page1") || p.label.startsWith("page1") || p.label.startsWith("filtered_page1"))?.totalYachts ?? null;
+        if (effectiveTotal === null) effectiveTotal = session.probeLog[0]?.totalYachts ?? null;
+      } else {
+        // Local fallback: only quote a complete, walked match count.
+        effectiveTotal = session.localTotal;
+        resultsIncomplete = session.localResultsIncomplete;
+      }
     }
   } catch {
     loadError = "Yacht listings are temporarily unavailable. Please try again shortly — our team has been notified.";
@@ -287,9 +301,11 @@ export default async function CharterYachtsPage({
         </h1>
         <div className="mx-auto h-px w-16 bg-[#e89d79]" aria-hidden="true" />
         <p className="mt-6 text-white/80">
-          {effectiveTotal !== null
-            ? `${effectiveTotal} ${effectiveTotal === 1 ? "yacht" : "yachts"} matching your search`
-            : "Live charter yachts from Central Yacht Agent"}
+          {resultsIncomplete
+            ? `Showing the first ${checkedRecords} yachts of the live catalogue that match your search — the full inventory is larger.`
+            : effectiveTotal !== null
+              ? `${effectiveTotal} ${effectiveTotal === 1 ? "yacht" : "yachts"} matching your search`
+              : "Live charter yachts from Central Yacht Agent"}
         </p>
         {unmatchedDestination && (
           <p className="mx-auto mt-3 max-w-xl rounded-md bg-white/10 p-3 text-sm text-white/90">
@@ -311,9 +327,17 @@ export default async function CharterYachtsPage({
 
         {loadError ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">{loadError}</p>
-        ) : unmatchedDestination || pageYachts.length === 0 ? (
+        ) : unmatchedDestination ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">
-            No yachts match your search yet. Try widening your destination or guest count, or call us — new yachts are added regularly.
+            That destination is not in the live cruising-area list yet. Try widening your search, or call us — our team can confirm coverage directly.
+          </p>
+        ) : pageYachts.length === 0 && anyCriteria && resultsIncomplete ? (
+          <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">
+            No matches found in the {checkedRecords} catalogue records checked so far — more records remain unchecked, so matching yachts may still exist. Try widening your search, or call us and we will check the full inventory.
+          </p>
+        ) : pageYachts.length === 0 ? (
+          <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">
+            No matching yachts exist for this search in the live catalogue right now. Try widening your destination or guest count, or call us — new yachts are added regularly.
           </p>
         ) : (
           <>

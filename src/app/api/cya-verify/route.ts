@@ -7,9 +7,12 @@ import {
   normalizeOperatingAreas,
   searchYachts,
   startYachtSearchSession,
+  yachtTypeWordsMatch,
   getYachtDetail,
   destinationSynonyms,
+  yachtSeasonAreaNames,
   CyaApiError,
+  type Yacht,
 } from "@/lib/cya";
 
 export const runtime = "nodejs";
@@ -213,9 +216,10 @@ export async function GET(request: Request) {
     report.destinationResolution = { success: false, error: errorInfo(err) };
   }
 
-  // --- Live filter verification: each criterion separately, then combined ---
-  // Uses startYachtSearchSession so the reported verdict comes from the same
-  // filtered-vs-unfiltered total comparison the site itself relies on.
+  // --- Live filter verification (lightweight: no local walks) ---
+  // Each case is probed with 2 requests (filtered page 1 vs unfiltered page 1)
+  // plus one single-criterion request each; startYachtSearchSession's
+  // lightweight mode skips the 8-page local fallback entirely.
   try {
     const areas = await getOperatingAreas();
     const bviAreas = resolveDestinationAreas(areas, "british-virgin-islands");
@@ -227,33 +231,63 @@ export async function GET(request: Request) {
       { key: "eightGuests", criteria: { areaIds: [], loweredAreaNames: [], typeWords: [], minGuests: 8 } },
       { key: "bviCatamaranEightGuests", criteria: { areaIds: bviIds, loweredAreaNames: bviNames, typeWords: ["catamaran"], minGuests: 8 } },
     ];
+    const unfilteredTotal: number | null = null;
     for (const c of filterCases) {
-      const session = await startYachtSearchSession(c.criteria);
+      const session = await startYachtSearchSession(c.criteria, { lightweight: true });
       const firstPage = await session.getPage(1, 10);
+      // Validate returned records against each requested constraint.
+      const inArea = (y: Yacht) =>
+        c.criteria.loweredAreaNames.length === 0 ||
+        yachtSeasonAreaNames(y).some((n) => {
+          const name = n.toLowerCase();
+          return c.criteria.loweredAreaNames.some((s) => name.includes(s) || s.includes(name));
+        });
+      const ofType = (y: Yacht) =>
+        c.criteria.typeWords.length === 0 ||
+        yachtTypeWordsMatch(y, c.criteria.typeWords);
+      const seatsGuests = (y: Yacht) =>
+        c.criteria.minGuests === null || typeof y.pax !== "number" || y.pax >= (c.criteria.minGuests as number);
+      const recordChecks = {
+        recordsObserved: firstPage.length,
+        allInRequestedAreas: firstPage.every(inArea),
+        allOfTypeRequested: firstPage.every(ofType),
+        allSeatRequestedGuests: firstPage.every(seatsGuests),
+        violations: firstPage
+          .filter((y) => !inArea(y) || !ofType(y) || !seatsGuests(y))
+          .slice(0, 3)
+          .map((y) => ({
+            id: String(y.id ?? ""),
+            areaNames: yachtSeasonAreaNames(y).slice(0, 2),
+            yachtType: typeof y.yachtType === "string" ? y.yachtType : null,
+            pax: typeof y.pax === "number" ? y.pax : null,
+          })),
+        sampleAreaNames: firstPage.slice(0, 3).map((y) => yachtSeasonAreaNames(y)[0] ?? null),
+        sampleYachtTypes: firstPage.slice(0, 3).map((y) => (typeof y.yachtType === "string" ? y.yachtType : null)),
+        samplePax: firstPage.slice(0, 3).map((y) => (typeof y.pax === "number" ? y.pax : null)),
+      };
       (report as Record<string, unknown>)[`filter_${c.key}`] = {
         requestedCriteria: {
-          areaIds: c.criteria.areaIds,
+          location_areas: c.criteria.areaIds,
           yachtTypes: c.criteria.typeWords,
           guests: c.criteria.minGuests,
         },
-        serverFilterConfirmed: session.serverFilterApplied,
+        combinedFilterConfirmed: session.serverFilterApplied,
         cyasReportedMatchingTotal: session.serverFilterApplied ? session.serverTotal : null,
-        unfilteredCatalogueTotal: session.probeLog.find((p) => p.label === "unfiltered_page1")?.totalYachts ?? null,
+        unfilteredCatalogueTotal:
+          session.probeLog.find((p) => p.label === "unfiltered_page1")?.totalYachts ?? unfilteredTotal,
+        perCriterionAcceptance: session.filterAcceptance,
         filteredPage1Listings: firstPage.length,
-        localFallbackUsed: !session.serverFilterApplied,
-        localResultsComplete: session.localResultsIncomplete ? false : session.localTotal !== null,
-        localMatchingTotal: session.localTotal,
+        localFallbackUsed: false,
+        recordChecks,
         probeLog: session.probeLog,
       };
     }
 
-    // Pagination: fetch page 2 of the combined case and check overlap.
-    const session = await startYachtSearchSession({
-      areaIds: bviIds,
-      loweredAreaNames: bviNames,
-      typeWords: ["catamaran"],
-      minGuests: 8,
-    });
+    // Pagination: page 1 vs page 2 of the combined case (2 more requests).
+    const session = await startYachtSearchSession(
+      { areaIds: bviIds, loweredAreaNames: bviNames, typeWords: ["catamaran"], minGuests: 8 },
+      { lightweight: true }
+    );
     const page1 = await session.getPage(1, 10);
     const page2 = await session.getPage(2, 10);
     const ids1 = page1.map((y) => String(y.id ?? ""));
@@ -266,7 +300,7 @@ export async function GET(request: Request) {
       overlappingIds: overlap,
       pagesDiffer: page2.length > 0 ? overlap < ids2.length : false,
       serverFilterConfirmed: session.serverFilterApplied,
-      totalYachts: session.serverFilterApplied ? session.serverTotal : session.localTotal,
+      totalYachts: session.serverFilterApplied ? session.serverTotal : null,
     };
   } catch (err) {
     report.liveFilterChecks = { success: false, error: errorInfo(err) };
