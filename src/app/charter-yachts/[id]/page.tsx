@@ -190,7 +190,7 @@ export default async function YachtDetailPage({
               {[builder, year !== null ? `Built ${year}` : null].filter(Boolean).join(" | ") || (yachtType ?? "Charter yacht")}
             </p>
             <p className="mt-3 font-display text-2xl italic text-[#e89d79]">{heroPrice}</p>
-            <YachtCtaButtons yachtId={id} showAvailability={true} />
+            <YachtCtaButtons yachtId={id} hasLiveData={availability.hasLiveData} />
           </div>
         </section>
 
@@ -478,7 +478,7 @@ export default async function YachtDetailPage({
             </p>
         </div>
 
-        <YachtMobileActionBar yachtId={id} showAvailability={true} />
+        <YachtMobileActionBar yachtId={id} hasLiveData={availability.hasLiveData} />
       </main>
 
       <Footer />

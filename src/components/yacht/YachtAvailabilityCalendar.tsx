@@ -105,23 +105,22 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
   const canGoForward = monthOffset < 11;
 
   if (ranges.length === 0) {
-    // Honest empty state: no fabricated calendar. Selecting dates here does
-    // not open the enquiry form; the visitor chooses to request a proposal.
+    // Honest empty state: no fabricated calendar. Compact by design — no
+    // oversized panel — with a clear enquiry action.
     return (
-      <div className="rounded-xl bg-white p-6 shadow-sm">
-        <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-          <CalendarDays className="h-8 w-8 shrink-0 text-[#e89d79]" aria-hidden="true" />
-          <div className="flex-1">
-            <h3 className="font-display text-xl italic text-[#061625]">Availability data currently unavailable</h3>
-            <p className="text-sm text-[#061625]/70">
-              Our live calendar feed for this yacht is not connected yet, so we cannot show confirmed dates here.
-              Tell us the dates you have in mind and our charter team will confirm current availability personally —
-              availability is always re-confirmed before any booking.
+      <div className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+          <CalendarDays className="h-6 w-6 shrink-0 text-[#e89d79]" aria-hidden="true" />
+          <div className="min-w-0 flex-1">
+            <h3 className="font-display text-lg italic text-[#061625]">Availability data currently unavailable</h3>
+            <p className="mt-0.5 text-sm text-[#061625]/70">
+              Live dates for this yacht are not in our feed yet — ask our team and we will confirm availability for
+              your dates personally.
             </p>
           </div>
           <a
             href="#enquire"
-            className="shrink-0 rounded-full border border-[#061625]/20 px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#061625]/5"
+            className="shrink-0 rounded-full bg-[#e89d79] px-5 py-2.5 text-center text-sm font-semibold text-[#061625] transition-colors hover:bg-[#d88a66]"
           >
             Ask about your dates
           </a>
