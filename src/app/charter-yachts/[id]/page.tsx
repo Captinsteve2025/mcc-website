@@ -1,12 +1,39 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Users, BedDouble, Ruler, CalendarDays, ExternalLink } from "lucide-react";
+import {
+  ArrowLeft,
+  Users,
+  BedDouble,
+  Ruler,
+  CalendarDays,
+  Anchor,
+  Calendar,
+  Ship,
+  Waves,
+  Snowflake,
+  Gauge,
+  FileText,
+} from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
-import { YachtPhoto } from "@/components/yacht/YachtPhoto";
 import { YachtEnquiryForm } from "@/components/yacht/YachtEnquiryForm";
+import { YachtHeroGallery } from "@/components/yacht/YachtHeroGallery";
+import { YachtSectionNav, type SectionTab } from "@/components/yacht/YachtSectionNav";
 import { getYachtDetail } from "@/lib/cya";
+import {
+  beamWithUnit,
+  cleanText,
+  collectGallery,
+  draftWithUnit,
+  lengthWithUnit,
+  num,
+  parseAccommodation,
+  parseAmenities,
+  parseSeasons,
+  parseWatersports,
+  str,
+} from "@/lib/yacht-detail";
 
 export const dynamic = "force-dynamic";
 
@@ -26,193 +53,11 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   }
 }
 
-function str(value: unknown): string | null {
-  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
-}
-
-function num(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-// CYA returns `lenght` (not `length`). Values may be numeric or numeric strings.
-function lengthValue(detail: Record<string, unknown>): number | null {
-  const raw = detail.lenght;
-  if (typeof raw === "number" && Number.isFinite(raw)) return raw;
-  if (typeof raw === "string") {
-    const parsed = Number.parseFloat(raw);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-  return null;
-}
-
-function lengthUnit(detail: Record<string, unknown>): string {
-  const unit = str(detail.lenght_unit ?? detail.lenghtUnit ?? detail.length_unit);
-  return unit ?? "m";
-}
-
-// Collect gallery URLs from `main_image` + `Images` (uppercase I). Verified
-// live: `Images` is an array of objects whose photograph URL is `image_src`.
-// Deduplicated; original CYA sources are preserved.
-function collectPhotos(detail: Record<string, unknown>): string[] {
-  const photos: string[] = [];
-  const main = str(detail.main_image);
-  if (main) photos.push(main);
-  const images = detail.Images;
-  if (Array.isArray(images)) {
-    for (const item of images) {
-      if (typeof item === "string" && item.startsWith("https://")) {
-        photos.push(item);
-      } else if (item && typeof item === "object") {
-        const obj = item as Record<string, unknown>;
-        const url = str(obj.image_src) ?? str(obj.src) ?? str(obj.url);
-        if (url) photos.push(url);
-      }
-    }
-  } else if (typeof images === "string" && images.startsWith("https://")) {
-    photos.push(images);
-  }
-  return [...new Set(photos)];
-}
-
-// CYA toy/equipment fields may contain HTML. Rendering as plain text is safe
-// (React escapes it); stripping tags keeps the text readable.
-function stripHtml(value: unknown): string | null {
-  const text = str(value);
-  if (text === null) return null;
-  const cleaned = text
-    .replace(/<br\s*\/?>/gi, "\n")
-    .replace(/<[^>]*>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&nbsp;/g, " ")
-    .trim();
-  return cleaned.length > 0 ? cleaned : null;
-}
-
-// Accommodations: verified to be an object of cabin/accommodation attributes.
-// Rendered as label/value pairs from its actual properties; arrays of strings
-// and plain text are also handled.
-function AccommodationsBlock({ value }: { value: unknown }) {
-  if (value && typeof value === "object" && !Array.isArray(value)) {
-    const entries = Object.entries(value as Record<string, unknown>).filter(
-      ([, v]) => stripHtml(v) !== null || typeof v === "number" || typeof v === "boolean"
-    );
-    if (entries.length === 0) return null;
-    return (
-      <dl className="grid gap-3 sm:grid-cols-2">
-        {entries.map(([key, v]) => (
-          <div key={key} className="rounded-lg bg-white p-4 shadow-sm">
-            <dt className="text-xs uppercase tracking-wide text-[#061625]/60">{key.replace(/_/g, " ")}</dt>
-            <dd className="whitespace-pre-line text-[#061625]">{typeof v === "object" ? JSON.stringify(v) : String(v)}</dd>
-          </div>
-        ))}
-      </dl>
-    );
-  }
-  if (Array.isArray(value)) {
-    const items = value
-      .map((item) => (typeof item === "string" ? stripHtml(item) : item && typeof item === "object" ? stripHtml((item as Record<string, unknown>).detail ?? (item as Record<string, unknown>).description ?? (item as Record<string, unknown>).text) : null))
-      .filter((s): s is string => Boolean(s));
-    if (items.length === 0) return null;
-    return (
-      <ul className="list-disc space-y-2 pl-5 leading-relaxed text-[#061625]/80">
-        {items.map((item, i) => (
-          <li key={i}>{item}</li>
-        ))}
-      </ul>
-    );
-  }
-  const text = stripHtml(value);
-  return text ? <p className="whitespace-pre-line leading-relaxed text-[#061625]/80">{text}</p> : null;
-}
-
-// Watersports / toys: text, arrays of strings, or objects with named lists.
-function ListBlock({ value }: { value: unknown }) {
-  if (Array.isArray(value)) {
-    const items = value
-      .map((item) =>
-        typeof item === "string"
-          ? stripHtml(item)
-          : item && typeof item === "object"
-            ? stripHtml((item as Record<string, unknown>).name ?? (item as Record<string, unknown>).title ?? (item as Record<string, unknown>).label)
-            : null
-      )
-      .filter((s): s is string => Boolean(s));
-    if (items.length === 0) return null;
-    return (
-      <ul className="list-disc space-y-1 pl-5 leading-relaxed text-[#061625]/80">
-        {items.map((item, i) => (
-          <li key={i}>{item}</li>
-        ))}
-      </ul>
-    );
-  }
-  const text = stripHtml(value);
-  return text ? <p className="whitespace-pre-line leading-relaxed text-[#061625]/80">{text}</p> : null;
-}
-
-// Seasonal pricing: verified live structure — seasons[] carries title,
-// start_date, end_date, base_price and a per-season currency. Currency is
-// never assumed to be USD; only rows CYA actually provides are rendered.
-function formatMoney(amount: number, currency: string | null): string {
-  const rounded = Math.round(amount).toLocaleString("en-US");
-  if (currency === "USD") return `${rounded}`;
-  if (currency === "EUR") return `\u20ac${rounded}`;
-  if (currency === "GBP") return `\u00a3${rounded}`;
-  return currency ? `${currency} ${rounded}` : `${rounded}`;
-}
-
-function SeasonPricing({ detail }: { detail: Record<string, unknown> }) {
-  const seasons = detail.seasons;
-  type SeasonRow = { label: string; dates: string | null; area: string | null; price: string };
-  const rows: SeasonRow[] = [];
-
-  if (Array.isArray(seasons)) {
-    for (const s of seasons) {
-      if (!s || typeof s !== "object") continue;
-      const obj = s as Record<string, unknown>;
-      const title = str(obj.title ?? obj.season_name ?? obj.name);
-      const start = str(obj.start_date);
-      const end = str(obj.end_date);
-      const label = title ?? [start, end].filter(Boolean).join(" \u2013 ") ?? "Season";
-      const dates = title && (start || end) ? [start, end].filter(Boolean).join(" \u2013 ") : null;
-      const rawPrice = obj.base_price;
-      const priceNum = typeof rawPrice === "number" ? rawPrice : typeof rawPrice === "string" ? Number.parseFloat(rawPrice) : null;
-      const currency = str(obj.currency);
-      if (priceNum !== null && Number.isFinite(priceNum)) {
-        const areaNames = Array.isArray(obj.location_areas)
-          ? obj.location_areas
-              .map((a) => (typeof a === "string" ? a : a && typeof a === "object" ? str((a as Record<string, unknown>).label ?? (a as Record<string, unknown>).name) : null))
-              .filter((n): n is string => Boolean(n))
-              .slice(0, 3)
-              .join(", ")
-          : null;
-        rows.push({ label, dates, area: areaNames, price: `${formatMoney(priceNum, currency)} / week` });
-      }
-    }
-  }
-
-  if (rows.length === 0) return null;
-
+function SectionHeading({ id, title }: { id: string; title: string }) {
   return (
-    <>
-      <h2 className="mb-4 mt-12 font-display text-3xl font-normal italic text-[#061625]">Seasonal rates</h2>
-      <dl className="divide-y divide-[#061625]/10 rounded-lg bg-white shadow-sm">
-        {rows.map((row, i) => (
-          <div key={i} className="p-4">
-            <div className="flex items-center justify-between gap-4">
-              <dt className="text-[#061625]/80">{row.label}</dt>
-              <dd className="text-right font-medium text-[#061625]">{row.price}</dd>
-            </div>
-            {(row.dates || row.area) && (
-              <p className="mt-1 text-xs text-[#061625]/60">
-                {[row.dates, row.area].filter(Boolean).join(" \u00b7 ")}
-              </p>
-            )}
-          </div>
-        ))}
-      </dl>
-      <p className="mt-3 text-xs text-[#061625]/50">Indicative rates only, subject to confirmation.</p>
-    </>
+    <h2 id={id} className="mb-6 scroll-mt-32 font-display text-3xl font-normal italic text-[#061625] md:text-4xl">
+      {title}
+    </h2>
   );
 }
 
@@ -245,23 +90,76 @@ export default async function YachtDetailPage({
   if (!yacht) notFound();
 
   const name = str(yacht.yachtName) ?? "Unnamed yacht";
-  const photos = collectPhotos(yacht);
+  const gallery = collectGallery(yacht);
+  const accommodation = parseAccommodation(yacht);
+  const amenities = parseAmenities(yacht);
+  const watersports = parseWatersports(yacht);
+  const seasons = parseSeasons(yacht);
+  const length = lengthWithUnit(yacht);
+  const beam = beamWithUnit(yacht);
+  const draft = draftWithUnit(yacht);
+  const builder = str(yacht.builder_name);
+  const yachtType = str(yacht.yachtType);
+  const year = num(yacht.year_build);
+  const refit = num(yacht.refit);
+  const flag = str(yacht.flag);
+  const cruiseSpeed = num(yacht.cruising_speed);
+  const maxSpeed = num(yacht.max_speed);
+  const engines = cleanText(yacht.yachtEngines);
+
   const minUsd = num(yacht.min_price_usd);
   const heroPrice =
-    minUsd !== null
-      ? `From $${Math.round(minUsd).toLocaleString("en-US")} per week (indicative, subject to confirmation)`
-      : "Charter rates on request";
+    seasons.length > 0 && seasons[0].price
+      ? `${seasons[0].price}, subject to confirmation`
+      : minUsd !== null
+        ? `From $${Math.round(minUsd).toLocaleString("en-US")} per week, subject to confirmation`
+        : "Charter rates on request";
 
-  const builder = str(yacht.builder_name);
-  const length = lengthValue(yacht);
-  const lengthUnitStr = lengthUnit(yacht);
-  const beam = num(yacht.beam);
-  const draft = num(yacht.draft);
-  const year = num(yacht.year_build) !== null ? String(yacht.year_build) : str(yacht.year_build);
-  const refit = num(yacht.refit) !== null ? String(yacht.refit) : str(yacht.refit);
-  const cabins = num(yacht.cabins);
-  const pax = num(yacht.pax);
-  const ebrochure = str(yacht.ebrochure);
+  // Quick spec strip — only fields this yacht actually provides.
+  const quickSpecs: Array<{ icon: typeof Ruler; label: string; value: string }> = [];
+  if (length) quickSpecs.push({ icon: Ruler, label: "Length", value: `${length.value} ${length.unit}` });
+  if (accommodation.pax !== null) quickSpecs.push({ icon: Users, label: "Guests", value: `Up to ${accommodation.pax}` });
+  if (accommodation.cabins !== null) quickSpecs.push({ icon: BedDouble, label: "Cabins", value: String(accommodation.cabins) });
+  if (cruiseSpeed !== null) quickSpecs.push({ icon: Gauge, label: "Cruising speed", value: `${cruiseSpeed} kn` });
+  if (year !== null) quickSpecs.push({ icon: Calendar, label: "Built", value: String(year) });
+  if (beam) quickSpecs.push({ icon: Ruler, label: "Beam", value: `${beam.value} ${beam.unit}` });
+  if (draft) quickSpecs.push({ icon: Ruler, label: "Draft", value: `${draft.value} ${draft.unit}` });
+
+  // Full specifications, grouped. Empty values are omitted entirely.
+  const generalSpecs: Array<[string, string]> = [];
+  if (yachtType) generalSpecs.push(["Yacht type", yachtType]);
+  if (builder) generalSpecs.push(["Builder", builder]);
+  if (flag) generalSpecs.push(["Flag", flag]);
+  if (year !== null) generalSpecs.push(["Year built", String(year)]);
+  if (refit !== null && refit > 0) generalSpecs.push(["Refit", String(refit)]);
+  const dimensionSpecs: Array<[string, string]> = [];
+  if (length) dimensionSpecs.push(["Length", `${length.value} ${length.unit}`]);
+  if (beam) dimensionSpecs.push(["Beam", `${beam.value} ${beam.unit}`]);
+  if (draft) dimensionSpecs.push(["Draft", `${draft.value} ${draft.unit}`]);
+  const performanceSpecs: Array<[string, string]> = [];
+  if (cruiseSpeed !== null) performanceSpecs.push(["Cruising speed", `${cruiseSpeed} kn`]);
+  if (maxSpeed !== null) performanceSpecs.push(["Maximum speed", `${maxSpeed} kn`]);
+  if (engines) performanceSpecs.push(["Engines", engines]);
+  const comfortSpecs = amenities.filter((a) =>
+    ["Air conditioning", "Overnight air conditioning", "Watermaker", "Water capacity", "Fuel consumption"].includes(a.label)
+  );
+
+  const specGroups: Array<{ title: string; rows: Array<[string, string]> }> = [
+    { title: "General", rows: generalSpecs },
+    { title: "Dimensions", rows: dimensionSpecs },
+    { title: "Performance", rows: performanceSpecs },
+    { title: "Comfort & systems", rows: comfortSpecs.map((a) => [a.label, a.value] as [string, string]) },
+  ].filter((g) => g.rows.length > 0);
+
+  // Only render tabs for sections that have real data for this yacht.
+  const tabs: SectionTab[] = [{ id: "overview", label: "Overview" }];
+  if (accommodation.cabins !== null || accommodation.pax !== null || accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0)
+    tabs.push({ id: "accommodation", label: "Accommodation" });
+  if (gallery.length > 0) tabs.push({ id: "gallery", label: "Gallery" });
+  if (watersports.length > 0) tabs.push({ id: "watersports", label: "Watersports" });
+  if (amenities.length > 0) tabs.push({ id: "amenities", label: "Amenities" });
+  if (seasons.length > 0) tabs.push({ id: "rates", label: "Rates" });
+  tabs.push({ id: "enquire", label: "Enquire" });
 
   const slug = `cya-${id.slice(0, 12)}`;
 
@@ -270,7 +168,8 @@ export default async function YachtDetailPage({
       <Header />
 
       <main className="flex-1">
-        <section className="bg-[#061625] px-4 pb-14 pt-32 text-white md:pb-20 md:pt-40">
+        {/* --- Yacht identity --- */}
+        <section className="bg-[#061625] px-4 pb-10 pt-32 text-white md:pb-12 md:pt-40">
           <div className="container mx-auto px-4">
             <Link
               href={destination ? `/charter-yachts?destination=${encodeURIComponent(destination)}` : "/charter-yachts"}
@@ -278,139 +177,279 @@ export default async function YachtDetailPage({
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to all charter yachts
             </Link>
-            <p className="mb-3 text-sm uppercase tracking-[0.3em] text-white/80">
-              {str(yacht.yachtType) ?? "Charter yacht"}
-            </p>
             <h1 className="font-display text-4xl font-normal italic leading-tight md:text-6xl">{name}</h1>
-            {builder && <p className="mt-3 text-white/80">Built by {builder}</p>}
-            <p className="mt-4 font-display text-2xl italic text-[#e89d79]">{heroPrice}</p>
+            <p className="mt-2 text-white/80">
+              {[builder, year !== null ? `Built ${year}` : null].filter(Boolean).join(" | ") || (yachtType ?? "Charter yacht")}
+            </p>
+            <p className="mt-3 font-display text-2xl italic text-[#e89d79]">{heroPrice}</p>
           </div>
         </section>
 
-        <section className="container mx-auto px-4 py-14 md:py-20">
-          {photos.length > 0 ? (
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {photos.slice(0, 9).map((photo, index) => (
-                <div key={photo} className="relative aspect-[4/3] overflow-hidden rounded-lg bg-[#061625]/10">
-                  <YachtPhoto src={photo} alt={index === 0 ? name : `${name} — photo ${index + 1}`} />
+        {/* --- Hero gallery mosaic --- */}
+        <section className="container mx-auto px-4 py-10">
+          <div id="gallery" className="scroll-mt-32">
+            <YachtHeroGallery yachtId={id} yachtName={name} images={gallery} />
+          </div>
+
+          {/* Quick specification strip */}
+          {quickSpecs.length > 0 && (
+            <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
+              {quickSpecs.map(({ icon: Icon, label, value }) => (
+                <div key={label} className="rounded-lg bg-white p-4 shadow-sm">
+                  <Icon className="h-5 w-5 text-[#e89d79]" aria-hidden="true" />
+                  <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">{label}</dt>
+                  <dd className="text-[#061625]">{value}</dd>
                 </div>
               ))}
-            </div>
-          ) : (
-            <div className="rounded-lg bg-white p-8 text-center text-sm text-[#061625]/60">
-              Photographs for this yacht are not available yet.
-            </div>
-          )}
-          {ebrochure && (
-            <p className="mt-6">
-              <a
-                href={ebrochure}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-[#061625]/20 px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#061625]/5"
-              >
-                View full e-brochure <ExternalLink className="h-4 w-4" aria-hidden="true" />
-              </a>
-            </p>
+            </dl>
           )}
         </section>
 
-        <section className="container mx-auto grid gap-12 px-4 pb-20 lg:grid-cols-5">
-          <div className="lg:col-span-3">
-            <h2 className="mb-6 font-display text-3xl font-normal italic text-[#061625]">Specifications</h2>
-            <dl className="grid gap-4 sm:grid-cols-2">
-              {[
-                { label: "Yacht type", value: str(yacht.yachtType) },
-                { label: "Builder", value: builder },
-                { label: "Length", value: length !== null ? `${length} ${lengthUnitStr}` : null },
-                { label: "Beam", value: beam !== null ? `${beam} ${lengthUnitStr}` : null },
-                { label: "Draft", value: draft !== null ? `${draft} ${lengthUnitStr}` : null },
-                { label: "Year built", value: year },
-                { label: "Refit", value: refit },
-                { label: "Cabins", value: cabins !== null ? String(cabins) : null },
-                { label: "Guests", value: pax !== null ? `Up to ${pax}` : null },
-              ]
-                .filter((row) => row.value !== null)
-                .map((row) => (
-                  <div key={row.label} className="flex items-center gap-3 rounded-lg bg-white p-4 shadow-sm">
-                    {row.label === "Length" || row.label === "Beam" || row.label === "Draft" ? (
-                      <Ruler className="h-5 w-5 shrink-0 text-[#e89d79]" aria-hidden="true" />
-                    ) : row.label === "Cabins" ? (
-                      <BedDouble className="h-5 w-5 shrink-0 text-[#e89d79]" aria-hidden="true" />
-                    ) : row.label === "Guests" ? (
-                      <Users className="h-5 w-5 shrink-0 text-[#e89d79]" aria-hidden="true" />
-                    ) : (
-                      <span className="h-5 w-5" aria-hidden="true" />
-                    )}
-                    <div>
-                      <dt className="text-xs uppercase tracking-wide text-[#061625]/60">{row.label}</dt>
-                      <dd className="text-[#061625]">{row.value}</dd>
-                    </div>
-                  </div>
-                ))}
-            </dl>
+        <YachtSectionNav tabs={tabs} yachtId={id} />
 
-            {yacht.accommodations !== undefined && yacht.accommodations !== null && (
-              <>
-                <h2 className="mb-4 mt-12 font-display text-3xl font-normal italic text-[#061625]">Accommodations</h2>
-                <AccommodationsBlock value={yacht.accommodations} />
-              </>
+        <div className="container mx-auto grid gap-12 px-4 pb-24 lg:grid-cols-5">
+          <div className="lg:col-span-3">
+            {/* --- Overview --- */}
+            <SectionHeading id="overview" title="Overview" />
+            <div className="space-y-4 leading-relaxed text-[#061625]/80">
+              <p>
+                {name} is {yachtType ? `a ${yachtType.toLowerCase()}` : "a charter yacht"}
+                {builder ? ` built by ${builder}` : ""}
+                {year !== null ? ` in ${year}` : ""}
+                {length ? `, measuring ${length.value} ${length.unit}` : ""}
+                {accommodation.pax !== null ? ` and welcoming up to ${accommodation.pax} guests` : ""}.
+              </p>
+              {accommodation.cabins !== null && accommodation.pax !== null && (
+                <p>
+                  Guest accommodation spans {accommodation.cabins} cabin{accommodation.cabins === 1 ? "" : "s"},
+                  giving every party space to relax aboard.
+                </p>
+              )}
+              {cleanText(yacht.description) && (
+                <p className="whitespace-pre-line">{cleanText(yacht.description)}</p>
+              )}
+            </div>
+
+            {/* --- Accommodation --- */}
+            {(accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0) && (
+              <section className="mt-14">
+                <SectionHeading id="accommodation" title="Accommodation" />
+                <dl className="grid gap-3 sm:grid-cols-3">
+                  {accommodation.pax !== null && (
+                    <div className="rounded-lg bg-white p-4 shadow-sm">
+                      <Users className="h-5 w-5 text-[#e89d79]" aria-hidden="true" />
+                      <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Guests</dt>
+                      <dd className="text-[#061625]">Up to {accommodation.pax}</dd>
+                    </div>
+                  )}
+                  {accommodation.cabins !== null && (
+                    <div className="rounded-lg bg-white p-4 shadow-sm">
+                      <BedDouble className="h-5 w-5 text-[#e89d79]" aria-hidden="true" />
+                      <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Cabins</dt>
+                      <dd className="text-[#061625]">{accommodation.cabins}</dd>
+                    </div>
+                  )}
+                  {accommodation.bathrooms && (
+                    <div className="rounded-lg bg-white p-4 shadow-sm">
+                      <Snowflake className="h-5 w-5 text-[#e89d79]" aria-hidden="true" />
+                      <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Bathrooms</dt>
+                      <dd className="text-[#061625]">{accommodation.bathrooms}</dd>
+                    </div>
+                  )}
+                </dl>
+                {accommodation.configLine && (
+                  <p className="mt-4 rounded-lg bg-white p-4 leading-relaxed text-[#061625]/80 shadow-sm">
+                    {accommodation.configLine}.
+                  </p>
+                )}
+                {accommodation.description && (
+                  <p className="mt-4 whitespace-pre-line leading-relaxed text-[#061625]/80">{accommodation.description}</p>
+                )}
+                {accommodation.otherFields.length > 0 && (
+                  <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                    {accommodation.otherFields.map((f) => (
+                      <div key={f.label} className="rounded-lg bg-white p-4 shadow-sm">
+                        <dt className="text-xs uppercase tracking-wide text-[#061625]/60">{f.label}</dt>
+                        <dd className="whitespace-pre-line text-[#061625]">{f.value}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </section>
             )}
 
-            {(yacht.watersports !== undefined && yacht.watersports !== null) ||
-            (yacht.other_toys !== undefined && yacht.other_toys !== null) ||
-            str(yacht.yachtEngines) ? (
-              <>
-                <h2 className="mb-4 mt-12 font-display text-3xl font-normal italic text-[#061625]">
-                  Watersports &amp; equipment
-                </h2>
-                <div className="space-y-4">
-                  <ListBlock value={yacht.watersports} />
-                  {stripHtml(yacht.other_toys) !== null && yacht.other_toys !== yacht.watersports && (
-                    <ListBlock value={yacht.other_toys} />
-                  )}
-                  {stripHtml(yacht.yachtEngines) && <p className="text-sm text-[#061625]/70">Engines: {stripHtml(yacht.yachtEngines)}</p>}
+            {/* --- Full specifications --- */}
+            {specGroups.length > 0 && (
+              <section className="mt-14">
+                <SectionHeading id="specifications" title="Specifications" />
+                <div className="grid gap-6 md:grid-cols-2">
+                  {specGroups.map((group) => (
+                    <div key={group.title} className="rounded-xl bg-white p-6 shadow-sm">
+                      <h3 className="mb-4 font-display text-xl italic text-[#061625]">{group.title}</h3>
+                      <dl className="space-y-2.5">
+                        {group.rows.map(([label, value]) => (
+                          <div key={label} className="flex items-baseline justify-between gap-4 border-b border-[#061625]/5 pb-2.5 last:border-0 last:pb-0">
+                            <dt className="text-sm text-[#061625]/60">{label}</dt>
+                            <dd className="text-right text-sm font-medium text-[#061625]">{value}</dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </div>
+                  ))}
                 </div>
-              </>
-            ) : null}
+              </section>
+            )}
 
-            <SeasonPricing detail={yacht} />
+            {/* --- Watersports --- */}
+            {watersports.length > 0 && (
+              <section className="mt-14">
+                <SectionHeading id="watersports" title="Watersports & Toys" />
+                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {watersports.map((item) => (
+                    <li key={item} className="flex items-center gap-2.5 rounded-lg bg-white p-4 text-sm text-[#061625] shadow-sm">
+                      <Waves className="h-5 w-5 shrink-0 text-[#e89d79]" aria-hidden="true" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* --- Amenities --- */}
+            {amenities.length > 0 && (
+              <section className="mt-14">
+                <SectionHeading id="amenities" title="Amenities & Comfort" />
+                <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  {amenities.map((a) => (
+                    <li key={a.label} className="flex items-center justify-between gap-4 rounded-lg bg-white p-4 text-sm shadow-sm">
+                      <span className="text-[#061625]/70">{a.label}</span>
+                      <span className="text-right font-medium text-[#061625]">{a.value}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            )}
+
+            {/* --- Charter rates --- */}
+            {seasons.length > 0 && (
+              <section className="mt-14">
+                <SectionHeading id="rates" title="Charter Rates" />
+                <div className="space-y-4">
+                  {seasons.map((season, i) => (
+                    <details key={i} open={i === 0} className="group rounded-xl bg-white p-5 shadow-sm">
+                      <summary className="flex cursor-pointer items-center justify-between gap-4">
+                        <span>
+                          <span className="font-display text-xl italic text-[#061625]">{season.title}</span>
+                          {season.dates && <span className="mt-0.5 block text-xs text-[#061625]/60">{season.dates}</span>}
+                        </span>
+                        {season.price && <span className="shrink-0 font-medium text-[#061625]">{season.price}</span>}
+                      </summary>
+                      <dl className="mt-4 space-y-2 border-t border-[#061625]/10 pt-4 text-sm">
+                        {season.category && (
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-[#061625]/60">Season type</dt>
+                            <dd className="text-right text-[#061625]">{season.category}</dd>
+                          </div>
+                        )}
+                        {season.area && (
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-[#061625]/60">Cruising region</dt>
+                            <dd className="text-right text-[#061625]">{season.area}</dd>
+                          </div>
+                        )}
+                        {season.basePort && (
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-[#061625]/60">Base port</dt>
+                            <dd className="text-right text-[#061625]">{season.basePort}</dd>
+                          </div>
+                        )}
+                        {season.pickup && (
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-[#061625]/60">Preferred pickup</dt>
+                            <dd className="text-right text-[#061625]">{season.pickup}</dd>
+                          </div>
+                        )}
+                        {season.charterType && (
+                          <div className="flex justify-between gap-4">
+                            <dt className="text-[#061625]/60">Charter type</dt>
+                            <dd className="text-right text-[#061625]">{season.charterType}</dd>
+                          </div>
+                        )}
+                        {season.terms && (
+                          <div className="pt-2">
+                            <dt className="text-[#061625]/60">Terms</dt>
+                            <dd className="mt-1 whitespace-pre-line text-[#061625]">{season.terms}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    </details>
+                  ))}
+                </div>
+                <p className="mt-3 text-xs text-[#061625]/50">
+                  Rates are indicative and subject to confirmation. Final quotation depends on guest count, dates and
+                  charter terms.
+                </p>
+              </section>
+            )}
+
+            {/* --- Availability (not fabricated) --- */}
+            <section className="mt-14 rounded-xl bg-white p-6 shadow-sm">
+              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+                <CalendarDays className="h-8 w-8 shrink-0 text-[#e89d79]" aria-hidden="true" />
+                <div className="flex-1">
+                  <h3 className="font-display text-xl italic text-[#061625]">Live availability</h3>
+                  <p className="text-sm text-[#061625]/70">
+                    Charter calendars are confirmed personally by our team, so your dates are always checked against
+                    the real schedule before any commitment.
+                  </p>
+                </div>
+                <a
+                  href="#enquire"
+                  className="shrink-0 rounded-full bg-[#e89d79] px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#d88a66]"
+                >
+                  Check Availability for Your Dates
+                </a>
+              </div>
+            </section>
 
             <p className="mt-10 text-xs text-[#061625]/50">
               Yacht data and images provided by Central Yacht Agent. Rates shown are indicative only and subject to
-              confirmation. Some details (crew, availability) are not provided by this listing and will be included in
-              your personalized proposal.
+              confirmation.
             </p>
           </div>
 
+          {/* --- Enquiry panel --- */}
           <div className="lg:col-span-2">
-            <div className="rounded-2xl bg-[#061625] p-6 text-white md:p-8">
-              <h2 className="mb-2 font-display text-3xl font-normal italic">Enquire About This Yacht</h2>
-              <p className="mb-5 text-sm text-white/80">
-                Tell us your plans and our charter team will confirm availability and send a personalized proposal for{" "}
-                {name}.
-              </p>
-              {(preferredDates || guests) && (
-                <p className="mb-5 flex items-start gap-2 rounded-lg bg-white/10 p-3 text-xs text-white/90">
-                  <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
-                  <span>
-                    {preferredDates && <>Dates carried from your search: {preferredDates}. </>}
-                    {guests && <>Guests: {guests}. </>}
-                    Please confirm the details below.
-                  </span>
+            <div id="enquire" className="scroll-mt-32 lg:sticky lg:top-28">
+              <div className="rounded-2xl bg-[#061625] p-6 text-white md:p-8">
+                <h2 className="mb-2 font-display text-3xl font-normal italic">Check Availability &amp; Get My Proposal</h2>
+                <p className="mb-5 text-sm text-white/80">
+                  Tell us your plans and our charter team will confirm live availability for {name} and send a
+                  personalized proposal — usually within one business day.
                 </p>
-              )}
-            </div>
-            <div className="mt-6">
-              <YachtEnquiryForm
-                yachtSlug={slug}
-                yachtName={name}
-                initialDates={preferredDates || undefined}
-                initialGuests={guests || undefined}
-              />
+                {(preferredDates || guests) && (
+                  <p className="mb-5 flex items-start gap-2 rounded-lg bg-white/10 p-3 text-xs text-white/90">
+                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
+                    <span>
+                      {preferredDates && <>Dates carried from your search: {preferredDates}. </>}
+                      {guests && <>Guests: {guests}. </>}
+                      Please confirm the details below.
+                    </span>
+                  </p>
+                )}
+              </div>
+              <div className="mt-6">
+                <YachtEnquiryForm
+                  yachtSlug={slug}
+                  yachtName={name}
+                  cyaYachtId={id}
+                  initialDates={preferredDates || undefined}
+                  initialGuests={guests || undefined}
+                />
+              </div>
             </div>
           </div>
-        </section>
+        </div>
       </main>
 
       <Footer />

@@ -11,6 +11,8 @@ import { MCC_PHONE_DISPLAY, MCC_PHONE_HREF } from "@/lib/managed-yachts";
 interface YachtEnquiryFormProps {
   yachtSlug: string;
   yachtName: string;
+  /** Full, untruncated CYA yacht identifier so enquiries trace to the yacht. */
+  cyaYachtId?: string;
   /** Values carried from the visitor's search, offered as starting points. */
   initialDates?: string;
   initialGuests?: string;
@@ -84,7 +86,7 @@ const inputClass = "h-11 rounded-md border-[#CBD5DF] bg-white text-[#061625] pla
 const labelClass = "mb-1.5 block text-sm font-medium text-[#061625]";
 const errorClass = "mt-1.5 text-sm text-[#B42318]";
 
-export function YachtEnquiryForm({ yachtSlug, yachtName, initialDates, initialGuests }: YachtEnquiryFormProps) {
+export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDates, initialGuests }: YachtEnquiryFormProps) {
   const [values, setValues] = useState<FormValues>({
     ...EMPTY_VALUES,
     preferredDates: initialDates ?? "",
@@ -104,7 +106,7 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, initialDates, initialGu
   const trackStart = () => {
     if (startTracked.current) return;
     startTracked.current = true;
-    trackEvent(`${yachtSlug}_enquiry_start`, { yacht: yachtSlug });
+    trackEvent("yacht_enquiry_start", { yacht_id: cyaYachtId ?? yachtSlug });
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -130,6 +132,7 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, initialDates, initialGu
           client_request_id: requestId,
           yacht_slug: yachtSlug,
           yacht_name: yachtName,
+          ...(cyaYachtId ? { cya_yacht_id: cyaYachtId } : {}),
           full_name: values.fullName.trim(),
           email: values.email.trim(),
           phone: values.phone.trim() || null,
@@ -152,7 +155,7 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, initialDates, initialGu
     }
 
     setStatus("saved");
-    trackEvent(`${yachtSlug}_enquiry_success`, { yacht: yachtSlug });
+    trackEvent("yacht_enquiry_submit_success", { yacht_id: cyaYachtId ?? yachtSlug });
   };
 
   if (status === "saved") {
