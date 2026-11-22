@@ -103,6 +103,45 @@ export async function GET(request: Request) {
       listingsReturned: yachts.length,
       firstYachtId: page1Ids[0] ?? null,
       observedFields: yachts[0] ? Object.keys(yachts[0]) : [],
+      // Image URL diagnostics: hostname breakdown and per-yacht validity.
+      imageHostnames: [
+        ...new Set(
+          yachts
+            .map((y) => {
+              const img = y.image;
+              if (typeof img !== "string" || img.length === 0) return "(missing)";
+              try {
+                return new URL(img).hostname;
+              } catch {
+                return "(invalid URL)";
+              }
+            })
+            .filter(Boolean)
+        ),
+      ],
+      imageCounts: {
+        total: yachts.length,
+        validHttpsUrl: yachts.filter((y) => {
+          const img = y.image;
+          if (typeof img !== "string") return false;
+          try {
+            return new URL(img).protocol === "https:";
+          } catch {
+            return false;
+          }
+        }).length,
+        missing: yachts.filter((y) => typeof y.image !== "string" || y.image.length === 0).length,
+        invalidUrl: yachts.filter((y) => {
+          const img = y.image;
+          if (typeof img !== "string" || img.length === 0) return false;
+          try {
+            new URL(img);
+            return false;
+          } catch {
+            return true;
+          }
+        }).length,
+      },
     };
   } catch (err) {
     report.yachtSearchPage1 = { success: false, error: errorInfo(err) };

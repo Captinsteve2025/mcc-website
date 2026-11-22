@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Users, BedDouble, Ruler } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
+import { YachtPhoto } from "@/components/yacht/YachtPhoto";
 import { searchYachts } from "@/lib/cya";
 
 export const metadata: Metadata = {
@@ -69,12 +69,9 @@ function YachtCard({ yacht }: { yacht: Yacht }) {
     <li className="group flex flex-col overflow-hidden rounded-lg bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
       <div className="relative aspect-[4/3] overflow-hidden bg-[#061625]/10">
         {image ? (
-          <Image
+          <YachtPhoto
             src={image}
             alt={typeof yacht.yachtName === "string" ? yacht.yachtName : "Charter yacht"}
-            fill
-            sizes="(min-width: 768px) 33vw, 100vw"
-            className="object-cover transition-transform duration-700 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-[#061625]/50">
