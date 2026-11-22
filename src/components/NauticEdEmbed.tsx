@@ -13,7 +13,7 @@ export function NauticEdEmbed() {
             href="https://www.nauticed.org/sailing-courses/view/bareboat-charter-master-bundle"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center justify-center rounded-md bg-[#e89d79] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#d88a66]"
+            className="inline-flex items-center justify-center rounded-md bg-[#EE9739] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#EA6F33]"
           >
             Get the Course Bundle
           </a>

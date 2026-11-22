@@ -25,7 +25,7 @@ const charterStylesData = [
     image: "/images/crewed-charter-catamaran.webp",
     icon: Users,
     features: ["Captain & Chef", "All Meals Included", "Premium Bar", "Water Toys"],
-    color: "#e89d79",
+    color: "#EE9739",
   },
   {
     id: "sail-stay",
@@ -182,7 +182,7 @@ export function CharterStyles() {
           <p className="text-[#061625]/60 text-base mb-5">Not sure which style is right for you?</p>
           <Link
             href="#enquire"
-            className="inline-flex items-center gap-3 bg-[#e89d79] hover:bg-[#d88a66] text-white px-8 py-4 rounded-full font-medium text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 group"
+            className="inline-flex items-center gap-3 bg-[#EE9739] hover:bg-[#EA6F33] text-white px-8 py-4 rounded-full font-medium text-lg transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 group"
           >
             <span>Let our experts guide you</span>
             <ArrowRight className="w-5 h-5 transition-transform group-hover:translate-x-1" />

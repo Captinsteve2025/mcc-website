@@ -139,7 +139,7 @@ export default function StMartinDestinationPage() {
 
         <div className="container mx-auto px-4 pb-16 relative z-10">
           <div className="max-w-4xl">
-            <p className="text-[#e89d79] uppercase tracking-[0.3em] text-sm font-medium mb-4">Caribbean Destination</p>
+            <p className="text-[#EE9739] uppercase tracking-[0.3em] text-sm font-medium mb-4">Caribbean Destination</p>
             <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-normal italic text-white mb-4">
               St. Martin / Sint Maarten
             </h1>
@@ -150,15 +150,15 @@ export default function StMartinDestinationPage() {
             {/* Stats bar */}
             <div className="flex flex-wrap gap-6 md:gap-10 mb-8">
               <div className="flex items-center gap-2 text-white/80">
-                <MapPin className="w-5 h-5 text-[#e89d79]" />
+                <MapPin className="w-5 h-5 text-[#EE9739]" />
                 <span>French & Dutch Cultures</span>
               </div>
               <div className="flex items-center gap-2 text-white/80">
-                <Calendar className="w-5 h-5 text-[#e89d79]" />
+                <Calendar className="w-5 h-5 text-[#EE9739]" />
                 <span>300+ Restaurants</span>
               </div>
               <div className="flex items-center gap-2 text-white/80">
-                <Ship className="w-5 h-5 text-[#e89d79]" />
+                <Ship className="w-5 h-5 text-[#EE9739]" />
                 <span>24 Yachts Available</span>
               </div>
             </div>
@@ -167,7 +167,7 @@ export default function StMartinDestinationPage() {
             <div className="flex flex-wrap gap-4">
               <Link
                 href="/search?destination=st-martin"
-                className="inline-flex items-center gap-2 bg-[#e89d79] hover:bg-[#d88a66] text-white px-6 py-3 rounded-full font-medium transition-all duration-300"
+                className="inline-flex items-center gap-2 bg-[#EE9739] hover:bg-[#EA6F33] text-white px-6 py-3 rounded-full font-medium transition-all duration-300"
               >
                 View Available Yachts
                 <ChevronRight className="w-4 h-4" />
@@ -203,7 +203,7 @@ export default function StMartinDestinationPage() {
             {highlights.map((highlight, index) => (
               <div key={index} className="text-center p-8 bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow">
                 <div className="w-16 h-16 rounded-full bg-[#061625] flex items-center justify-center mx-auto mb-5">
-                  <highlight.icon className="w-8 h-8 text-[#e89d79]" />
+                  <highlight.icon className="w-8 h-8 text-[#EE9739]" />
                 </div>
                 <h3 className="font-display text-xl font-normal italic text-[#061625] mb-3">
                   {highlight.title}
@@ -221,7 +221,7 @@ export default function StMartinDestinationPage() {
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-sm uppercase tracking-[0.3em] text-[#e89d79] mb-4 font-medium">Must-Visit Destinations</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-[#EE9739] mb-4 font-medium">Must-Visit Destinations</p>
             <h2 className="font-display text-3xl md:text-4xl font-normal italic text-[#061625] mb-4">
               Top Anchorages & Experiences
             </h2>
@@ -256,7 +256,7 @@ export default function StMartinDestinationPage() {
       <section className="py-16 md:py-24 bg-[#f8f7f4]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-sm uppercase tracking-[0.3em] text-[#e89d79] mb-4 font-medium">Featured Yachts</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-[#EE9739] mb-4 font-medium">Featured Yachts</p>
             <h2 className="font-display text-3xl md:text-4xl font-normal italic text-[#061625] mb-4">
               Best Boats Available in St. Martin
             </h2>
@@ -287,7 +287,7 @@ export default function StMartinDestinationPage() {
       <section className="py-16 md:py-24 bg-[#061625]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-sm uppercase tracking-[0.3em] text-[#e89d79] mb-4 font-medium">Plan Your Journey</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-[#EE9739] mb-4 font-medium">Plan Your Journey</p>
             <h2 className="font-display text-3xl md:text-4xl font-normal italic text-white mb-4">
               7-Day Sample Itinerary
             </h2>
@@ -299,7 +299,7 @@ export default function StMartinDestinationPage() {
           <div className="max-w-4xl mx-auto">
             {itinerary.map((day, index) => (
               <div key={index} className="flex gap-6 mb-6 last:mb-0">
-                <div className="flex-shrink-0 w-16 h-16 rounded-full bg-[#e89d79] flex items-center justify-center">
+                <div className="flex-shrink-0 w-16 h-16 rounded-full bg-[#EE9739] flex items-center justify-center">
                   <span className="font-display text-xl italic text-white">Day {day.day}</span>
                 </div>
                 <div className="flex-1 bg-white/5 backdrop-blur-sm rounded-xl p-5 border border-white/10">
@@ -307,7 +307,7 @@ export default function StMartinDestinationPage() {
                     <h3 className="font-display text-lg font-normal italic text-white">
                       {day.location}
                     </h3>
-                    <span className="text-[#e89d79] text-sm flex items-center gap-1">
+                    <span className="text-[#EE9739] text-sm flex items-center gap-1">
                       <Clock className="w-4 h-4" />
                       {day.distance}
                     </span>
@@ -324,7 +324,7 @@ export default function StMartinDestinationPage() {
       <section className="py-16 md:py-24 bg-[#f8f7f4]">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-sm uppercase tracking-[0.3em] text-[#e89d79] mb-4 font-medium">When to Go</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-[#EE9739] mb-4 font-medium">When to Go</p>
             <h2 className="font-display text-3xl md:text-4xl font-normal italic text-[#061625] mb-4">
               Best Time to Visit
             </h2>
@@ -339,7 +339,7 @@ export default function StMartinDestinationPage() {
                 <h3 className="font-display text-xl font-normal italic text-[#061625] mb-2">
                   {season.name}
                 </h3>
-                <p className="text-[#e89d79] font-medium text-sm mb-4">{season.months}</p>
+                <p className="text-[#EE9739] font-medium text-sm mb-4">{season.months}</p>
                 <div className="space-y-3 text-sm">
                   <div className="flex items-start gap-2">
                     <Sun className="w-4 h-4 text-[#061625]/40 mt-0.5" />
@@ -364,7 +364,7 @@ export default function StMartinDestinationPage() {
       <section className="py-16 md:py-24 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <p className="text-sm uppercase tracking-[0.3em] text-[#e89d79] mb-4 font-medium">Common Questions</p>
+            <p className="text-sm uppercase tracking-[0.3em] text-[#EE9739] mb-4 font-medium">Common Questions</p>
             <h2 className="font-display text-3xl md:text-4xl font-normal italic text-[#061625] mb-4">
               St. Martin Charter FAQs
             </h2>
@@ -388,7 +388,7 @@ export default function StMartinDestinationPage() {
       {/* CTA Section */}
       <section className="py-16 md:py-24 bg-[#061625]" id="enquire">
         <div className="container mx-auto px-4 text-center">
-          <p className="text-sm uppercase tracking-[0.3em] text-[#e89d79] mb-4 font-medium">Ready to Explore?</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-[#EE9739] mb-4 font-medium">Ready to Explore?</p>
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-normal italic text-white mb-6">
             Plan Your St. Martin Adventure
           </h2>
@@ -399,7 +399,7 @@ export default function StMartinDestinationPage() {
           <div className="flex flex-wrap justify-center gap-4">
             <Link
               href="/search?destination=st-martin"
-              className="inline-flex items-center gap-2 bg-[#e89d79] hover:bg-[#d88a66] text-white px-8 py-4 rounded-full font-medium text-lg transition-all duration-300"
+              className="inline-flex items-center gap-2 bg-[#EE9739] hover:bg-[#EA6F33] text-white px-8 py-4 rounded-full font-medium text-lg transition-all duration-300"
             >
               Browse St. Martin Yachts
               <ChevronRight className="w-5 h-5" />

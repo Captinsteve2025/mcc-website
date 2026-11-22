@@ -169,7 +169,7 @@ export function YachtHeroGallery({ yachtId, yachtName, images }: GalleryProps) {
         onClick={() => openGallery(0)}
         className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#061625]/20 bg-white px-5 py-2.5 text-sm font-medium text-[#061625] shadow-sm transition-colors hover:bg-[#061625]/5"
       >
-        <Images className="h-4 w-4 text-[#e89d79]" aria-hidden="true" />
+        <Images className="h-4 w-4 text-[#EE9739]" aria-hidden="true" />
         View All {images.length} Photos
       </button>
 

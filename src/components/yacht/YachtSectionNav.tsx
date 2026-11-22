@@ -67,7 +67,7 @@ export function YachtSectionNav({ tabs, yachtId }: { tabs: SectionTab[]; yachtId
             const el = document.getElementById("enquire");
             if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 104, behavior: "smooth" });
           }}
-          className="ml-2 shrink-0 rounded-full bg-[#e89d79] px-4 py-2 text-sm font-semibold uppercase tracking-wide text-[#061625] transition-colors hover:bg-[#d88a66]"
+          className="ml-2 shrink-0 rounded-full bg-[#EE9739] px-4 py-2 text-sm font-semibold uppercase tracking-wide text-[#061625] transition-colors hover:bg-[#EA6F33]"
         >
           Get My Charter Proposal
         </button>

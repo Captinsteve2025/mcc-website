@@ -12,9 +12,9 @@ export function FeaturedCollections() {
     <section className="py-20 md:py-28 bg-[#f8f7f4]">
       <div className="container mx-auto px-4 mb-16">
         <div className="text-center">
-          <p className="text-sm uppercase tracking-[0.3em] text-[#e89d79] mb-4 font-medium">Curated For You</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-[#EE9739] mb-4 font-medium">Curated For You</p>
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-normal italic text-[#061625] mb-6">Featured Yacht Collections</h2>
-          <div className="w-16 h-px bg-[#e89d79] mx-auto mb-6" />
+          <div className="w-16 h-px bg-[#EE9739] mx-auto mb-6" />
           <p className="text-[#061625]/70 text-lg max-w-2xl mx-auto">Expertly curated collections to help you find the perfect yacht for your Caribbean adventure.</p>
         </div>
       </div>
@@ -49,8 +49,8 @@ function CollectionRow({ title, description, slug, yachts }: { title: string; de
       </div>
       <div ref={scrollRef} className="flex gap-5 md:gap-6 overflow-x-auto hide-scrollbar px-4 md:px-8 lg:px-16 pb-6">
         {yachts.map((yacht) => <YachtCard key={yacht.id} yacht={yacht} variant="compact" />)}
-        <Link href={`/search?collection=${slug}`} className="flex-shrink-0 w-[280px] md:w-[320px] rounded-xl overflow-hidden bg-white border-2 border-dashed border-[#e89d79]/40 hover:border-[#e89d79] hover:shadow-lg transition-all duration-300 flex flex-col items-center justify-center aspect-[4/3]">
-          <span className="font-display text-xl font-normal italic text-[#e89d79] mb-2">View All</span>
+        <Link href={`/search?collection=${slug}`} className="flex-shrink-0 w-[280px] md:w-[320px] rounded-xl overflow-hidden bg-white border-2 border-dashed border-[#EE9739]/40 hover:border-[#EE9739] hover:shadow-lg transition-all duration-300 flex flex-col items-center justify-center aspect-[4/3]">
+          <span className="font-display text-xl font-normal italic text-[#EE9739] mb-2">View All</span>
           <span className="text-[#061625]/50 text-sm">See full collection</span>
         </Link>
       </div>

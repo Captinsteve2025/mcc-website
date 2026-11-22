@@ -8,7 +8,7 @@ export function YachtPricing({ yacht }: { yacht: ManagedYacht }) {
         <div className="mx-auto max-w-4xl rounded-lg bg-[#061625] p-8 text-center text-white shadow-2xl sm:p-12">
           <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-white/80">Charter Pricing</p>
           <h2 className="mb-4 font-display text-4xl font-normal italic leading-[1.2] md:text-5xl">Your Private Charter Aboard {yacht.name}</h2>
-          <div className="mx-auto my-6 h-px w-16 bg-[#e89d79]" aria-hidden="true" />
+          <div className="mx-auto my-6 h-px w-16 bg-[#EE9739]" aria-hidden="true" />
 
           {yacht.displayRate || yacht.minimumNights ? (
             <dl className="mt-8 grid gap-6 text-left sm:grid-cols-2">

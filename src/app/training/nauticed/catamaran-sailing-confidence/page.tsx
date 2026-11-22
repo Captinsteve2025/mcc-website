@@ -25,9 +25,9 @@ export default function CatamaranSailingConfidencePage() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#061625]/95 via-[#061625]/70 to-[#061625]/40" />
         </div>
         <div className="container relative z-10 mx-auto px-4 text-center text-white">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/20 px-6 py-2 backdrop-blur-sm">
-            <Ship className="h-5 w-5 text-[#e89d79]" />
-            <span className="text-sm font-bold uppercase tracking-wide text-[#e89d79]">NauticEd Online Course</span>
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/20 px-6 py-2 backdrop-blur-sm">
+            <Ship className="h-5 w-5 text-[#EE9739]" />
+            <span className="text-sm font-bold uppercase tracking-wide text-[#EE9739]">NauticEd Online Course</span>
           </div>
           <h1 className="mb-4 text-4xl font-bold leading-tight tracking-tight md:text-6xl">
             Catamaran Sailing Confidence
@@ -45,7 +45,7 @@ export default function CatamaranSailingConfidencePage() {
             </div>
           </div>
           <div className="flex flex-wrap justify-center gap-4 pb-8">
-            <Button className="bg-[#e89d79] text-white hover:bg-[#d88a66]" size="lg" asChild>
+            <Button className="bg-[#EE9739] text-white hover:bg-[#EA6F33]" size="lg" asChild>
               <a href="#enquire">Get Started</a>
             </Button>
             <Button variant="outline" size="lg" className="border-white/50 text-white hover:bg-white/10 bg-white/10 backdrop-blur-sm" asChild>
@@ -59,19 +59,19 @@ export default function CatamaranSailingConfidencePage() {
         <div className="container mx-auto px-4">
           <div className="grid gap-8 md:grid-cols-4 text-center">
             <div className="rounded-xl bg-white/10 p-6 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">6</p>
+              <p className="text-3xl font-bold text-[#EE9739]">6</p>
               <p className="text-sm text-white/80">Hours Online</p>
             </div>
             <div className="rounded-xl bg-white/10 p-6 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">$49</p>
+              <p className="text-3xl font-bold text-[#EE9739]">$49</p>
               <p className="text-sm text-white/80">Course Price</p>
             </div>
             <div className="rounded-xl bg-white/10 p-6 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">Lifetime</p>
+              <p className="text-3xl font-bold text-[#EE9739]">Lifetime</p>
               <p className="text-sm text-white/80">Access</p>
             </div>
             <div className="rounded-xl bg-white/10 p-6 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">Lagoon</p>
+              <p className="text-3xl font-bold text-[#EE9739]">Lagoon</p>
               <p className="text-sm text-white/80">Endorsed</p>
             </div>
           </div>
@@ -93,19 +93,19 @@ export default function CatamaranSailingConfidencePage() {
                   <h3 className="mb-4 text-lg font-bold text-[#061625]">Getting Started</h3>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Moving on board</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Stowing your gear</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Life aboard a catamaran</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Dinghy management</span>
                     </li>
                   </ul>
@@ -116,19 +116,19 @@ export default function CatamaranSailingConfidencePage() {
                   <h3 className="mb-4 text-lg font-bold text-[#061625]">Maneuvering</h3>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Twin-engine handling</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Docking under power</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Mooring & anchoring</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Spring line techniques</span>
                     </li>
                   </ul>
@@ -139,19 +139,19 @@ export default function CatamaranSailingConfidencePage() {
                   <h3 className="mb-4 text-lg font-bold text-[#061625]">Sailing</h3>
                   <ul className="space-y-2 text-sm text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Tacking & gybing a cat</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Sail trim for cats</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Reefing techniques</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Heavy weather tactics</span>
                     </li>
                   </ul>
@@ -168,8 +168,8 @@ export default function CatamaranSailingConfidencePage() {
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#e89d79]/10">
-                  <Users className="h-7 w-7 text-[#e89d79]" />
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#EE9739]/10">
+                  <Users className="h-7 w-7 text-[#EE9739]" />
                 </div>
                 <h3 className="mb-2 font-bold text-[#061625]">Monohull Crossovers</h3>
                 <p className="text-sm text-muted-foreground">
@@ -179,8 +179,8 @@ export default function CatamaranSailingConfidencePage() {
             </Card>
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#e89d79]/10">
-                  <Anchor className="h-7 w-7 text-[#e89d79]" />
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#EE9739]/10">
+                  <Anchor className="h-7 w-7 text-[#EE9739]" />
                 </div>
                 <h3 className="mb-2 font-bold text-[#061625]">Charter Planners</h3>
                 <p className="text-sm text-muted-foreground">
@@ -190,8 +190,8 @@ export default function CatamaranSailingConfidencePage() {
             </Card>
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#e89d79]/10">
-                  <Ship className="h-7 w-7 text-[#e89d79]" />
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#EE9739]/10">
+                  <Ship className="h-7 w-7 text-[#EE9739]" />
                 </div>
                 <h3 className="mb-2 font-bold text-[#061625]">Future Owners</h3>
                 <p className="text-sm text-muted-foreground">
@@ -201,8 +201,8 @@ export default function CatamaranSailingConfidencePage() {
             </Card>
             <Card className="border-0 shadow-lg">
               <CardContent className="p-6 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#e89d79]/10">
-                  <Award className="h-7 w-7 text-[#e89d79]" />
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-[#EE9739]/10">
+                  <Award className="h-7 w-7 text-[#EE9739]" />
                 </div>
                 <h3 className="mb-2 font-bold text-[#061625]">New Cat Sailors</h3>
                 <p className="text-sm text-muted-foreground">
@@ -220,42 +220,42 @@ export default function CatamaranSailingConfidencePage() {
             <h2 className="mb-12 text-center text-4xl font-bold text-[#061625]">Everything You Get</h2>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                 <div>
                   <p className="font-medium text-[#061625]">Learn to sail large catamarans</p>
                   <p className="text-sm text-muted-foreground">On your own or on a bareboat charter</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                 <div>
                   <p className="font-medium text-[#061625]">Available immediately online</p>
                   <p className="text-sm text-muted-foreground">Start learning today at your own pace</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                 <div>
                   <p className="font-medium text-[#061625]">Unlimited lifetime access</p>
                   <p className="text-sm text-muted-foreground">Review materials anytime, free updates included</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                 <div>
                   <p className="font-medium text-[#061625]">Free bonus courses</p>
                   <p className="text-sm text-muted-foreground">Basic Sail Trim & Nav Rules included</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                 <div>
                   <p className="font-medium text-[#061625]">Sailing resume recognition</p>
                   <p className="text-sm text-muted-foreground">Charter companies trust NauticEd credentials</p>
                 </div>
               </div>
               <div className="flex items-start gap-3 rounded-lg bg-muted/50 p-4">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                 <div>
                   <p className="font-medium text-[#061625]">30-day money back guarantee</p>
                   <p className="text-sm text-muted-foreground">Complete satisfaction guaranteed</p>
@@ -276,21 +276,21 @@ export default function CatamaranSailingConfidencePage() {
           <div className="grid gap-6 md:grid-cols-3 max-w-4xl mx-auto">
             <Card className="border-0 bg-white/10 backdrop-blur-sm">
               <CardContent className="p-6">
-                <span className="text-xs text-[#e89d79]">Step 1</span>
+                <span className="text-xs text-[#EE9739]">Step 1</span>
                 <h3 className="mb-2 font-bold text-white">This Course</h3>
                 <p className="text-sm text-white/70">Catamaran theory & techniques online</p>
               </CardContent>
             </Card>
             <Card className="border-0 bg-white/10 backdrop-blur-sm">
               <CardContent className="p-6">
-                <span className="text-xs text-[#e89d79]">Step 2</span>
+                <span className="text-xs text-[#EE9739]">Step 2</span>
                 <h3 className="mb-2 font-bold text-white">Bareboat Charter Master</h3>
                 <p className="text-sm text-white/70">Complete certification bundle</p>
               </CardContent>
             </Card>
             <Card className="border-0 bg-white/10 backdrop-blur-sm">
               <CardContent className="p-6">
-                <span className="text-xs text-[#e89d79]">Step 3</span>
+                <span className="text-xs text-[#EE9739]">Step 3</span>
                 <h3 className="mb-2 font-bold text-white">Caribbean Practical with MCC</h3>
                 <p className="text-sm text-white/70">Get your catamaran endorsement</p>
               </CardContent>
@@ -358,10 +358,10 @@ export default function CatamaranSailingConfidencePage() {
             <div className="mt-8 text-center">
               <p className="mb-2 text-muted-foreground">Or contact us directly:</p>
               <div className="flex flex-wrap justify-center gap-6">
-                <a href="tel:+17865201558" className="flex items-center gap-2 text-[#061625] hover:text-[#e89d79]">
+                <a href="tel:+17865201558" className="flex items-center gap-2 text-[#061625] hover:text-[#EE9739]">
                   <Phone className="h-5 w-5" />+1 (786) 520-1558
                 </a>
-                <a href="mailto:info@mycaribbeancharters.com" className="flex items-center gap-2 text-[#061625] hover:text-[#e89d79]">
+                <a href="mailto:info@mycaribbeancharters.com" className="flex items-center gap-2 text-[#061625] hover:text-[#EE9739]">
                   <Mail className="h-5 w-5" />info@mycaribbeancharters.com
                 </a>
               </div>
@@ -375,34 +375,34 @@ export default function CatamaranSailingConfidencePage() {
           <h2 className="mb-8 text-center text-3xl font-bold text-[#061625]">Continue Your Certification</h2>
           <div className="grid gap-6 md:grid-cols-4">
             <Link href="/training/nauticed/skipper-large-powerboat" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">Skipper Large Powerboat</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">Skipper Large Powerboat</h3>
                   <p className="text-sm text-muted-foreground">For powerboats 27ft+</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/nauticed/bareboat-charter-master" className="group">
-              <Card className="h-full border-2 border-[#e89d79] shadow-lg">
+              <Card className="h-full border-2 border-[#EE9739] shadow-lg">
                 <CardContent className="p-6">
-                  <span className="mb-2 inline-block rounded bg-[#e89d79]/10 px-2 py-1 text-xs font-bold text-[#e89d79]">Recommended</span>
+                  <span className="mb-2 inline-block rounded bg-[#EE9739]/10 px-2 py-1 text-xs font-bold text-[#EE9739]">Recommended</span>
                   <h3 className="mb-2 font-bold text-[#061625]">Bareboat Charter Master</h3>
                   <p className="text-sm text-muted-foreground">Charter worldwide</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/nauticed/captain-rank" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">Captain Rank</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">Captain Rank</h3>
                   <p className="text-sm text-muted-foreground">Professional level</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/nauticed/slc-license" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">SLC License</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">SLC License</h3>
                   <p className="text-sm text-muted-foreground">International license</p>
                 </CardContent>
               </Card>
@@ -411,11 +411,11 @@ export default function CatamaranSailingConfidencePage() {
           <div className="mt-10 text-center">
             <p className="text-sm text-muted-foreground">Explore More:</p>
             <div className="mt-2 flex flex-wrap justify-center gap-3 text-sm">
-              <Link href="/training" className="text-[#e89d79] hover:underline">All Training Programs</Link>
+              <Link href="/training" className="text-[#EE9739] hover:underline">All Training Programs</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/training/day-skipper-st-martin" className="text-[#e89d79] hover:underline">St Martin Catamaran Training</Link>
+              <Link href="/training/day-skipper-st-martin" className="text-[#EE9739] hover:underline">St Martin Catamaran Training</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/search" className="text-[#e89d79] hover:underline">Browse Yachts</Link>
+              <Link href="/search" className="text-[#EE9739] hover:underline">Browse Yachts</Link>
             </div>
           </div>
         </div>

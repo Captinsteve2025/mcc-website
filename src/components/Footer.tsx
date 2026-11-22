@@ -6,7 +6,7 @@ import { Phone, Mail, MapPin, Facebook, Instagram, Youtube } from "lucide-react"
 import { Logo } from "@/components/Logo";
 import { destinations, charterStyles } from "@/lib/data";
 
-const accentColor = "#e89d79"; // MCC coral/orange color
+const accentColor = "#337891";
 
 // Authority badges - local images
 const authorityBadges = [

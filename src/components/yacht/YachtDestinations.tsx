@@ -22,7 +22,7 @@ export function YachtDestinations() {
         <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {atlasDestinations.map((destination) => (
             <li key={destination.name} className="flex flex-col rounded-lg bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
-              <MapPin className="h-6 w-6 text-[#e89d79]" aria-hidden="true" />
+              <MapPin className="h-6 w-6 text-[#EE9739]" aria-hidden="true" />
               <h3 className="mt-4 font-display text-2xl font-normal italic text-[#061625]">{destination.name}</h3>
               <p className="mt-3 text-[15px] leading-[1.5] text-[#061625]/80">{destination.description}</p>
             </li>

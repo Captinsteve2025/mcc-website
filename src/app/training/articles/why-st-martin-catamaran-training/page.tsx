@@ -61,10 +61,10 @@ export default function WhyStMartinTrainingPage() {
 
               <div className="space-y-8">
                 {/* Trade Winds */}
-                <Card className="border-2 border-[#e89d79]">
+                <Card className="border-2 border-[#EE9739]">
                   <CardContent className="p-8">
                     <div className="flex items-start gap-4">
-                      <Wind className="h-10 w-10 text-[#e89d79]" />
+                      <Wind className="h-10 w-10 text-[#EE9739]" />
                       <div>
                         <h3 className="mb-3 text-2xl font-bold text-[#061625]">Consistent Trade Winds</h3>
                         <p className="mb-4 text-muted-foreground">
@@ -72,15 +72,15 @@ export default function WhyStMartinTrainingPage() {
                         </p>
                         <ul className="space-y-2 text-sm text-muted-foreground">
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>Consistent easterly winds 15-25 knots</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>Year-round sailing season</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>Build real offshore confidence</span>
                           </li>
                         </ul>
@@ -93,7 +93,7 @@ export default function WhyStMartinTrainingPage() {
                 <Card className="border-2 border-[#061625]/10">
                   <CardContent className="p-8">
                     <div className="flex items-start gap-4">
-                      <Navigation className="h-10 w-10 text-[#e89d79]" />
+                      <Navigation className="h-10 w-10 text-[#EE9739]" />
                       <div>
                         <h3 className="mb-3 text-2xl font-bold text-[#061625]">Multi-Island Offshore Passages</h3>
                         <p className="mb-4 text-muted-foreground">
@@ -101,15 +101,15 @@ export default function WhyStMartinTrainingPage() {
                         </p>
                         <ul className="space-y-2 text-sm text-muted-foreground">
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>15-25 nautical mile open water passages</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>Navigate between three different nations</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>Experience varied cruising environments</span>
                           </li>
                         </ul>
@@ -122,7 +122,7 @@ export default function WhyStMartinTrainingPage() {
                 <Card className="border-2 border-[#061625]/10">
                   <CardContent className="p-8">
                     <div className="flex items-start gap-4">
-                      <Globe className="h-10 w-10 text-[#e89d79]" />
+                      <Globe className="h-10 w-10 text-[#EE9739]" />
                       <div>
                         <h3 className="mb-3 text-2xl font-bold text-[#061625]">International Border Crossings</h3>
                         <p className="mb-4 text-muted-foreground">
@@ -130,15 +130,15 @@ export default function WhyStMartinTrainingPage() {
                         </p>
                         <ul className="space-y-2 text-sm text-muted-foreground">
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>French St. Martin / Dutch Sint Maarten</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>British Anguilla clearance procedures</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>French St. Barts port clearance</span>
                           </li>
                         </ul>
@@ -151,7 +151,7 @@ export default function WhyStMartinTrainingPage() {
                 <Card className="border-2 border-[#061625]/10">
                   <CardContent className="p-8">
                     <div className="flex items-start gap-4">
-                      <Anchor className="h-10 w-10 text-[#e89d79]" />
+                      <Anchor className="h-10 w-10 text-[#EE9739]" />
                       <div>
                         <h3 className="mb-3 text-2xl font-bold text-[#061625]">Diverse Anchorages & Marinas</h3>
                         <p className="mb-4 text-muted-foreground">
@@ -159,15 +159,15 @@ export default function WhyStMartinTrainingPage() {
                         </p>
                         <ul className="space-y-2 text-sm text-muted-foreground">
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>Protected lagoon training base</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>Med-style stern-to practice</span>
                           </li>
                           <li className="flex items-center gap-2">
-                            <CheckCircle2 className="h-4 w-4 text-[#e89d79]" />
+                            <CheckCircle2 className="h-4 w-4 text-[#EE9739]" />
                             <span>Exposed anchorage assessment</span>
                           </li>
                         </ul>
@@ -188,35 +188,35 @@ export default function WhyStMartinTrainingPage() {
               <div className="mb-8 rounded-xl bg-muted p-6">
                 <ol className="space-y-4">
                   <li className="flex items-start gap-4">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e89d79] font-bold text-[#061625]">1</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EE9739] font-bold text-[#061625]">1</span>
                     <div>
                       <span className="font-bold text-[#061625]">Simpson Bay Lagoon</span>
                       <span className="text-muted-foreground"> — Protected base for close-quarters training</span>
                     </div>
                   </li>
                   <li className="flex items-start gap-4">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e89d79] font-bold text-[#061625]">2</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EE9739] font-bold text-[#061625]">2</span>
                     <div>
                       <span className="font-bold text-[#061625]">Anguilla</span>
                       <span className="text-muted-foreground"> — 20nm offshore passage, British customs clearance</span>
                     </div>
                   </li>
                   <li className="flex items-start gap-4">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e89d79] font-bold text-[#061625]">3</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EE9739] font-bold text-[#061625]">3</span>
                     <div>
                       <span className="font-bold text-[#061625]">St. Barts</span>
                       <span className="text-muted-foreground"> — Challenging pilotage, French port procedures</span>
                     </div>
                   </li>
                   <li className="flex items-start gap-4">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e89d79] font-bold text-[#061625]">4</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EE9739] font-bold text-[#061625]">4</span>
                     <div>
                       <span className="font-bold text-[#061625]">Tintamarre</span>
                       <span className="text-muted-foreground"> — Remote anchorage, emergency drill practice</span>
                     </div>
                   </li>
                   <li className="flex items-start gap-4">
-                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e89d79] font-bold text-[#061625]">5</span>
+                    <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#EE9739] font-bold text-[#061625]">5</span>
                     <div>
                       <span className="font-bold text-[#061625]">Return to Simpson Bay</span>
                       <span className="text-muted-foreground"> — Final assessment and certification</span>
@@ -252,22 +252,22 @@ export default function WhyStMartinTrainingPage() {
       <section className="bg-muted py-16">
         <div className="container mx-auto px-4">
           <div className="mb-6 text-center">
-            <Link href="/training" className="text-[#e89d79] hover:underline">← Back to All Training Programs</Link>
+            <Link href="/training" className="text-[#EE9739] hover:underline">← Back to All Training Programs</Link>
           </div>
           <h2 className="mb-8 text-center text-2xl font-bold text-[#061625]">Related Articles</h2>
           <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
             <Link href="/training/articles/catamaran-charter-certification-europe" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79]">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739]">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">How to Get Certified to Charter a Catamaran in Europe</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">How to Get Certified to Charter a Catamaran in Europe</h3>
                   <p className="text-sm text-muted-foreground">Complete guide to SLC certification requirements for European waters.</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/articles/skipper-certification-requirements" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79]">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739]">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">What Charter Companies Look for in Skipper Certification</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">What Charter Companies Look for in Skipper Certification</h3>
                   <p className="text-sm text-muted-foreground">Understand what credentials you need to book your first bareboat charter.</p>
                 </CardContent>
               </Card>

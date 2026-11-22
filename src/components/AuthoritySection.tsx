@@ -54,16 +54,16 @@ export function AuthoritySection() {
       </div>
 
       {/* Decorative top accent line */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-[#e89d79] to-transparent z-10" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-1 bg-gradient-to-r from-transparent via-[#EE9739] to-transparent z-10" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Main heading */}
         <div className="text-center max-w-4xl mx-auto mb-16">
-          <p className="text-sm uppercase tracking-[0.3em] text-[#e89d79] mb-4 font-medium">Why Choose Us</p>
+          <p className="text-sm uppercase tracking-[0.3em] text-[#EE9739] mb-4 font-medium">Why Choose Us</p>
           <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-normal italic text-[#061625] mb-6 leading-tight">
             Caribbean Experts. Crew Inspired.<br className="hidden md:block" /> Client Focused.
           </h2>
-          <div className="w-16 h-px bg-[#e89d79] mx-auto mb-6" />
+          <div className="w-16 h-px bg-[#EE9739] mx-auto mb-6" />
           <p className="text-lg md:text-xl text-[#061625]/70 italic">
             Real people. Real experience. Real charters that exceed expectations.
           </p>
@@ -74,9 +74,9 @@ export function AuthoritySection() {
           {stats.map((stat, index) => (
             <div
               key={index}
-              className="text-center p-6 bg-white/70 backdrop-blur-sm rounded-lg border border-[#061625]/[0.08] hover:border-[#e89d79]/40 hover:bg-white/90 transition-all duration-300 group shadow-sm"
+              className="text-center p-6 bg-white/70 backdrop-blur-sm rounded-lg border border-[#061625]/[0.08] hover:border-[#EE9739]/40 hover:bg-white/90 transition-all duration-300 group shadow-sm"
             >
-              <stat.icon className="w-8 h-8 text-[#e89d79] mx-auto mb-3 group-hover:scale-110 transition-transform" />
+              <stat.icon className="w-8 h-8 text-[#EE9739] mx-auto mb-3 group-hover:scale-110 transition-transform" />
               <div className="font-display text-4xl md:text-5xl font-normal italic text-[#061625] mb-1">
                 {stat.value}
               </div>
@@ -95,7 +95,7 @@ export function AuthoritySection() {
               At My Caribbean Charters we are not a travel startup run by algorithms. We are experienced sailors, former yacht crew, charter captains, and Caribbean residents who live and breathe everything about sailing, cruising, and exploring the islands.
             </p>
             <p className="text-lg text-[#061625]/80 leading-relaxed">
-              With over <span className="text-[#e89d79] font-semibold">50 years of combined hands-on experience</span> in the Caribbean yacht industry, we know what makes a charter unforgettable, and what makes it frustrating. We have walked the docks, sailed the anchorages, answered questions under the sun, and handled every kind of itinerary challenge imaginable.
+              With over <span className="text-[#EE9739] font-semibold">50 years of combined hands-on experience</span> in the Caribbean yacht industry, we know what makes a charter unforgettable, and what makes it frustrating. We have walked the docks, sailed the anchorages, answered questions under the sun, and handled every kind of itinerary challenge imaginable.
             </p>
           </div>
 
@@ -123,7 +123,7 @@ export function AuthoritySection() {
               )}
 
               <div className="relative">
-                <div className="w-16 h-16 rounded-full bg-[#061625] flex items-center justify-center mx-auto mb-4 group-hover:bg-[#e89d79] transition-colors duration-300 shadow-lg">
+                <div className="w-16 h-16 rounded-full bg-[#061625] flex items-center justify-center mx-auto mb-4 group-hover:bg-[#EE9739] transition-colors duration-300 shadow-lg">
                   <pillar.icon className="w-7 h-7 text-white" />
                 </div>
                 <h3 className="font-display text-2xl font-normal italic text-[#061625] mb-2">
@@ -141,7 +141,7 @@ export function AuthoritySection() {
         <div className="text-center pt-8 border-t border-[#061625]/10 max-w-3xl mx-auto">
           <p className="text-sm uppercase tracking-[0.25em] text-[#061625]/50 mb-3">My Caribbean Charters</p>
           <p className="font-display text-2xl md:text-3xl font-normal italic text-[#061625]">
-            <span className="text-[#e89d79]">Experienced.</span> Authentic. <span className="text-[#e89d79]">Dedicated</span> to your best charter yet.
+            <span className="text-[#EE9739]">Experienced.</span> Authentic. <span className="text-[#EE9739]">Dedicated</span> to your best charter yet.
           </p>
         </div>
       </div>

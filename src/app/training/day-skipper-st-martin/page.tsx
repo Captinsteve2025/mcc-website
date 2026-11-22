@@ -122,7 +122,7 @@ export default function DaySkipperStMartinPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-black/30" />
         </div>
         <div className="container relative z-10 mx-auto px-4 pb-8 text-center text-white">
-          <Link href="/training" className="mb-6 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-[#e89d79]">
+          <Link href="/training" className="mb-6 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-[#EE9739]">
             <ArrowLeft className="h-4 w-4" />
             <span className="text-sm font-medium">Back to Training Programs</span>
           </Link>
@@ -131,14 +131,14 @@ export default function DaySkipperStMartinPage() {
             <Tag className="h-5 w-5 text-white" />
             <span className="text-sm font-bold uppercase tracking-wide text-white">15% OFF - Book Before April 2026</span>
           </div>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/20 px-6 py-2 backdrop-blur-sm">
-            <GraduationCap className="h-5 w-5 text-[#e89d79]" />
-            <span className="text-sm font-bold uppercase tracking-wide text-[#e89d79]">6-Day Program</span>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/20 px-6 py-2 backdrop-blur-sm">
+            <GraduationCap className="h-5 w-5 text-[#EE9739]" />
+            <span className="text-sm font-bold uppercase tracking-wide text-[#EE9739]">6-Day Program</span>
           </div>
           <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight md:text-7xl">
             Bareboat Charter Master
             <br />
-            <span className="text-[#e89d79]">St. Martin</span>
+            <span className="text-[#EE9739]">St. Martin</span>
           </h1>
           <p className="mx-auto mb-8 max-w-3xl text-xl leading-relaxed md:text-2xl">
             Intensive instructor-led practical training aligned with NauticEd SLC standards — US Coast Guard approved American National Standard.
@@ -222,10 +222,10 @@ export default function DaySkipperStMartinPage() {
                   sail offshore passages to Anguilla and St. Barts in charter-realistic operating environments.
                 </p>
 
-                <div className="mb-8 rounded-xl border-2 border-[#e89d79] bg-orange-50 p-6">
+                <div className="mb-8 rounded-xl border-2 border-[#EE9739] bg-orange-50 p-6">
                   <div className="flex items-start gap-4">
-                    <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79]/20">
-                      <Globe className="h-6 w-6 text-[#e89d79]" />
+                    <div className="mt-1 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739]/20">
+                      <Globe className="h-6 w-6 text-[#EE9739]" />
                     </div>
                     <div>
                       <h3 className="mb-2 text-xl font-bold text-[#061625]">NauticEd Partnership</h3>
@@ -245,27 +245,27 @@ export default function DaySkipperStMartinPage() {
                 <h3 className="mb-4 text-xl font-bold text-[#061625]">Practical Competency Areas</h3>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Boat handling and docking</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Sail handling and trimming</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Navigation and passage planning</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Anchoring and ground tackle</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Emergency procedures</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Skipper leadership and crew management</span>
                   </li>
                 </ul>
@@ -274,19 +274,19 @@ export default function DaySkipperStMartinPage() {
                 <h3 className="mb-4 text-xl font-bold text-[#061625]">Entry Requirements</h3>
                 <ul className="space-y-3">
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Completion of required NauticEd theory modules</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Approved pre-course experience questionnaire</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Minimum age 18 for SLC assessment</span>
                   </li>
                   <li className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Reasonable level of physical fitness</span>
                   </li>
                 </ul>
@@ -308,37 +308,37 @@ export default function DaySkipperStMartinPage() {
               </p>
             </div>
 
-            <div className="mb-8 rounded-xl border-2 border-[#e89d79]/20 bg-white p-6">
+            <div className="mb-8 rounded-xl border-2 border-[#EE9739]/20 bg-white p-6">
               <h3 className="mb-4 text-xl font-bold text-[#061625]">Required Online Courses</h3>
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                   <span className="text-muted-foreground">Skipper Large Keelboat (20 hours)</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                   <span className="text-muted-foreground">Maneuvering Under Power (4 hours)</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                   <span className="text-muted-foreground">Bareboat Charter Clinic (5 hours)</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                   <span className="text-muted-foreground">Coastal Navigation (10 hours)</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                   <span className="text-muted-foreground">Anchoring a Sailboat (4 hours)</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                   <span className="text-muted-foreground">Electronic Navigation (5 hours)</span>
                 </div>
               </div>
-              <div className="mt-4 rounded-lg bg-[#e89d79]/10 p-4">
+              <div className="mt-4 rounded-lg bg-[#EE9739]/10 p-4">
                 <p className="text-sm font-medium text-[#061625]">
-                  <span className="text-[#e89d79]">Bonus:</span> Get Basic Sail Trim and Navigation Rules courses FREE with the bundle!
+                  <span className="text-[#EE9739]">Bonus:</span> Get Basic Sail Trim and Navigation Rules courses FREE with the bundle!
                 </p>
               </div>
             </div>
@@ -392,7 +392,7 @@ export default function DaySkipperStMartinPage() {
               <div className="grid gap-6">
                 <Card className="border-2 border-[#061625]/10">
                   <CardContent className="p-6">
-                    <Navigation className="mb-4 h-10 w-10 text-[#e89d79]" />
+                    <Navigation className="mb-4 h-10 w-10 text-[#EE9739]" />
                     <h3 className="mb-3 text-xl font-bold text-[#061625]">Offshore Passages</h3>
                     <p className="text-muted-foreground">
                       Real open-water sailing between islands develops confidence for international chartering
@@ -402,7 +402,7 @@ export default function DaySkipperStMartinPage() {
                 </Card>
                 <Card className="border-2 border-[#061625]/10">
                   <CardContent className="p-6">
-                    <Globe className="mb-4 h-10 w-10 text-[#e89d79]" />
+                    <Globe className="mb-4 h-10 w-10 text-[#EE9739]" />
                     <h3 className="mb-3 text-xl font-bold text-[#061625]">Three Islands</h3>
                     <p className="text-muted-foreground">
                       Experience diverse cruising grounds including French St. Martin, British Anguilla,
@@ -412,7 +412,7 @@ export default function DaySkipperStMartinPage() {
                 </Card>
                 <Card className="border-2 border-[#061625]/10">
                   <CardContent className="p-6">
-                    <Users className="mb-4 h-10 w-10 text-[#e89d79]" />
+                    <Users className="mb-4 h-10 w-10 text-[#EE9739]" />
                     <h3 className="mb-3 text-xl font-bold text-[#061625]">4:1 Ratio</h3>
                     <p className="text-muted-foreground">
                       Maximum 4 students per instructor ensures ample helm time, skipper rotations,
@@ -439,7 +439,7 @@ export default function DaySkipperStMartinPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">1</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">1</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Simpson Bay Lagoon</h3>
                     <p className="mb-3 text-sm text-muted-foreground">Safety Induction & Close Quarters Maneuvering</p>
@@ -449,7 +449,7 @@ export default function DaySkipperStMartinPage() {
                       <li>• Close quarters maneuvering practice</li>
                       <li>• Prop walk and engine handling</li>
                     </ul>
-                    <div className="mt-4 rounded-lg bg-[#e89d79] px-4 py-2">
+                    <div className="mt-4 rounded-lg bg-[#EE9739] px-4 py-2">
                       <span className="text-sm font-medium text-white">Focus: Vessel familiarity, safety protocols, basic boat handling</span>
                     </div>
                   </div>
@@ -461,7 +461,7 @@ export default function DaySkipperStMartinPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">2</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">2</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">St. Martin to Anguilla</h3>
                     <p className="mb-3 text-sm text-muted-foreground">Passage Planning, Sail Handling & Anchoring</p>
@@ -471,7 +471,7 @@ export default function DaySkipperStMartinPage() {
                       <li>• Sail hoisting, trimming, reefing</li>
                       <li>• Anchoring exercises and techniques</li>
                     </ul>
-                    <div className="mt-4 rounded-lg bg-[#e89d79] px-4 py-2">
+                    <div className="mt-4 rounded-lg bg-[#EE9739] px-4 py-2">
                       <span className="text-sm font-medium text-white">Focus: Offshore passage making, sail competence, anchoring as skipper</span>
                     </div>
                   </div>
@@ -483,7 +483,7 @@ export default function DaySkipperStMartinPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">3</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">3</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Anguilla to St. Barts</h3>
                     <p className="mb-3 text-sm text-muted-foreground">Pilotage, Mooring Operations & Optional Night Segment</p>
@@ -493,7 +493,7 @@ export default function DaySkipperStMartinPage() {
                       <li>• Electronic and visual navigation</li>
                       <li>• Optional night sailing segment</li>
                     </ul>
-                    <div className="mt-4 rounded-lg bg-[#e89d79] px-4 py-2">
+                    <div className="mt-4 rounded-lg bg-[#EE9739] px-4 py-2">
                       <span className="text-sm font-medium text-white">Focus: Pilotage skills, mooring operations, navigation confidence</span>
                     </div>
                   </div>
@@ -505,7 +505,7 @@ export default function DaySkipperStMartinPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">4</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">4</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">St. Barts to Tintamarre</h3>
                     <p className="mb-3 text-sm text-muted-foreground">Emergency Drills & Anchoring Repetition</p>
@@ -515,7 +515,7 @@ export default function DaySkipperStMartinPage() {
                       <li>• Squall preparation drills</li>
                       <li>• Repeated anchoring exercises</li>
                     </ul>
-                    <div className="mt-4 rounded-lg bg-[#e89d79] px-4 py-2">
+                    <div className="mt-4 rounded-lg bg-[#EE9739] px-4 py-2">
                       <span className="text-sm font-medium text-white">Focus: Emergency response, scenario-based training, anchoring mastery</span>
                     </div>
                   </div>
@@ -527,7 +527,7 @@ export default function DaySkipperStMartinPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">5</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">5</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Tintamarre to Simpson Bay</h3>
                     <p className="mb-3 text-sm text-muted-foreground">Advanced Docking & Charter Readiness Drills</p>
@@ -537,7 +537,7 @@ export default function DaySkipperStMartinPage() {
                       <li>• Charter readiness scenarios</li>
                       <li>• Decision making under pressure</li>
                     </ul>
-                    <div className="mt-4 rounded-lg bg-[#e89d79] px-4 py-2">
+                    <div className="mt-4 rounded-lg bg-[#EE9739] px-4 py-2">
                       <span className="text-sm font-medium text-white">Focus: Advanced boat control, command presence, charter preparation</span>
                     </div>
                   </div>
@@ -546,10 +546,10 @@ export default function DaySkipperStMartinPage() {
             </Card>
 
             {/* Day 6 */}
-            <Card className="border-2 border-[#e89d79]">
+            <Card className="border-2 border-[#EE9739]">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">6</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">6</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Final Practical Assessment</h3>
                     <p className="mb-3 text-sm text-muted-foreground">Competency Sign-off & Certification Review</p>
@@ -624,7 +624,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin (15% Introductory Discount)", date: "Feb 15-20, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Feb 15 - 20</p>
@@ -637,7 +637,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin (15% Introductory Discount)", date: "Feb 22-27, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Feb 22 - 27</p>
@@ -659,7 +659,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin (15% Introductory Discount)", date: "Mar 1-6, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Mar 1 - 6</p>
@@ -672,7 +672,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin (15% Introductory Discount)", date: "Mar 8-13, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Mar 8 - 13</p>
@@ -685,7 +685,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin (15% Introductory Discount)", date: "Mar 15-20, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Mar 15 - 20</p>
@@ -698,7 +698,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin (15% Introductory Discount)", date: "Mar 22-27, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Mar 22 - 27</p>
@@ -720,7 +720,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin", date: "Apr 5-10, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Apr 5 - 10</p>
@@ -733,7 +733,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin", date: "Apr 12-17, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Apr 12 - 17</p>
@@ -746,7 +746,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin", date: "Apr 19-24, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Apr 19 - 24</p>
@@ -759,7 +759,7 @@ export default function DaySkipperStMartinPage() {
                         setPreset({ passage: "6-Day Bareboat Charter Master St. Martin", date: "Apr 26 - May 1, 2026", pkg: "standard" });
                         setDialogOpen(true);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#e89d79] hover:bg-[#e89d79]/5"
+                      className="flex w-full items-center justify-between rounded-lg border-2 border-[#061625]/10 p-3 text-left transition-all hover:border-[#EE9739] hover:bg-[#EE9739]/5"
                     >
                       <div>
                         <p className="font-bold text-[#061625]">Apr 26 - May 1</p>
@@ -821,14 +821,14 @@ export default function DaySkipperStMartinPage() {
                 <div className="mb-6">
                   <h4 className="mb-3 font-bold text-[#061625]">Standard Inclusions</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Shared double cabin accommodation</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Max 4:1 instructor-to-student ratio</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />6 nights accommodation aboard</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />All meals and provisions</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />NauticEd authorized instructor</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />NauticEd SLC + SLC assessment</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Fuel and marina fees</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Training materials and logbook</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Shared double cabin accommodation</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Max 4:1 instructor-to-student ratio</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />6 nights accommodation aboard</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />All meals and provisions</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />NauticEd authorized instructor</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />NauticEd SLC + SLC assessment</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Fuel and marina fees</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Training materials and logbook</li>
                   </ul>
                 </div>
 
@@ -857,14 +857,14 @@ export default function DaySkipperStMartinPage() {
             </Card>
 
             {/* VIP Package */}
-            <Card className="relative border-2 border-[#e89d79] shadow-xl">
+            <Card className="relative border-2 border-[#EE9739] shadow-xl">
               {/* VIP Badge */}
-              <div className="absolute -right-3 -top-3 rounded-full bg-[#e89d79] px-4 py-1.5 text-sm font-bold text-[#061625] shadow-lg">
+              <div className="absolute -right-3 -top-3 rounded-full bg-[#EE9739] px-4 py-1.5 text-sm font-bold text-[#061625] shadow-lg">
                 VIP
               </div>
               <CardContent className="p-8">
                 <div className="mb-6 text-center">
-                  <p className="text-sm font-bold uppercase tracking-wide text-[#e89d79]">VIP Bareboat Charter Master Experience</p>
+                  <p className="text-sm font-bold uppercase tracking-wide text-[#EE9739]">VIP Bareboat Charter Master Experience</p>
                   <div className="mt-2 flex items-center justify-center gap-3">
                     <span className="text-2xl text-muted-foreground line-through">$12,000</span>
                     <span className="text-4xl font-bold text-[#061625]">$10,200</span>
@@ -874,23 +874,23 @@ export default function DaySkipperStMartinPage() {
                 </div>
 
                 <div className="mb-6">
-                  <h4 className="mb-3 font-bold text-[#e89d79]">VIP Inclusions</h4>
+                  <h4 className="mb-3 font-bold text-[#EE9739]">VIP Inclusions</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />2 people sharing owner&apos;s version cabin</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Max 3:1 instructor-to-student ratio</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />2 people sharing owner&apos;s version cabin</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Max 3:1 instructor-to-student ratio</li>
                   </ul>
                 </div>
 
                 <div className="mb-6">
                   <h4 className="mb-3 font-bold text-[#061625]">All Standard Inclusions</h4>
                   <ul className="space-y-2 text-sm text-muted-foreground">
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />6 nights accommodation aboard</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />All meals and provisions</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Professional NauticEd approved instructor</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />SLC assessment fee</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Fuel and marina fees</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Training materials</li>
-                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Logbook sign-off</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />6 nights accommodation aboard</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />All meals and provisions</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Professional NauticEd approved instructor</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />SLC assessment fee</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Fuel and marina fees</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Training materials</li>
+                    <li className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Logbook sign-off</li>
                   </ul>
                 </div>
 
@@ -1004,49 +1004,49 @@ export default function DaySkipperStMartinPage() {
           </div>
           <div className="mx-auto grid max-w-5xl gap-6 md:grid-cols-2">
             <Link href="/training/articles/catamaran-charter-certification-europe" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/10 px-3 py-1">
-                    <Globe className="h-4 w-4 text-[#e89d79]" />
-                    <span className="text-xs font-medium text-[#e89d79]">Certification Guide</span>
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/10 px-3 py-1">
+                    <Globe className="h-4 w-4 text-[#EE9739]" />
+                    <span className="text-xs font-medium text-[#EE9739]">Certification Guide</span>
                   </div>
-                  <h3 className="mb-2 text-xl font-bold text-[#061625] group-hover:text-[#e89d79]">How to Get Certified to Charter a Catamaran in Europe</h3>
+                  <h3 className="mb-2 text-xl font-bold text-[#061625] group-hover:text-[#EE9739]">How to Get Certified to Charter a Catamaran in Europe</h3>
                   <p className="text-sm text-muted-foreground">Complete guide to SLC certification requirements for Mediterranean, Croatia, Greece, and beyond.</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/articles/why-st-martin-catamaran-training" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/10 px-3 py-1">
-                    <MapPin className="h-4 w-4 text-[#e89d79]" />
-                    <span className="text-xs font-medium text-[#e89d79]">Destination Guide</span>
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/10 px-3 py-1">
+                    <MapPin className="h-4 w-4 text-[#EE9739]" />
+                    <span className="text-xs font-medium text-[#EE9739]">Destination Guide</span>
                   </div>
-                  <h3 className="mb-2 text-xl font-bold text-[#061625] group-hover:text-[#e89d79]">Why St Martin Is Ideal for Advanced Catamaran Training</h3>
+                  <h3 className="mb-2 text-xl font-bold text-[#061625] group-hover:text-[#EE9739]">Why St Martin Is Ideal for Advanced Catamaran Training</h3>
                   <p className="text-sm text-muted-foreground">Trade winds, multi-island passages, and international waters for charter-ready skills.</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/articles/nauticed-vs-rya-certification" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/10 px-3 py-1">
-                    <Award className="h-4 w-4 text-[#e89d79]" />
-                    <span className="text-xs font-medium text-[#e89d79]">Certification Comparison</span>
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/10 px-3 py-1">
+                    <Award className="h-4 w-4 text-[#EE9739]" />
+                    <span className="text-xs font-medium text-[#EE9739]">Certification Comparison</span>
                   </div>
-                  <h3 className="mb-2 text-xl font-bold text-[#061625] group-hover:text-[#e89d79]">NauticEd vs RYA for Catamaran Charter Certification</h3>
+                  <h3 className="mb-2 text-xl font-bold text-[#061625] group-hover:text-[#EE9739]">NauticEd vs RYA for Catamaran Charter Certification</h3>
                   <p className="text-sm text-muted-foreground">Compare NauticEd SLC and RYA certifications. Which is right for your charter goals?</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/articles/skipper-certification-requirements" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/10 px-3 py-1">
-                    <Ship className="h-4 w-4 text-[#e89d79]" />
-                    <span className="text-xs font-medium text-[#e89d79]">Charter Guide</span>
+                  <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/10 px-3 py-1">
+                    <Ship className="h-4 w-4 text-[#EE9739]" />
+                    <span className="text-xs font-medium text-[#EE9739]">Charter Guide</span>
                   </div>
-                  <h3 className="mb-2 text-xl font-bold text-[#061625] group-hover:text-[#e89d79]">What Charter Companies Look for in Skipper Certification</h3>
+                  <h3 className="mb-2 text-xl font-bold text-[#061625] group-hover:text-[#EE9739]">What Charter Companies Look for in Skipper Certification</h3>
                   <p className="text-sm text-muted-foreground">Understand exactly what credentials charter companies require before approving bareboat charters.</p>
                 </CardContent>
               </Card>
@@ -1061,13 +1061,13 @@ export default function DaySkipperStMartinPage() {
           <div className="mx-auto max-w-4xl text-center">
             <h3 className="mb-6 text-2xl font-bold text-[#061625]">Explore More Training Options</h3>
             <div className="flex flex-wrap justify-center gap-3 text-sm">
-              <Link href="/training" className="text-[#e89d79] hover:underline">All Training Programs</Link>
+              <Link href="/training" className="text-[#EE9739] hover:underline">All Training Programs</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/training/day-skipper" className="text-[#e89d79] hover:underline">BVI Sailing Courses</Link>
+              <Link href="/training/day-skipper" className="text-[#EE9739] hover:underline">BVI Sailing Courses</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/training/offshore-passages" className="text-[#e89d79] hover:underline">Caribbean Offshore Passages</Link>
+              <Link href="/training/offshore-passages" className="text-[#EE9739] hover:underline">Caribbean Offshore Passages</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/bali" className="text-[#e89d79] hover:underline">Train on Bali Catamarans</Link>
+              <Link href="/bali" className="text-[#EE9739] hover:underline">Train on Bali Catamarans</Link>
             </div>
           </div>
         </div>

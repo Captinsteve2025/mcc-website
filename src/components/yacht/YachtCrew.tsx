@@ -21,7 +21,7 @@ export function YachtCrew({ members }: { members: YachtCrewMember[] }) {
               <div className="flex flex-col p-6 md:p-8">
                 <p className="text-xs font-medium uppercase tracking-[0.2em] text-[#061625]/70">{member.role}</p>
                 <h3 className="mt-2 font-display text-3xl font-normal italic text-[#061625]">{member.name}</h3>
-                <div className="my-4 h-px w-12 bg-[#e89d79]" aria-hidden="true" />
+                <div className="my-4 h-px w-12 bg-[#EE9739]" aria-hidden="true" />
                 <p className="text-[15px] leading-[1.6] text-[#061625]/80">{member.bio}</p>
               </div>
             </li>

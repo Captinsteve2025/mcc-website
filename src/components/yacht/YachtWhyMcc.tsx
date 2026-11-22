@@ -42,7 +42,7 @@ export function YachtWhyMcc({ yachtName }: { yachtName: string }) {
         <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {trustCards.map((card) => (
             <li key={card.title} className="rounded-lg bg-white p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-              <card.icon className="h-8 w-8 text-[#e89d79]" aria-hidden="true" />
+              <card.icon className="h-8 w-8 text-[#EE9739]" aria-hidden="true" />
               <h3 className="mt-5 font-display text-2xl font-normal italic text-[#061625]">{card.title}</h3>
               <p className="mt-3 text-[15px] leading-[1.5] text-[#061625]/80">{card.body}</p>
             </li>

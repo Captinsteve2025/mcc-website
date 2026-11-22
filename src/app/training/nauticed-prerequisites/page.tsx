@@ -15,18 +15,18 @@ export default function NauticEdPrerequisitesPage() {
       {/* Hero */}
       <section className="relative flex min-h-[50vh] items-center justify-center overflow-hidden bg-gradient-to-br from-[#061625] to-[#0a2540] pt-20">
         <div className="container relative z-10 mx-auto px-4 text-center text-white">
-          <Link href="/training/day-skipper-st-martin" className="mb-6 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-[#e89d79]">
+          <Link href="/training/day-skipper-st-martin" className="mb-6 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-[#EE9739]">
             <ArrowLeft className="h-4 w-4" />
             <span className="text-sm font-medium">Back to St. Martin Bareboat Charter Master</span>
           </Link>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/20 px-6 py-2">
-            <BookOpen className="h-5 w-5 text-[#e89d79]" />
-            <span className="text-sm font-bold uppercase tracking-wide text-[#e89d79]">Pre-Course Requirements</span>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/20 px-6 py-2">
+            <BookOpen className="h-5 w-5 text-[#EE9739]" />
+            <span className="text-sm font-bold uppercase tracking-wide text-[#EE9739]">Pre-Course Requirements</span>
           </div>
           <h1 className="mb-6 text-4xl font-bold leading-tight tracking-tight md:text-6xl">
             NauticEd Prerequisites
             <br />
-            <span className="text-[#e89d79]">Checklist</span>
+            <span className="text-[#EE9739]">Checklist</span>
           </h1>
           <p className="mx-auto mb-8 max-w-3xl text-xl leading-relaxed text-white/80">
             Complete these online theory courses before your practical training in St. Martin.
@@ -39,10 +39,10 @@ export default function NauticEdPrerequisitesPage() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-4xl">
-            <Card className="border-2 border-[#e89d79] bg-[#e89d79]/5">
+            <Card className="border-2 border-[#EE9739] bg-[#EE9739]/5">
               <CardContent className="p-8">
                 <div className="flex items-start gap-4">
-                  <AlertCircle className="mt-1 h-8 w-8 flex-shrink-0 text-[#e89d79]" />
+                  <AlertCircle className="mt-1 h-8 w-8 flex-shrink-0 text-[#EE9739]" />
                   <div>
                     <h2 className="mb-3 text-2xl font-bold text-[#061625]">Why Prerequisites Matter</h2>
                     <p className="mb-4 text-muted-foreground">
@@ -52,19 +52,19 @@ export default function NauticEdPrerequisitesPage() {
                     </p>
                     <ul className="space-y-2 text-muted-foreground">
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-[#e89d79]" />
+                        <CheckCircle2 className="h-5 w-5 text-[#EE9739]" />
                         <span>All students start with the same theoretical foundation</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-[#e89d79]" />
+                        <CheckCircle2 className="h-5 w-5 text-[#EE9739]" />
                         <span>More time for practical skills during the course</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-[#e89d79]" />
+                        <CheckCircle2 className="h-5 w-5 text-[#EE9739]" />
                         <span>Better understanding of safety procedures and COLREGs</span>
                       </li>
                       <li className="flex items-center gap-2">
-                        <CheckCircle2 className="h-5 w-5 text-[#e89d79]" />
+                        <CheckCircle2 className="h-5 w-5 text-[#EE9739]" />
                         <span>Eligibility for NauticEd SLC + SLC certification</span>
                       </li>
                     </ul>
@@ -91,7 +91,7 @@ export default function NauticEdPrerequisitesPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-white">1</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-white">1</div>
                   <div className="flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-3">
                       <h3 className="text-xl font-bold text-[#061625]">Skipper Course</h3>
@@ -103,15 +103,15 @@ export default function NauticEdPrerequisitesPage() {
                     </p>
                     <div className="mb-4 grid gap-4 md:grid-cols-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4 text-[#e89d79]" />
+                        <Clock className="h-4 w-4 text-[#EE9739]" />
                         <span>8-10 hours</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Laptop className="h-4 w-4 text-[#e89d79]" />
+                        <Laptop className="h-4 w-4 text-[#EE9739]" />
                         <span>Online, self-paced</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileText className="h-4 w-4 text-[#e89d79]" />
+                        <FileText className="h-4 w-4 text-[#EE9739]" />
                         <span>Certificate on completion</span>
                       </div>
                     </div>
@@ -130,7 +130,7 @@ export default function NauticEdPrerequisitesPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-white">2</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-white">2</div>
                   <div className="flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-3">
                       <h3 className="text-xl font-bold text-[#061625]">Coastal Navigation</h3>
@@ -142,15 +142,15 @@ export default function NauticEdPrerequisitesPage() {
                     </p>
                     <div className="mb-4 grid gap-4 md:grid-cols-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4 text-[#e89d79]" />
+                        <Clock className="h-4 w-4 text-[#EE9739]" />
                         <span>12-15 hours</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Laptop className="h-4 w-4 text-[#e89d79]" />
+                        <Laptop className="h-4 w-4 text-[#EE9739]" />
                         <span>Online, self-paced</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileText className="h-4 w-4 text-[#e89d79]" />
+                        <FileText className="h-4 w-4 text-[#EE9739]" />
                         <span>Certificate on completion</span>
                       </div>
                     </div>
@@ -169,7 +169,7 @@ export default function NauticEdPrerequisitesPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-white">3</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-white">3</div>
                   <div className="flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-3">
                       <h3 className="text-xl font-bold text-[#061625]">Sail Trim</h3>
@@ -181,15 +181,15 @@ export default function NauticEdPrerequisitesPage() {
                     </p>
                     <div className="mb-4 grid gap-4 md:grid-cols-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4 text-[#e89d79]" />
+                        <Clock className="h-4 w-4 text-[#EE9739]" />
                         <span>4-6 hours</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Laptop className="h-4 w-4 text-[#e89d79]" />
+                        <Laptop className="h-4 w-4 text-[#EE9739]" />
                         <span>Online, self-paced</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileText className="h-4 w-4 text-[#e89d79]" />
+                        <FileText className="h-4 w-4 text-[#EE9739]" />
                         <span>Certificate on completion</span>
                       </div>
                     </div>
@@ -208,7 +208,7 @@ export default function NauticEdPrerequisitesPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-white">4</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-white">4</div>
                   <div className="flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-3">
                       <h3 className="text-xl font-bold text-[#061625]">Rules of the Road (COLREGs)</h3>
@@ -220,15 +220,15 @@ export default function NauticEdPrerequisitesPage() {
                     </p>
                     <div className="mb-4 grid gap-4 md:grid-cols-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4 text-[#e89d79]" />
+                        <Clock className="h-4 w-4 text-[#EE9739]" />
                         <span>6-8 hours</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Laptop className="h-4 w-4 text-[#e89d79]" />
+                        <Laptop className="h-4 w-4 text-[#EE9739]" />
                         <span>Online, self-paced</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileText className="h-4 w-4 text-[#e89d79]" />
+                        <FileText className="h-4 w-4 text-[#EE9739]" />
                         <span>Certificate on completion</span>
                       </div>
                     </div>
@@ -247,7 +247,7 @@ export default function NauticEdPrerequisitesPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-white">5</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-white">5</div>
                   <div className="flex-1">
                     <div className="mb-2 flex flex-wrap items-center gap-3">
                       <h3 className="text-xl font-bold text-[#061625]">Anchoring</h3>
@@ -259,15 +259,15 @@ export default function NauticEdPrerequisitesPage() {
                     </p>
                     <div className="mb-4 grid gap-4 md:grid-cols-3">
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4 text-[#e89d79]" />
+                        <Clock className="h-4 w-4 text-[#EE9739]" />
                         <span>3-4 hours</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Laptop className="h-4 w-4 text-[#e89d79]" />
+                        <Laptop className="h-4 w-4 text-[#EE9739]" />
                         <span>Online, self-paced</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <FileText className="h-4 w-4 text-[#e89d79]" />
+                        <FileText className="h-4 w-4 text-[#EE9739]" />
                         <span>Certificate on completion</span>
                       </div>
                     </div>
@@ -308,7 +308,7 @@ export default function NauticEdPrerequisitesPage() {
                   Highly recommended since you'll be training on a Bali catamaran.
                 </p>
                 <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 text-[#e89d79]" />
+                  <Clock className="h-4 w-4 text-[#EE9739]" />
                   <span>6 hours</span>
                 </div>
                 <Button variant="outline" size="sm" asChild>
@@ -332,7 +332,7 @@ export default function NauticEdPrerequisitesPage() {
                   and marina operations. Essential for confident boat handling.
                 </p>
                 <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 text-[#e89d79]" />
+                  <Clock className="h-4 w-4 text-[#EE9739]" />
                   <span>4 hours</span>
                 </div>
                 <Button variant="outline" size="sm" asChild>
@@ -356,7 +356,7 @@ export default function NauticEdPrerequisitesPage() {
                   go/no-go decisions based on conditions.
                 </p>
                 <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 text-[#e89d79]" />
+                  <Clock className="h-4 w-4 text-[#EE9739]" />
                   <span>6 hours</span>
                 </div>
                 <Button variant="outline" size="sm" asChild>
@@ -380,7 +380,7 @@ export default function NauticEdPrerequisitesPage() {
                   and crisis management.
                 </p>
                 <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4 text-[#e89d79]" />
+                  <Clock className="h-4 w-4 text-[#EE9739]" />
                   <span>4 hours</span>
                 </div>
                 <Button variant="outline" size="sm" asChild>
@@ -479,19 +479,19 @@ export default function NauticEdPrerequisitesPage() {
             <div className="mb-8 grid gap-6 md:grid-cols-3">
               <Card className="border-2 border-[#061625]/10">
                 <CardContent className="p-6">
-                  <p className="text-4xl font-bold text-[#e89d79]">35-45</p>
+                  <p className="text-4xl font-bold text-[#EE9739]">35-45</p>
                   <p className="text-muted-foreground">hours for required courses</p>
                 </CardContent>
               </Card>
               <Card className="border-2 border-[#061625]/10">
                 <CardContent className="p-6">
-                  <p className="text-4xl font-bold text-[#e89d79]">20+</p>
+                  <p className="text-4xl font-bold text-[#EE9739]">20+</p>
                   <p className="text-muted-foreground">hours for recommended courses</p>
                 </CardContent>
               </Card>
               <Card className="border-2 border-[#061625]/10">
                 <CardContent className="p-6">
-                  <p className="text-4xl font-bold text-[#e89d79]">4-6</p>
+                  <p className="text-4xl font-bold text-[#EE9739]">4-6</p>
                   <p className="text-muted-foreground">weeks suggested lead time</p>
                 </CardContent>
               </Card>

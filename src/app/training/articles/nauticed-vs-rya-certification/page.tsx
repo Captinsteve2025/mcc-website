@@ -189,19 +189,19 @@ export default function NauticEdVsRYACertificationPage() {
                   <h3 className="mb-4 text-xl font-bold text-[#061625]">NauticEd Bareboat Charter Master is ideal if you:</h3>
                   <ul className="space-y-3">
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#EE9739]" />
                       <span className="text-muted-foreground">Are UK-based and want to train locally</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#EE9739]" />
                       <span className="text-muted-foreground">Plan to continue to RYA Yachtmaster progression</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#EE9739]" />
                       <span className="text-muted-foreground">Need tidal navigation experience for UK/Northern European sailing</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 text-[#EE9739]" />
                       <span className="text-muted-foreground">Prefer the traditional classroom-based approach</span>
                     </li>
                   </ul>
@@ -251,22 +251,22 @@ export default function NauticEdVsRYACertificationPage() {
       <section className="bg-muted py-16">
         <div className="container mx-auto px-4">
           <div className="mb-6 text-center">
-            <Link href="/training" className="text-[#e89d79] hover:underline">← Back to All Training Programs</Link>
+            <Link href="/training" className="text-[#EE9739] hover:underline">← Back to All Training Programs</Link>
           </div>
           <h2 className="mb-8 text-center text-2xl font-bold text-[#061625]">Related Articles</h2>
           <div className="mx-auto grid max-w-4xl gap-6 md:grid-cols-2">
             <Link href="/training/articles/catamaran-charter-certification-europe" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79]">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739]">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">How to Get Certified to Charter a Catamaran in Europe</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">How to Get Certified to Charter a Catamaran in Europe</h3>
                   <p className="text-sm text-muted-foreground">Understand the certification requirements for European charter destinations.</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/articles/skipper-certification-requirements" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79]">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739]">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">What Charter Companies Look for in Skipper Certification</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">What Charter Companies Look for in Skipper Certification</h3>
                   <p className="text-sm text-muted-foreground">Learn what credentials charter companies actually require.</p>
                 </CardContent>
               </Card>

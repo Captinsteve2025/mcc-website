@@ -93,7 +93,7 @@ function YachtCard({ yacht, detailHref }: { yacht: Yacht; detailHref: (id: strin
       </Link>
       <div className="flex flex-1 flex-col p-6">
         <Link href={href}>
-          <h2 className="font-display text-2xl font-normal italic text-[#061625] hover:text-[#e89d79]">{name}</h2>
+          <h2 className="font-display text-2xl font-normal italic text-[#061625] hover:text-[#EE9739]">{name}</h2>
         </Link>
         <p className="mt-1 text-sm text-[#061625]/70">
           {typeof yacht.yachtType === "string" ? yacht.yachtType : null}
@@ -102,19 +102,19 @@ function YachtCard({ yacht, detailHref }: { yacht: Yacht; detailHref: (id: strin
         <ul className="mt-4 space-y-1.5 text-sm text-[#061625]/80">
           {typeof yacht.length === "number" && (
             <li className="flex items-center gap-2">
-              <Ruler className="h-4 w-4 text-[#e89d79]" aria-hidden="true" />
+              <Ruler className="h-4 w-4 text-[#EE9739]" aria-hidden="true" />
               {yacht.length} {typeof yacht.units === "string" ? yacht.units : "ft"}
             </li>
           )}
           {typeof yacht.cabins === "number" && (
             <li className="flex items-center gap-2">
-              <BedDouble className="h-4 w-4 text-[#e89d79]" aria-hidden="true" />
+              <BedDouble className="h-4 w-4 text-[#EE9739]" aria-hidden="true" />
               {yacht.cabins} cabins
             </li>
           )}
           {typeof yacht.pax === "number" && (
             <li className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-[#e89d79]" aria-hidden="true" />
+              <Users className="h-4 w-4 text-[#EE9739]" aria-hidden="true" />
               Up to {yacht.pax} guests
             </li>
           )}
@@ -124,7 +124,7 @@ function YachtCard({ yacht, detailHref }: { yacht: Yacht; detailHref: (id: strin
         <div className="mt-auto pt-6">
           <Link
             href={href}
-            className="inline-flex items-center gap-2 rounded-full bg-[#e89d79] px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#d88a66]"
+            className="inline-flex items-center gap-2 rounded-full bg-[#EE9739] px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#EA6F33]"
           >
             View Yacht <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </Link>
@@ -210,7 +210,7 @@ function RefinementBar({
         />
         <button
           type="submit"
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#e89d79] px-4 text-sm font-medium text-[#061625] transition-colors hover:bg-[#d88a66]"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#EE9739] px-4 text-sm font-medium text-[#061625] transition-colors hover:bg-[#EA6F33]"
         >
           <SlidersHorizontal className="h-4 w-4" aria-hidden="true" /> Refine
         </button>
@@ -325,7 +325,7 @@ export default async function CharterYachtsPage({
         <h1 className="mx-auto mb-6 max-w-3xl font-display text-5xl font-normal italic leading-tight md:text-6xl">
           Browse Live Charter Yachts
         </h1>
-        <div className="mx-auto h-px w-16 bg-[#e89d79]" aria-hidden="true" />
+        <div className="mx-auto h-px w-16 bg-[#EE9739]" aria-hidden="true" />
         <p className="mt-6 text-white/80">
           {resultsIncomplete && localMatches !== null
             ? `Checked ${checkedRecords} catalogue records so far — ${localMatches} ${localMatches === 1 ? "yacht" : "yachts"} matched; the full inventory is larger, so more matches may exist.`
@@ -349,8 +349,8 @@ export default async function CharterYachtsPage({
           </p>
         )}
         {resultsIncomplete && (
-          <p className="mx-auto mt-3 flex max-w-xl items-start gap-2 rounded-md bg-[#e89d79]/20 p-3 text-left text-sm text-white">
-            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
+          <p className="mx-auto mt-3 flex max-w-xl items-start gap-2 rounded-md bg-[#EE9739]/20 p-3 text-left text-sm text-white">
+            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#EE9739]" aria-hidden="true" />
             <span>
               This search scanned the first {checkedRecords} records of the live catalogue and found {localMatches ?? "some"} {localMatches === 1 ? "match" : "matches"}; more records remain unchecked, so this is not the complete result. Our team can check the full inventory for you — just ask.
             </span>

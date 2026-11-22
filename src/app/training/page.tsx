@@ -12,7 +12,7 @@ import { BreadcrumbSchema } from "@/components/StructuredData";
 import { JsonLd } from "@/components/JsonLd";
 
 // MCC Brand Colors
-const coral = "#e89d79";
+const coral = "#EE9739";
 const navy = "#061625";
 
 export default function TrainingPage() {

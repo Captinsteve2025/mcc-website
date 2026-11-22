@@ -50,7 +50,7 @@ export function YachtFeatures() {
 
         <ul className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature) => (
-            <li key={feature.title} className="rounded-lg border border-[#061625]/10 bg-[#f8f7f4] p-8 transition-all duration-300 hover:border-[#e89d79] hover:shadow-lg">
+            <li key={feature.title} className="rounded-lg border border-[#061625]/10 bg-[#f8f7f4] p-8 transition-all duration-300 hover:border-[#EE9739] hover:shadow-lg">
               <feature.icon className="h-8 w-8 text-[#061625]" aria-hidden="true" />
               <h3 className="mt-5 font-display text-2xl font-normal italic text-[#061625]">{feature.title}</h3>
               <p className="mt-3 text-[15px] leading-[1.5] text-[#061625]/80">{feature.body}</p>
@@ -60,11 +60,11 @@ export function YachtFeatures() {
 
         <div className="mt-16 rounded-lg bg-[#061625] p-8 text-white lg:p-12">
           <h3 className="font-display text-3xl font-normal italic">Yacht Specifications</h3>
-          <div className="mx-0 my-4 h-px w-16 bg-[#e89d79]" aria-hidden="true" />
+          <div className="mx-0 my-4 h-px w-16 bg-[#EE9739]" aria-hidden="true" />
           <dl className="mt-6 grid gap-x-8 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
             {atlasKnownSpecs.map((spec) => (
               <div key={spec.label} className="border-b border-white/15 pb-3">
-                <dt className="text-xs font-medium uppercase tracking-wider text-[#e89d79]">{spec.label}</dt>
+                <dt className="text-xs font-medium uppercase tracking-wider text-[#EE9739]">{spec.label}</dt>
                 <dd className="mt-1 text-base text-white">{spec.value}</dd>
               </div>
             ))}

@@ -80,7 +80,7 @@ export function YachtNameSearch({ defaultValue, basePath }: Props) {
           aria-label="Yacht name"
           placeholder="Yacht name (e.g. Endless Horizon)"
           autoComplete="off"
-          className="h-12 w-full rounded-md border border-white/20 bg-white/95 pl-9 pr-9 text-sm text-[#061625] placeholder:text-[#061625]/45 focus:outline-none focus:ring-2 focus:ring-[#e89d79]"
+          className="h-12 w-full rounded-md border border-white/20 bg-white/95 pl-9 pr-9 text-sm text-[#061625] placeholder:text-[#061625]/45 focus:outline-none focus:ring-2 focus:ring-[#EE9739]"
         />
         {value && (
           <button
@@ -114,7 +114,7 @@ export function YachtNameSearch({ defaultValue, basePath }: Props) {
                   setOpen(false);
                   go(name);
                 }}
-                className="block w-full truncate px-3 py-2.5 text-left text-sm text-[#061625] transition-colors hover:bg-[#e89d79]/10"
+                className="block w-full truncate px-3 py-2.5 text-left text-sm text-[#061625] transition-colors hover:bg-[#EE9739]/10"
               >
                 {name}
               </button>

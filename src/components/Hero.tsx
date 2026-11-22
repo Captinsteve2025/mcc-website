@@ -63,9 +63,9 @@ export function Hero() {
   };
 
   const selectClass =
-    "w-full h-12 pl-10 pr-4 bg-white/95 border border-white/20 rounded-md text-[#061625] text-sm focus:outline-none focus:ring-2 focus:ring-[#e89d79] appearance-none cursor-pointer";
+    "w-full h-12 pl-10 pr-4 bg-white/95 border border-white/20 rounded-md text-[#061625] text-sm focus:outline-none focus:ring-2 focus:ring-[#EE9739] appearance-none cursor-pointer";
   const inputClass =
-    "w-full h-12 px-3 bg-white/95 border border-white/20 rounded-md text-[#061625] text-sm focus:outline-none focus:ring-2 focus:ring-[#e89d79] [color-scheme:light]";
+    "w-full h-12 px-3 bg-white/95 border border-white/20 rounded-md text-[#061625] text-sm focus:outline-none focus:ring-2 focus:ring-[#EE9739] [color-scheme:light]";
 
   return (
     <section className="relative min-h-[640px] md:min-h-[700px] flex items-center justify-center overflow-hidden">
@@ -223,7 +223,7 @@ export function Hero() {
             {/* One prominent submission button */}
             <button
               type="submit"
-              className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-md bg-[#e89d79] text-base font-semibold text-white transition-colors hover:bg-[#d88a66]"
+              className="mt-4 flex h-14 w-full items-center justify-center gap-2 rounded-md bg-[#EE9739] text-base font-semibold text-white transition-colors hover:bg-[#EA6F33]"
             >
               <Search className="h-5 w-5" aria-hidden="true" />
               Search Yachts

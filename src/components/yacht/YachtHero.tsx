@@ -31,7 +31,7 @@ export function YachtHero({ yacht }: { yacht: ManagedYacht }) {
           <ul className="grid gap-3 text-sm text-white sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
             {facts.map((fact) => (
               <li key={fact} className="flex items-center justify-center gap-2">
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-[#EE9739]" aria-hidden="true" />
                 {fact}
               </li>
             ))}

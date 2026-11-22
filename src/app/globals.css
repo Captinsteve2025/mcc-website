@@ -23,13 +23,13 @@
     --secondary-foreground: 210 50% 10%;
     --muted: 210 20% 96%;
     --muted-foreground: 210 15% 40%;
-    --accent: 16 100% 66%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 32 85% 58%;
+    --accent-foreground: 210 50% 10%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
     --border: 210 15% 90%;
     --input: 210 15% 90%;
-    --ring: 16 100% 66%;
+    --ring: 32 85% 58%;
     --radius: 0.5rem;
   }
 
@@ -40,19 +40,19 @@
     --card-foreground: 0 0% 98%;
     --popover: 210 45% 12%;
     --popover-foreground: 0 0% 98%;
-    --primary: 16 100% 66%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 32 85% 58%;
+    --primary-foreground: 210 50% 10%;
     --secondary: 210 30% 18%;
     --secondary-foreground: 0 0% 98%;
     --muted: 210 30% 18%;
     --muted-foreground: 210 15% 65%;
-    --accent: 16 100% 66%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 32 85% 58%;
+    --accent-foreground: 210 50% 10%;
     --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 98%;
     --border: 210 30% 22%;
     --input: 210 30% 22%;
-    --ring: 16 100% 66%;
+    --ring: 32 85% 58%;
   }
 }
 
@@ -73,7 +73,7 @@
 
   /* Improve focus visibility for accessibility */
   :focus-visible {
-    outline: 2px solid #FF7F50;
+    outline: 2px solid #EE9739;
     outline-offset: 2px;
   }
 
@@ -135,7 +135,7 @@
     position: absolute;
     top: -40px;
     left: 0;
-    background: #FF7F50;
+    background: #EE9739;
     color: white;
     padding: 8px 16px;
     z-index: 100;

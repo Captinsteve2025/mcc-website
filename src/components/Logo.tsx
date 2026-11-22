@@ -8,23 +8,18 @@ interface LogoProps {
 }
 
 export function Logo({ variant = "light", className = "" }: LogoProps) {
-  // The white logo works on dark backgrounds (light variant)
-  // For light backgrounds (dark variant), we invert the colors
-  const imageClass = variant === "light"
-    ? "" // White logo as-is for dark backgrounds
-    : "invert"; // Invert to dark for light backgrounds
+  const source = variant === "light" ? "/images/brand/mcc-logo-light.png" : "/images/brand/mcc-logo-primary.png";
 
   return (
     <Image
-      src="/images/mcc-logo-white.png"
+      src={source}
       alt="My Caribbean Charters"
-      width={200}
-      height={50}
-      className={`h-10 lg:h-12 w-auto ${imageClass} ${className}`}
+      width={3000}
+      height={1825}
+      className={`h-12 w-auto object-contain lg:h-14 ${className}`}
       priority
     />
   );
 }
 
-// Default export for backward compatibility
 export default Logo;

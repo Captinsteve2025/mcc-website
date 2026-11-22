@@ -10,19 +10,19 @@ export function YachtEnquirySection({ yacht }: { yacht: ManagedYacht }) {
         <div>
           <p className="mb-4 text-sm font-medium uppercase tracking-[0.2em] text-white/80">Enquire About {yacht.name}</p>
           <h2 className="mb-6 font-display text-4xl font-normal italic leading-[1.2] md:text-5xl lg:text-6xl">Check {yacht.name} Availability</h2>
-          <div className="mb-8 h-px w-16 bg-[#e89d79]" aria-hidden="true" />
+          <div className="mb-8 h-px w-16 bg-[#EE9739]" aria-hidden="true" />
           <p className="text-lg text-white/90">
             Tell us your preferred dates and a little about your group. Our Caribbean charter specialists will prepare a personalized proposal.
           </p>
           <ul className="mt-8 space-y-4 text-[15px] leading-[1.5] text-white/90">
             {yacht.minimumNights && (
               <li className="flex gap-3">
-                <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-[#e89d79]" aria-hidden="true" />
+                <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
                 Minimum charter duration of {yacht.minimumNights} nights, subject to approved terms.
               </li>
             )}
             <li className="flex gap-3">
-              <Phone className="mt-0.5 h-5 w-5 shrink-0 text-[#e89d79]" aria-hidden="true" />
+              <Phone className="mt-0.5 h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
               <span>
                 Prefer to talk now? Call{" "}
                 <TrackedLink

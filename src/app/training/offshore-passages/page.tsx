@@ -85,18 +85,18 @@ export default function OffshorePassagesPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/80 to-primary/70" />
         </div>
         <div className="container relative z-10 mx-auto px-4 text-center text-white">
-          <Link href="/training" className="mb-6 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-[#e89d79]">
+          <Link href="/training" className="mb-6 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-[#EE9739]">
             <ArrowLeft className="h-4 w-4" />
             <span className="text-sm font-medium">Back to Training Programs</span>
           </Link>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/20 px-6 py-2 backdrop-blur-sm">
-            <Navigation className="h-5 w-5 text-[#e89d79]" />
-            <span className="text-sm font-bold uppercase tracking-wide text-[#e89d79]">10-Day Passages</span>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/20 px-6 py-2 backdrop-blur-sm">
+            <Navigation className="h-5 w-5 text-[#EE9739]" />
+            <span className="text-sm font-bold uppercase tracking-wide text-[#EE9739]">10-Day Passages</span>
           </div>
           <h1 className="mb-6 text-5xl font-bold leading-tight tracking-tight md:text-7xl">
             Offshore Passage
             <br />
-            <span className="text-[#e89d79]">Training</span>
+            <span className="text-[#EE9739]">Training</span>
           </h1>
           <p className="mx-auto mb-8 max-w-3xl text-xl leading-relaxed md:text-2xl">
             Two distinct 10-day voyages through the Eastern Caribbean. Build offshore confidence
@@ -112,19 +112,19 @@ export default function OffshorePassagesPage() {
           </div>
           <div className="mx-auto mt-12 grid max-w-4xl gap-6 md:grid-cols-4">
             <div className="rounded-lg bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">10</p>
+              <p className="text-3xl font-bold text-[#EE9739]">10</p>
               <p className="text-sm text-white/80">Days Per Leg</p>
             </div>
             <div className="rounded-lg bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">500+</p>
+              <p className="text-3xl font-bold text-[#EE9739]">500+</p>
               <p className="text-sm text-white/80">Total Miles</p>
             </div>
             <div className="rounded-lg bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">8+</p>
+              <p className="text-3xl font-bold text-[#EE9739]">8+</p>
               <p className="text-sm text-white/80">Islands</p>
             </div>
             <div className="rounded-lg bg-white/10 p-4 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">6</p>
+              <p className="text-3xl font-bold text-[#EE9739]">6</p>
               <p className="text-sm text-white/80">Max Crew</p>
             </div>
           </div>
@@ -139,12 +139,12 @@ export default function OffshorePassagesPage() {
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground">Choose one leg or complete both for the ultimate offshore experience</p>
           </div>
           <div className="grid gap-8 lg:grid-cols-2">
-            <Card className="overflow-hidden border-2 border-[#e89d79]">
+            <Card className="overflow-hidden border-2 border-[#EE9739]">
               <div className="relative h-64">
                 <Image src="https://images.unsplash.com/photo-1500930287596-c1ecaa373bb2?w=800&h=400&fit=crop" alt="St. Martin to Martinique" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent" />
                 <div className="absolute bottom-6 left-6 text-white">
-                  <p className="text-sm font-bold uppercase tracking-wide text-[#e89d79]">Leg 1</p>
+                  <p className="text-sm font-bold uppercase tracking-wide text-[#EE9739]">Leg 1</p>
                   <h3 className="text-3xl font-bold">St. Martin to Martinique</h3>
                   <p className="mt-1 text-white/80">10 Days | 300–350 Nautical Miles</p>
                 </div>
@@ -152,22 +152,22 @@ export default function OffshorePassagesPage() {
               <CardContent className="p-8">
                 <p className="mb-6 leading-relaxed text-muted-foreground">Island hopping through the Leewards and Windwards with clearances, anchoring, and coastal navigation.</p>
                 <div className="mb-6 space-y-3">
-                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#e89d79]" /><span className="text-muted-foreground">Leeward and Windward chain exploration</span></div>
-                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#e89d79]" /><span className="text-muted-foreground">Multi-country customs and immigration</span></div>
-                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#e89d79]" /><span className="text-muted-foreground">Anchoring and mooring practice</span></div>
-                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#e89d79]" /><span className="text-muted-foreground">Foundations of passage making</span></div>
+                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#EE9739]" /><span className="text-muted-foreground">Leeward and Windward chain exploration</span></div>
+                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#EE9739]" /><span className="text-muted-foreground">Multi-country customs and immigration</span></div>
+                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#EE9739]" /><span className="text-muted-foreground">Anchoring and mooring practice</span></div>
+                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#EE9739]" /><span className="text-muted-foreground">Foundations of passage making</span></div>
                 </div>
                 <Button variant="gold" className="w-full" onClick={() => openDialog("Leg 1: St. Martin to Martinique", "")}>
                   Reserve Leg 1
                 </Button>
               </CardContent>
             </Card>
-            <Card className="overflow-hidden border-2 border-[#e89d79]">
+            <Card className="overflow-hidden border-2 border-[#EE9739]">
               <div className="relative h-64">
                 <Image src="https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=400&fit=crop" alt="Martinique to Grenada" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent" />
                 <div className="absolute bottom-6 left-6 text-white">
-                  <p className="text-sm font-bold uppercase tracking-wide text-[#e89d79]">Leg 2</p>
+                  <p className="text-sm font-bold uppercase tracking-wide text-[#EE9739]">Leg 2</p>
                   <h3 className="text-3xl font-bold">Martinique to Grenada</h3>
                   <p className="mt-1 text-white/80">10 Days | 190–225 Nautical Miles</p>
                 </div>
@@ -175,10 +175,10 @@ export default function OffshorePassagesPage() {
               <CardContent className="p-8">
                 <p className="mb-6 leading-relaxed text-muted-foreground">Continue through the Windwards to Grenada with the beautiful Grenadines along the way.</p>
                 <div className="mb-6 space-y-3">
-                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#e89d79]" /><span className="text-muted-foreground">Overnight passages with watch systems</span></div>
-                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#e89d79]" /><span className="text-muted-foreground">Tobago Cays and Grenadines</span></div>
-                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#e89d79]" /><span className="text-muted-foreground">Advanced navigation and weather routing</span></div>
-                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#e89d79]" /><span className="text-muted-foreground">Crew-led passage planning</span></div>
+                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#EE9739]" /><span className="text-muted-foreground">Overnight passages with watch systems</span></div>
+                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#EE9739]" /><span className="text-muted-foreground">Tobago Cays and Grenadines</span></div>
+                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#EE9739]" /><span className="text-muted-foreground">Advanced navigation and weather routing</span></div>
+                  <div className="flex items-start gap-3"><CheckCircle2 className="mt-1 h-5 w-5 text-[#EE9739]" /><span className="text-muted-foreground">Crew-led passage planning</span></div>
                 </div>
                 <Button variant="gold" className="w-full" onClick={() => openDialog("Leg 2: Martinique to Grenada", "")}>
                   Reserve Leg 2
@@ -210,7 +210,7 @@ export default function OffshorePassagesPage() {
                 <tbody className="divide-y divide-gray-200">
                   {leg1Itinerary.map((item, idx) => (
                     <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-muted/30"}>
-                      <td className="px-6 py-4 font-bold text-[#e89d79]">{item.day}</td>
+                      <td className="px-6 py-4 font-bold text-[#EE9739]">{item.day}</td>
                       <td className="px-6 py-4">
                         <p className="font-medium text-[#061625]">{item.passage}</p>
                         <p className="text-sm text-muted-foreground">{item.activity}</p>
@@ -222,8 +222,8 @@ export default function OffshorePassagesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="border-t bg-[#e89d79]/10 px-6 py-4">
-              <p className="font-bold text-[#061625]">Leg 1 Total: <span className="text-[#e89d79]">Approximately 300–350 nautical miles logged</span></p>
+            <div className="border-t bg-[#EE9739]/10 px-6 py-4">
+              <p className="font-bold text-[#061625]">Leg 1 Total: <span className="text-[#EE9739]">Approximately 300–350 nautical miles logged</span></p>
             </div>
           </div>
         </div>
@@ -250,7 +250,7 @@ export default function OffshorePassagesPage() {
                 <tbody className="divide-y divide-gray-200">
                   {leg2Itinerary.map((item, idx) => (
                     <tr key={idx} className={idx % 2 === 0 ? "bg-white" : "bg-muted/30"}>
-                      <td className="px-6 py-4 font-bold text-[#e89d79]">{item.day}</td>
+                      <td className="px-6 py-4 font-bold text-[#EE9739]">{item.day}</td>
                       <td className="px-6 py-4">
                         <p className="font-medium text-[#061625]">{item.passage}</p>
                         <p className="text-sm text-muted-foreground">{item.activity}</p>
@@ -262,8 +262,8 @@ export default function OffshorePassagesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="border-t bg-[#e89d79]/10 px-6 py-4">
-              <p className="font-bold text-[#061625]">Leg 2 Total: <span className="text-[#e89d79]">Approximately 190–225 nautical miles logged</span></p>
+            <div className="border-t bg-[#EE9739]/10 px-6 py-4">
+              <p className="font-bold text-[#061625]">Leg 2 Total: <span className="text-[#EE9739]">Approximately 190–225 nautical miles logged</span></p>
             </div>
           </div>
         </div>
@@ -278,10 +278,10 @@ export default function OffshorePassagesPage() {
           </div>
           <div className="mx-auto max-w-4xl space-y-4">
             {upcomingPassages.map((passage, idx) => (
-              <Card key={idx} className="border-2 border-[#061625]/10 transition-all hover:border-[#e89d79]">
+              <Card key={idx} className="border-2 border-[#061625]/10 transition-all hover:border-[#EE9739]">
                 <CardContent className="flex flex-wrap items-center justify-between gap-4 p-6">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-16 w-16 flex-col items-center justify-center rounded-lg bg-[#e89d79] text-white">
+                    <div className="flex h-16 w-16 flex-col items-center justify-center rounded-lg bg-[#EE9739] text-white">
                       <span className="text-sm font-bold">{passage.month}</span>
                       <span className="text-2xl font-bold">{passage.day}</span>
                     </div>
@@ -298,7 +298,7 @@ export default function OffshorePassagesPage() {
             ))}
           </div>
           <div className="mt-8 text-center">
-            <p className="text-muted-foreground">Don't see dates that work for you? <button onClick={() => setDialogOpen(true)} className="font-medium text-[#e89d79] hover:underline">Contact us</button> to discuss custom training options.</p>
+            <p className="text-muted-foreground">Don't see dates that work for you? <button onClick={() => setDialogOpen(true)} className="font-medium text-[#EE9739] hover:underline">Contact us</button> to discuss custom training options.</p>
           </div>
         </div>
       </section>
@@ -314,13 +314,13 @@ export default function OffshorePassagesPage() {
           <div className="mx-auto grid max-w-5xl gap-8 md:grid-cols-2">
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-8">
-                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-[#e89d79]">Standard Package</div>
+                <div className="mb-2 text-xs font-bold uppercase tracking-wide text-[#EE9739]">Standard Package</div>
                 <h3 className="mb-4 text-2xl font-bold text-[#061625]">$9,000 <span className="text-lg font-normal text-muted-foreground">per person</span></h3>
                 <ul className="mb-6 space-y-3 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#e89d79]" />Sharing a standard double cabin with A/C</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#e89d79]" />10 days live-aboard training per leg</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#e89d79]" />Professional skipper/instructor</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#e89d79]" />Logged miles certificate</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#EE9739]" />Sharing a standard double cabin with A/C</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#EE9739]" />10 days live-aboard training per leg</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#EE9739]" />Professional skipper/instructor</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#EE9739]" />Logged miles certificate</li>
                 </ul>
                 <Button variant="outline" className="w-full" onClick={() => openDialog("Standard Package", "")}>
                   Enquire About Standard
@@ -328,15 +328,15 @@ export default function OffshorePassagesPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-[#e89d79] shadow-xl">
-              <div className="bg-[#e89d79] px-6 py-2 text-center text-sm font-bold uppercase text-white">VIP Package</div>
+            <Card className="border-2 border-[#EE9739] shadow-xl">
+              <div className="bg-[#EE9739] px-6 py-2 text-center text-sm font-bold uppercase text-white">VIP Package</div>
               <CardContent className="p-8">
                 <h3 className="mb-4 text-2xl font-bold text-[#061625]">$12,000 <span className="text-lg font-normal text-muted-foreground">per person</span></h3>
                 <ul className="mb-6 space-y-3 text-sm text-muted-foreground">
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#e89d79]" />Owners version double cabin</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#e89d79]" />3:1 instructor ratio</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#e89d79]" />45'+ catamaran</li>
-                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#e89d79]" />All training inclusions from Standard</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#EE9739]" />Owners version double cabin</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#EE9739]" />3:1 instructor ratio</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#EE9739]" />45'+ catamaran</li>
+                  <li className="flex items-start gap-2"><CheckCircle2 className="mt-0.5 h-4 w-4 text-[#EE9739]" />All training inclusions from Standard</li>
                 </ul>
                 <Button variant="gold" className="w-full" onClick={() => openDialog("VIP Package", "")}>
                   Reserve VIP
@@ -348,12 +348,12 @@ export default function OffshorePassagesPage() {
           <div className="mx-auto mt-12 max-w-3xl rounded-lg bg-muted p-8">
             <h3 className="mb-4 text-xl font-bold text-[#061625]">What's Included</h3>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Accommodation aboard the yacht</div>
-              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />All meals and provisions</div>
-              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Professional skipper/instructor</div>
-              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Fuel and marina fees</div>
-              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Training materials and charts</div>
-              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#e89d79]" />Logged miles certificate</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Accommodation aboard the yacht</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />All meals and provisions</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Professional skipper/instructor</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Fuel and marina fees</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Training materials and charts</div>
+              <div className="flex items-center gap-2 text-muted-foreground"><CheckCircle2 className="h-4 w-4 text-[#EE9739]" />Logged miles certificate</div>
             </div>
 
             <h3 className="mt-8 mb-3 text-xl font-bold text-[#061625]">Not Included</h3>
@@ -466,13 +466,13 @@ export default function OffshorePassagesPage() {
           <div className="mx-auto max-w-4xl text-center">
             <h3 className="mb-6 text-2xl font-bold text-[#061625]">Explore More Training Options</h3>
             <div className="flex flex-wrap justify-center gap-3 text-sm">
-              <Link href="/training" className="text-[#e89d79] hover:underline">All Training Programs</Link>
+              <Link href="/training" className="text-[#EE9739] hover:underline">All Training Programs</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/training/day-skipper" className="text-[#e89d79] hover:underline">BVI Sailing Courses</Link>
+              <Link href="/training/day-skipper" className="text-[#EE9739] hover:underline">BVI Sailing Courses</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/training/owner-program" className="text-[#e89d79] hover:underline">Catamaran Owner Training</Link>
+              <Link href="/training/owner-program" className="text-[#EE9739] hover:underline">Catamaran Owner Training</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/bali" className="text-[#e89d79] hover:underline">Train on Bali Catamarans</Link>
+              <Link href="/bali" className="text-[#EE9739] hover:underline">Train on Bali Catamarans</Link>
             </div>
           </div>
         </div>

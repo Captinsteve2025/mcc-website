@@ -25,9 +25,9 @@ export default function BareboatCharterMasterPage() {
           <div className="absolute inset-0 bg-gradient-to-t from-[#061625]/95 via-[#061625]/70 to-[#061625]/40" />
         </div>
         <div className="container relative z-10 mx-auto px-4 text-center text-white">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/20 px-6 py-2 backdrop-blur-sm">
-            <BadgeCheck className="h-5 w-5 text-[#e89d79]" />
-            <span className="text-sm font-bold uppercase tracking-wide text-[#e89d79]">NauticEd Certification</span>
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/20 px-6 py-2 backdrop-blur-sm">
+            <BadgeCheck className="h-5 w-5 text-[#EE9739]" />
+            <span className="text-sm font-bold uppercase tracking-wide text-[#EE9739]">NauticEd Certification</span>
           </div>
           <h1 className="mb-4 text-4xl font-bold leading-tight tracking-tight md:text-6xl">
             Bareboat Charter Master
@@ -37,7 +37,7 @@ export default function BareboatCharterMasterPage() {
             Achieve your SLC license and charter confidently anywhere.
           </p>
           <div className="flex flex-wrap justify-center gap-4 pb-8">
-            <Button className="bg-[#e89d79] text-white hover:bg-[#d88a66]" size="lg" asChild>
+            <Button className="bg-[#EE9739] text-white hover:bg-[#EA6F33]" size="lg" asChild>
               <a href="#enquire">Start Your Certification</a>
             </Button>
             <Button variant="outline" size="lg" className="border-white/50 text-white hover:bg-white/10 bg-white/10 backdrop-blur-sm" asChild>
@@ -51,19 +51,19 @@ export default function BareboatCharterMasterPage() {
         <div className="container mx-auto px-4">
           <div className="grid gap-8 md:grid-cols-4 text-center">
             <div className="rounded-xl bg-white/10 p-6 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">5+</p>
+              <p className="text-3xl font-bold text-[#EE9739]">5+</p>
               <p className="text-sm text-white/80">Online Courses</p>
             </div>
             <div className="rounded-xl bg-white/10 p-6 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">3-5</p>
+              <p className="text-3xl font-bold text-[#EE9739]">3-5</p>
               <p className="text-sm text-white/80">Days Practical</p>
             </div>
             <div className="rounded-xl bg-white/10 p-6 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">SLC</p>
+              <p className="text-3xl font-bold text-[#EE9739]">SLC</p>
               <p className="text-sm text-white/80">License Eligible</p>
             </div>
             <div className="rounded-xl bg-white/10 p-6 backdrop-blur-sm">
-              <p className="text-3xl font-bold text-[#e89d79]">30+</p>
+              <p className="text-3xl font-bold text-[#EE9739]">30+</p>
               <p className="text-sm text-white/80">Countries Accept</p>
             </div>
           </div>
@@ -81,29 +81,29 @@ export default function BareboatCharterMasterPage() {
             <div className="grid gap-6 md:grid-cols-2">
               <Card className="border-2 border-[#061625]/10">
                 <CardContent className="p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#e89d79]/10">
-                    <Laptop className="h-6 w-6 text-[#e89d79]" />
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#EE9739]/10">
+                    <Laptop className="h-6 w-6 text-[#EE9739]" />
                   </div>
                   <h3 className="mb-3 text-xl font-bold text-[#061625]">Online Theory Courses</h3>
                   <ul className="space-y-2 text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Skipper Course (fundamentals)</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Coastal Navigation</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Sail Trim for Cruisers</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Anchoring & Docking</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Weather Fundamentals</span>
                     </li>
                   </ul>
@@ -111,29 +111,29 @@ export default function BareboatCharterMasterPage() {
               </Card>
               <Card className="border-2 border-[#061625]/10">
                 <CardContent className="p-6">
-                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#e89d79]/10">
-                    <Ship className="h-6 w-6 text-[#e89d79]" />
+                  <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-[#EE9739]/10">
+                    <Ship className="h-6 w-6 text-[#EE9739]" />
                   </div>
                   <h3 className="mb-3 text-xl font-bold text-[#061625]">Practical Assessment</h3>
                   <ul className="space-y-2 text-muted-foreground">
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Boat handling under power</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Sail setting and trimming</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Mediterranean mooring</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Anchoring techniques</span>
                     </li>
                     <li className="flex items-start gap-2">
-                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-4 w-4 flex-shrink-0 text-[#EE9739]" />
                       <span>Man overboard recovery</span>
                     </li>
                   </ul>
@@ -150,8 +150,8 @@ export default function BareboatCharterMasterPage() {
           <div className="grid gap-8 md:grid-cols-3">
             <Card className="border-0 shadow-lg">
               <CardContent className="p-8 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e89d79]/10">
-                  <Globe className="h-8 w-8 text-[#e89d79]" />
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#EE9739]/10">
+                  <Globe className="h-8 w-8 text-[#EE9739]" />
                 </div>
                 <h3 className="mb-3 text-xl font-bold text-[#061625]">Globally Recognized</h3>
                 <p className="text-muted-foreground">
@@ -162,8 +162,8 @@ export default function BareboatCharterMasterPage() {
             </Card>
             <Card className="border-0 shadow-lg">
               <CardContent className="p-8 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e89d79]/10">
-                  <Award className="h-8 w-8 text-[#e89d79]" />
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#EE9739]/10">
+                  <Award className="h-8 w-8 text-[#EE9739]" />
                 </div>
                 <h3 className="mb-3 text-xl font-bold text-[#061625]">SLC License Eligible</h3>
                 <p className="text-muted-foreground">
@@ -174,8 +174,8 @@ export default function BareboatCharterMasterPage() {
             </Card>
             <Card className="border-0 shadow-lg">
               <CardContent className="p-8 text-center">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#e89d79]/10">
-                  <Target className="h-8 w-8 text-[#e89d79]" />
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#EE9739]/10">
+                  <Target className="h-8 w-8 text-[#EE9739]" />
                 </div>
                 <h3 className="mb-3 text-xl font-bold text-[#061625]">Charter Ready</h3>
                 <p className="text-muted-foreground">
@@ -274,7 +274,7 @@ export default function BareboatCharterMasterPage() {
                     <textarea rows={4} placeholder="Tell us about your goals and any questions you have..." className="flex w-full rounded-[10px] border border-input bg-background px-4 py-3 text-sm" />
                   </div>
                   <input type="hidden" name="certification" value="bareboat-charter-master" />
-                  <Button className="w-full bg-[#e89d79] text-white hover:bg-[#d88a66]" size="lg">
+                  <Button className="w-full bg-[#EE9739] text-white hover:bg-[#EA6F33]" size="lg">
                     Request Certification Info
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
@@ -284,10 +284,10 @@ export default function BareboatCharterMasterPage() {
             <div className="mt-8 text-center">
               <p className="mb-2 text-white/70">Or contact us directly:</p>
               <div className="flex flex-wrap justify-center gap-6">
-                <a href="tel:+17865201558" className="flex items-center gap-2 text-white hover:text-[#e89d79]">
+                <a href="tel:+17865201558" className="flex items-center gap-2 text-white hover:text-[#EE9739]">
                   <Phone className="h-5 w-5" />+1 (786) 520-1558
                 </a>
-                <a href="mailto:info@mycaribbeancharters.com" className="flex items-center gap-2 text-white hover:text-[#e89d79]">
+                <a href="mailto:info@mycaribbeancharters.com" className="flex items-center gap-2 text-white hover:text-[#EE9739]">
                   <Mail className="h-5 w-5" />info@mycaribbeancharters.com
                 </a>
               </div>
@@ -301,33 +301,33 @@ export default function BareboatCharterMasterPage() {
           <h2 className="mb-8 text-center text-3xl font-bold text-[#061625]">Other NauticEd Certifications</h2>
           <div className="grid gap-6 md:grid-cols-4">
             <Link href="/training/nauticed/catamaran-sailing-confidence" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">Catamaran Sailing Confidence</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">Catamaran Sailing Confidence</h3>
                   <p className="text-sm text-muted-foreground">Master cat handling</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/nauticed/skipper-large-powerboat" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">Skipper Large Powerboat</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">Skipper Large Powerboat</h3>
                   <p className="text-sm text-muted-foreground">For powerboats 27ft+</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/nauticed/captain-rank" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">Captain Rank</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">Captain Rank</h3>
                   <p className="text-sm text-muted-foreground">Professional level</p>
                 </CardContent>
               </Card>
             </Link>
             <Link href="/training/nauticed/slc-license" className="group">
-              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#e89d79] group-hover:shadow-lg">
+              <Card className="h-full border-2 border-[#061625]/10 transition-all group-hover:border-[#EE9739] group-hover:shadow-lg">
                 <CardContent className="p-6">
-                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#e89d79]">SLC License</h3>
+                  <h3 className="mb-2 font-bold text-[#061625] group-hover:text-[#EE9739]">SLC License</h3>
                   <p className="text-sm text-muted-foreground">International boating license</p>
                 </CardContent>
               </Card>
@@ -336,11 +336,11 @@ export default function BareboatCharterMasterPage() {
           <div className="mt-10 text-center">
             <p className="text-sm text-muted-foreground">Explore More:</p>
             <div className="mt-2 flex flex-wrap justify-center gap-3 text-sm">
-              <Link href="/training" className="text-[#e89d79] hover:underline">All Training Programs</Link>
+              <Link href="/training" className="text-[#EE9739] hover:underline">All Training Programs</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/training/day-skipper" className="text-[#e89d79] hover:underline">BVI Sailing Courses</Link>
+              <Link href="/training/day-skipper" className="text-[#EE9739] hover:underline">BVI Sailing Courses</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/search" className="text-[#e89d79] hover:underline">Browse Yachts</Link>
+              <Link href="/search" className="text-[#EE9739] hover:underline">Browse Yachts</Link>
             </div>
           </div>
         </div>

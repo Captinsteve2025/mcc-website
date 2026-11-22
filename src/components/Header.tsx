@@ -57,7 +57,7 @@ export function Header() {
           <nav className="hidden lg:flex items-center gap-8" role="navigation" aria-label="Main navigation">
             <div className="relative group">
               <button
-                className={`flex items-center gap-1 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#FF7F50] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#FF7F50]" : "text-white hover:text-white/80"}`}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EE9739] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#EE9739]" : "text-white hover:text-white/80"}`}
                 aria-haspopup="true"
                 aria-expanded="false"
               >
@@ -69,7 +69,7 @@ export function Header() {
                     <Link
                       key={style.id}
                       href="/#charter-styles"
-                      className="block px-4 py-2 text-sm text-[#061625] hover:bg-gray-100 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7F50]"
+                      className="block px-4 py-2 text-sm text-[#061625] hover:bg-gray-100 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739]"
                       role="menuitem"
                     >
                       {style.name}
@@ -81,7 +81,7 @@ export function Header() {
 
             <div className="relative group">
               <button
-                className={`flex items-center gap-1 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#FF7F50] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#FF7F50]" : "text-white hover:text-white/80"}`}
+                className={`flex items-center gap-1 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EE9739] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#EE9739]" : "text-white hover:text-white/80"}`}
                 aria-haspopup="true"
                 aria-expanded="false"
               >
@@ -93,7 +93,7 @@ export function Header() {
                     <Link
                       key={dest.id}
                       href={getDestinationLink(dest.slug)}
-                      className="block px-4 py-2 text-sm text-[#061625] hover:bg-gray-100 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7F50]"
+                      className="block px-4 py-2 text-sm text-[#061625] hover:bg-gray-100 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739]"
                       role="menuitem"
                     >
                       {dest.name}
@@ -105,21 +105,21 @@ export function Header() {
 
             <Link
               href="/charter-yachts"
-              className={`text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#FF7F50] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#FF7F50]" : "text-white hover:text-white/80"}`}
+              className={`text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EE9739] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#EE9739]" : "text-white hover:text-white/80"}`}
             >
               All Charter Yachts
             </Link>
 
             <Link
               href="/managed-yachts"
-              className={`text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#FF7F50] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#FF7F50]" : "text-white hover:text-white/80"}`}
+              className={`text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EE9739] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#EE9739]" : "text-white hover:text-white/80"}`}
             >
               Managed Yachts
             </Link>
 
             <Link
               href="/training"
-              className={`text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#FF7F50] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#FF7F50]" : "text-white hover:text-white/80"}`}
+              className={`text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EE9739] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#EE9739]" : "text-white hover:text-white/80"}`}
             >
               Training
             </Link>
@@ -128,7 +128,7 @@ export function Header() {
           <div className="flex items-center gap-4">
             <a
               href="tel:+1-786-520-1558"
-              className={`hidden md:flex items-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7F50] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#FF7F50]" : "text-white hover:text-white/80"}`}
+              className={`hidden md:flex items-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#EE9739]" : "text-white hover:text-white/80"}`}
               aria-label="Call us at +1 786 520 1558"
             >
               <Phone className="w-4 h-4" aria-hidden="true" /> +1 (786) 520-1558
@@ -140,7 +140,7 @@ export function Header() {
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild className="lg:hidden">
                 <button
-                  className={`p-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF7F50] ${isScrolled ? "text-[#061625]" : "text-white"}`}
+                  className={`p-2 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739] ${isScrolled ? "text-[#061625]" : "text-white"}`}
                   aria-label="Open navigation menu"
                   aria-expanded={isOpen}
                 >
@@ -160,7 +160,7 @@ export function Header() {
                           key={style.id}
                           href="/#charter-styles"
                           onClick={() => setIsOpen(false)}
-                          className="block py-2 text-[#061625] hover:text-[#FF7F50] transition-colors focus:outline-none focus-visible:underline"
+                          className="block py-2 text-[#061625] hover:text-[#EE9739] transition-colors focus:outline-none focus-visible:underline"
                         >
                           {style.name}
                         </Link>
@@ -173,7 +173,7 @@ export function Header() {
                           key={dest.id}
                           href={getDestinationLink(dest.slug)}
                           onClick={() => setIsOpen(false)}
-                          className="block py-2 text-[#061625] hover:text-[#FF7F50] transition-colors focus:outline-none focus-visible:underline"
+                          className="block py-2 text-[#061625] hover:text-[#EE9739] transition-colors focus:outline-none focus-visible:underline"
                         >
                           {dest.name}
                         </Link>
@@ -183,7 +183,7 @@ export function Header() {
                       <Link
                         href="/charter-yachts"
                         onClick={() => setIsOpen(false)}
-                        className="block py-2 text-[#061625] hover:text-[#FF7F50] transition-colors font-semibold focus:outline-none focus-visible:underline"
+                        className="block py-2 text-[#061625] hover:text-[#EE9739] transition-colors font-semibold focus:outline-none focus-visible:underline"
                       >
                         All Charter Yachts
                       </Link>
@@ -192,7 +192,7 @@ export function Header() {
                       <Link
                         href="/managed-yachts"
                         onClick={() => setIsOpen(false)}
-                        className="block py-2 text-[#061625] hover:text-[#FF7F50] transition-colors font-semibold focus:outline-none focus-visible:underline"
+                        className="block py-2 text-[#061625] hover:text-[#EE9739] transition-colors font-semibold focus:outline-none focus-visible:underline"
                       >
                         Managed Yachts
                       </Link>
@@ -201,7 +201,7 @@ export function Header() {
                       <Link
                         href="/training"
                         onClick={() => setIsOpen(false)}
-                        className="block py-2 text-[#061625] hover:text-[#FF7F50] transition-colors font-semibold focus:outline-none focus-visible:underline"
+                        className="block py-2 text-[#061625] hover:text-[#EE9739] transition-colors font-semibold focus:outline-none focus-visible:underline"
                       >
                         Sailing Training
                       </Link>

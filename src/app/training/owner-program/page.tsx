@@ -34,18 +34,18 @@ export default function OwnerProgramPage() {
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/80 to-primary/70" />
         </div>
         <div className="container relative z-10 mx-auto px-4 text-center text-white">
-          <Link href="/training" className="mb-6 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-[#e89d79]">
+          <Link href="/training" className="mb-6 inline-flex items-center gap-2 text-white/80 transition-colors hover:text-[#EE9739]">
             <ArrowLeft className="h-4 w-4" />
             <span className="text-sm font-medium">Back to Training Programs</span>
           </Link>
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#e89d79]/20 px-6 py-2 backdrop-blur-sm">
-            <Briefcase className="h-5 w-5 text-[#e89d79]" />
-            <span className="text-sm font-bold uppercase tracking-wide text-[#e89d79]">Charter Ownership</span>
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-[#EE9739]/20 px-6 py-2 backdrop-blur-sm">
+            <Briefcase className="h-5 w-5 text-[#EE9739]" />
+            <span className="text-sm font-bold uppercase tracking-wide text-[#EE9739]">Charter Ownership</span>
           </div>
           <h1 className="mb-6 text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl lg:text-7xl">
             Owner Transition
             <br />
-            <span className="text-[#e89d79]">Program</span>
+            <span className="text-[#EE9739]">Program</span>
           </h1>
           <p className="mx-auto mb-8 max-w-3xl text-base leading-relaxed sm:text-lg md:text-2xl">
             Structured owner training combined with charter ownership onboarding —
@@ -121,19 +121,19 @@ export default function OwnerProgramPage() {
                 <h3 className="mb-4 text-xl font-bold text-[#061625]">Program Outcomes</h3>
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Owner confidence as skipper or informed non-skipper</span>
                   </div>
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Safe, insurable charter-ready vessel</span>
                   </div>
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Seamless handover into charter operations</span>
                   </div>
                   <div className="flex items-start gap-3">
-                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                    <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                     <span className="text-muted-foreground">Clear understanding of financial, legal, and operational realities</span>
                   </div>
                 </div>
@@ -156,7 +156,7 @@ export default function OwnerProgramPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">1</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">1</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Owner Orientation & Expectations (Day 1)</h3>
                     <div className="grid gap-6 md:grid-cols-2">
@@ -178,8 +178,8 @@ export default function OwnerProgramPage() {
                         </ul>
                       </div>
                     </div>
-                    <div className="mt-4 rounded-lg bg-[#e89d79]/10 px-4 py-2">
-                      <span className="text-sm font-medium text-[#e89d79]">Key Outcome: Owner understands how charter boats are actually run, not how brochures describe them.</span>
+                    <div className="mt-4 rounded-lg bg-[#EE9739]/10 px-4 py-2">
+                      <span className="text-sm font-medium text-[#EE9739]">Key Outcome: Owner understands how charter boats are actually run, not how brochures describe them.</span>
                     </div>
                   </div>
                 </div>
@@ -190,7 +190,7 @@ export default function OwnerProgramPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">2</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">2</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Vessel Systems & Risk Awareness (Days 2–3)</h3>
                     <div className="grid gap-6 md:grid-cols-2">
@@ -214,8 +214,8 @@ export default function OwnerProgramPage() {
                         </ul>
                       </div>
                     </div>
-                    <div className="mt-4 rounded-lg bg-[#e89d79]/10 px-4 py-2">
-                      <span className="text-sm font-medium text-[#e89d79]">Key Outcome: Owner can speak intelligently with engineers, crew, and managers.</span>
+                    <div className="mt-4 rounded-lg bg-[#EE9739]/10 px-4 py-2">
+                      <span className="text-sm font-medium text-[#EE9739]">Key Outcome: Owner can speak intelligently with engineers, crew, and managers.</span>
                     </div>
                   </div>
                 </div>
@@ -226,7 +226,7 @@ export default function OwnerProgramPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">3</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">3</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Owner as Skipper (Optional; Days 4–6)</h3>
                     <div className="grid gap-6 md:grid-cols-2">
@@ -250,8 +250,8 @@ export default function OwnerProgramPage() {
                         </ul>
                       </div>
                     </div>
-                    <div className="mt-4 rounded-lg bg-[#e89d79]/10 px-4 py-2">
-                      <span className="text-sm font-medium text-[#e89d79]">Key Outcome: Owner is safe, credible, and insurable as skipper — or clearly understands why not to skipper.</span>
+                    <div className="mt-4 rounded-lg bg-[#EE9739]/10 px-4 py-2">
+                      <span className="text-sm font-medium text-[#EE9739]">Key Outcome: Owner is safe, credible, and insurable as skipper — or clearly understands why not to skipper.</span>
                     </div>
                   </div>
                 </div>
@@ -262,7 +262,7 @@ export default function OwnerProgramPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">4</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">4</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Charter Operations Reality (Days 4–6)</h3>
                     <div className="grid gap-6 md:grid-cols-2">
@@ -286,8 +286,8 @@ export default function OwnerProgramPage() {
                         </ul>
                       </div>
                     </div>
-                    <div className="mt-4 rounded-lg bg-[#e89d79]/10 px-4 py-2">
-                      <span className="text-sm font-medium text-[#e89d79]">Key Outcome: Owner becomes an asset to the operation, not a liability.</span>
+                    <div className="mt-4 rounded-lg bg-[#EE9739]/10 px-4 py-2">
+                      <span className="text-sm font-medium text-[#EE9739]">Key Outcome: Owner becomes an asset to the operation, not a liability.</span>
                     </div>
                   </div>
                 </div>
@@ -298,7 +298,7 @@ export default function OwnerProgramPage() {
             <Card className="border-2 border-[#061625]/10">
               <CardContent className="p-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">5</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">5</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Financial, Legal & Tax Briefing (Day 7 or separate)</h3>
                     <div className="grid gap-6 md:grid-cols-3">
@@ -329,8 +329,8 @@ export default function OwnerProgramPage() {
                         </ul>
                       </div>
                     </div>
-                    <div className="mt-4 rounded-lg bg-[#e89d79]/10 px-4 py-2">
-                      <span className="text-sm font-medium text-[#e89d79]">Key Outcome: Owner understands business mechanics to ask the right questions.</span>
+                    <div className="mt-4 rounded-lg bg-[#EE9739]/10 px-4 py-2">
+                      <span className="text-sm font-medium text-[#EE9739]">Key Outcome: Owner understands business mechanics to ask the right questions.</span>
                     </div>
                   </div>
                 </div>
@@ -338,10 +338,10 @@ export default function OwnerProgramPage() {
             </Card>
 
             {/* Phase 6 */}
-            <Card className="border-2 border-[#e89d79]">
+            <Card className="border-2 border-[#EE9739]">
               <CardContent className="p-8">
                 <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#e89d79] text-xl font-bold text-[#061625]">6</div>
+                  <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-[#EE9739] text-xl font-bold text-[#061625]">6</div>
                   <div className="flex-1">
                     <h3 className="mb-2 text-xl font-bold text-[#061625]">Handover to Charter Management (Final Day)</h3>
                     <div className="grid gap-6 md:grid-cols-2">
@@ -363,8 +363,8 @@ export default function OwnerProgramPage() {
                         </ul>
                       </div>
                     </div>
-                    <div className="mt-4 rounded-lg bg-[#e89d79]/10 px-4 py-2">
-                      <span className="text-sm font-medium text-[#e89d79]">Key Outcome: Boat enters charter service cleanly and professionally.</span>
+                    <div className="mt-4 rounded-lg bg-[#EE9739]/10 px-4 py-2">
+                      <span className="text-sm font-medium text-[#EE9739]">Key Outcome: Boat enters charter service cleanly and professionally.</span>
                     </div>
                   </div>
                 </div>
@@ -379,28 +379,28 @@ export default function OwnerProgramPage() {
         <div className="container mx-auto px-4">
           <div className="mx-auto max-w-5xl">
             <div className="grid gap-8 lg:grid-cols-2">
-              <Card className="border-2 border-[#e89d79]">
+              <Card className="border-2 border-[#EE9739]">
                 <CardContent className="p-8">
                   <h3 className="mb-4 text-xl font-bold text-[#061625]">Optional Enhancements</h3>
                   <ul className="space-y-3 text-muted-foreground">
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>SLC or Bareboat Charter Master assessment during training</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>Owner logbook sign-off</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>Post-season performance review session</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>Annual owner refresher sail</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>Remote quarterly financial and maintenance review</span>
                     </li>
                   </ul>
@@ -413,23 +413,23 @@ export default function OwnerProgramPage() {
                   <p className="mb-4 text-sm text-muted-foreground">This program directly reduces:</p>
                   <ul className="space-y-3 text-muted-foreground">
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>Insurance issues and liability exposure</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>Crew turnover and management friction</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>Owner frustration and unrealistic expectations</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>Unexpected costs and maintenance surprises</span>
                     </li>
                     <li className="flex items-start gap-3">
-                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#e89d79]" />
+                      <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#EE9739]" />
                       <span>Reputation damage from unprepared ownership</span>
                     </li>
                   </ul>
@@ -576,15 +576,15 @@ export default function OwnerProgramPage() {
           <div className="mx-auto max-w-4xl text-center">
             <h3 className="mb-6 text-2xl font-bold text-[#061625]">Explore More Training Options</h3>
             <div className="flex flex-wrap justify-center gap-3 text-sm">
-              <Link href="/training" className="text-[#e89d79] hover:underline">All Training Programs</Link>
+              <Link href="/training" className="text-[#EE9739] hover:underline">All Training Programs</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/training/day-skipper" className="text-[#e89d79] hover:underline">BVI Sailing Courses</Link>
+              <Link href="/training/day-skipper" className="text-[#EE9739] hover:underline">BVI Sailing Courses</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/training/offshore-passages" className="text-[#e89d79] hover:underline">Caribbean Offshore Passages</Link>
+              <Link href="/training/offshore-passages" className="text-[#EE9739] hover:underline">Caribbean Offshore Passages</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/bali" className="text-[#e89d79] hover:underline">New Bali Catamarans</Link>
+              <Link href="/bali" className="text-[#EE9739] hover:underline">New Bali Catamarans</Link>
               <span className="text-muted-foreground">•</span>
-              <Link href="/charter-ownership" className="text-[#e89d79] hover:underline">Charter Ownership Program</Link>
+              <Link href="/charter-ownership" className="text-[#EE9739] hover:underline">Charter Ownership Program</Link>
             </div>
           </div>
         </div>

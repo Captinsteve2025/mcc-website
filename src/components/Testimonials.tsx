@@ -42,7 +42,7 @@ export function Testimonials() {
           <div className="flex items-center justify-center gap-2 mb-4">
             <div className="flex items-center gap-1">
               {Array.from({ length: 5 }).map((_, i) => (
-                <Star key={i} className="w-5 h-5 fill-[#e89d79] text-[#e89d79]" />
+                <Star key={i} className="w-5 h-5 fill-[#EE9739] text-[#EE9739]" />
               ))}
             </div>
             <span className="text-lg font-semibold text-foreground">5.0 Rating</span>
@@ -79,12 +79,12 @@ export function Testimonials() {
                 key={testimonial.id}
                 className="bg-card rounded-xl p-6 md:p-8 luxury-shadow transition-all duration-500"
               >
-                <Quote className="w-8 h-8 text-[#e89d79]/30 mb-4" />
+                <Quote className="w-8 h-8 text-[#EE9739]/30 mb-4" />
                 <div className="flex gap-1 mb-4">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <Star
                       key={`star-${testimonial.id}-${i}`}
-                      className={`w-4 h-4 ${i < testimonial.rating ? "fill-[#e89d79] text-[#e89d79]" : "text-gray-300"}`}
+                      className={`w-4 h-4 ${i < testimonial.rating ? "fill-[#EE9739] text-[#EE9739]" : "text-gray-300"}`}
                     />
                   ))}
                 </div>
@@ -121,7 +121,7 @@ export function Testimonials() {
                 setCurrentIndex(i);
               }}
               className={`w-2 h-2 rounded-full transition-all ${
-                i === currentIndex ? "bg-[#e89d79] w-6" : "bg-gray-300 hover:bg-gray-400"
+                i === currentIndex ? "bg-[#EE9739] w-6" : "bg-gray-300 hover:bg-gray-400"
               }`}
               aria-label={`Go to page ${i + 1}`}
             />

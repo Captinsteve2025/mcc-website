@@ -39,12 +39,12 @@ export function YachtCrewSection({ crew, yachtId }: { crew: CrewProfile[]; yacht
               />
             ) : (
               <span className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-[#061625]/5" aria-hidden="true">
-                <Users className="h-10 w-10 text-[#e89d79]" />
+                <Users className="h-10 w-10 text-[#EE9739]" />
               </span>
             )}
             <div className="min-w-0">
               <h3 className="font-display text-xl italic text-[#061625]">{member.name}</h3>
-              <p className="text-sm font-medium uppercase tracking-wide text-[#e89d79]">{member.role}</p>
+              <p className="text-sm font-medium uppercase tracking-wide text-[#EE9739]">{member.role}</p>
               {member.nationality && <p className="mt-1 text-sm text-[#061625]/70">Nationality: {member.nationality}</p>}
               {member.languages && <p className="text-sm text-[#061625]/70">Languages: {member.languages}</p>}
               {member.bio && (

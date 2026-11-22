@@ -43,8 +43,8 @@ export function MobileNav({ currentPage, variant = "light" }: MobileNavProps) {
                 onClick={() => setIsOpen(false)}
                 className={`block py-3 text-lg font-medium transition-colors ${
                   currentPage === item.name
-                    ? "text-[#e89d79]"
-                    : "text-foreground hover:text-[#e89d79]"
+                    ? "text-[#EE9739]"
+                    : "text-foreground hover:text-[#EE9739]"
                 }`}
               >
                 {item.name}
@@ -58,7 +58,7 @@ export function MobileNav({ currentPage, variant = "light" }: MobileNavProps) {
             >
               <Phone className="w-4 h-4" /> +1 (786) 520-1558
             </a>
-            <Button asChild className="w-full bg-[#e89d79] hover:bg-[#e89d79]/90 text-white">
+            <Button asChild className="w-full bg-[#EE9739] hover:bg-[#EE9739]/90 text-white">
               <Link href="#contact" onClick={() => setIsOpen(false)}>
                 Enquire Now
               </Link>

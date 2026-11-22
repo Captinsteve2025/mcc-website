@@ -191,7 +191,7 @@ export default async function YachtDetailPage({
             <p className="mt-2 text-white/80">
               {[builder, year !== null ? `Built ${year}` : null].filter(Boolean).join(" | ") || (yachtType ?? "Charter yacht")}
             </p>
-            <p className="mt-3 font-display text-2xl italic text-[#e89d79]">{heroPrice}</p>
+            <p className="mt-3 font-display text-2xl italic text-[#EE9739]">{heroPrice}</p>
             <YachtCtaButtons yachtId={id} hasLiveData={availability.hasLiveData} />
           </div>
         </section>
@@ -207,7 +207,7 @@ export default async function YachtDetailPage({
             <dl className="mt-8 grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
               {quickSpecs.map(({ icon: Icon, label, value }) => (
                 <div key={label} className="rounded-lg bg-white p-4 shadow-sm">
-                  <Icon className="h-5 w-5 text-[#e89d79]" aria-hidden="true" />
+                  <Icon className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
                   <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">{label}</dt>
                   <dd className="text-[#061625]">{value}</dd>
                 </div>
@@ -259,21 +259,21 @@ export default async function YachtDetailPage({
                 <dl className="grid gap-3 sm:grid-cols-3">
                   {accommodation.pax !== null && (
                     <div className="rounded-lg bg-white p-4 shadow-sm">
-                      <Users className="h-5 w-5 text-[#e89d79]" aria-hidden="true" />
+                      <Users className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
                       <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Guests</dt>
                       <dd className="text-[#061625]">Up to {accommodation.pax}</dd>
                     </div>
                   )}
                   {accommodation.cabins !== null && (
                     <div className="rounded-lg bg-white p-4 shadow-sm">
-                      <BedDouble className="h-5 w-5 text-[#e89d79]" aria-hidden="true" />
+                      <BedDouble className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
                       <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Cabins</dt>
                       <dd className="text-[#061625]">{accommodation.cabins}</dd>
                     </div>
                   )}
                   {accommodation.bathrooms && (
                     <div className="rounded-lg bg-white p-4 shadow-sm">
-                      <Snowflake className="h-5 w-5 text-[#e89d79]" aria-hidden="true" />
+                      <Snowflake className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
                       <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Bathrooms</dt>
                       <dd className="text-[#061625]">{accommodation.bathrooms}</dd>
                     </div>
@@ -334,7 +334,7 @@ export default async function YachtDetailPage({
                 </p>
                 {(preferredDates || guests) && (
                   <p className="mb-5 flex items-start gap-2 rounded-lg bg-white/10 p-3 text-xs text-white/90">
-                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
+                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#EE9739]" aria-hidden="true" />
                     <span>
                       {preferredDates && <>Dates carried from your search: {preferredDates}. </>}
                       {guests && <>Guests: {guests}. </>}
@@ -365,7 +365,7 @@ export default async function YachtDetailPage({
                 <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                   {watersports.map((item) => (
                     <li key={item} className="flex items-center gap-2.5 rounded-lg bg-white p-4 text-sm text-[#061625] shadow-sm">
-                      <Waves className="h-5 w-5 shrink-0 text-[#e89d79]" aria-hidden="true" />
+                      <Waves className="h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
                       {item}
                     </li>
                   ))}
@@ -456,7 +456,7 @@ export default async function YachtDetailPage({
             {/* --- Availability (calendar lives above; this is the terms note) --- */}
             <section className="mt-14 rounded-xl bg-white p-6 shadow-sm">
               <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                <CalendarDays className="h-8 w-8 shrink-0 text-[#e89d79]" aria-hidden="true" />
+                <CalendarDays className="h-8 w-8 shrink-0 text-[#EE9739]" aria-hidden="true" />
                 <div className="flex-1">
                   <h3 className="font-display text-xl italic text-[#061625]">Booking conditions</h3>
                   <p className="text-sm text-[#061625]/70">

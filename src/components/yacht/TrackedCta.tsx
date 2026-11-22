@@ -13,7 +13,7 @@ interface TrackedCtaProps {
 }
 
 const variantClasses = {
-  primary: "bg-[#e89d79] text-[#061625] shadow-lg hover:bg-[#d88a66] hover:shadow-xl hover:scale-105",
+  primary: "bg-[#EE9739] text-[#061625] shadow-lg hover:bg-[#EA6F33] hover:shadow-xl hover:scale-105",
   secondary: "border border-white/60 bg-transparent text-white hover:bg-white/10",
   light: "bg-[#061625] text-white shadow-lg hover:bg-[#0a2540] hover:shadow-xl hover:scale-105",
 };
@@ -26,7 +26,7 @@ export function TrackedCta({ href, label, eventName, yachtSlug, variant = "prima
         if (eventName) trackEvent(eventName, { yacht: yachtSlug });
       }}
       className={cn(
-        "inline-flex min-h-12 items-center justify-center gap-3 rounded-full px-8 py-4 text-base font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e89d79] focus-visible:ring-offset-2",
+        "inline-flex min-h-12 items-center justify-center gap-3 rounded-full px-8 py-4 text-base font-medium transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739] focus-visible:ring-offset-2",
         variantClasses[variant],
         className
       )}
@@ -50,7 +50,7 @@ export function TrackedLink({ href, label, eventName, yachtSlug, className }: Tr
       href={href}
       onClick={() => trackEvent(eventName, { yacht: yachtSlug })}
       className={cn(
-        "font-medium underline underline-offset-4 transition-colors hover:text-[#e89d79] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e89d79]",
+        "font-medium underline underline-offset-4 transition-colors hover:text-[#EE9739] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739]",
         className
       )}
     >

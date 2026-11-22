@@ -14,9 +14,9 @@ export function YachtFAQ({ yachtName, faqs }: { yachtName: string; faqs: { quest
           <div className="divide-y divide-[#061625]/15 border-y border-[#061625]/15">
             {faqs.map((faq) => (
               <details key={faq.question} className="group py-5">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-md font-display text-xl italic text-[#061625] transition-colors hover:text-[#d88a66] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e89d79] [&::-webkit-details-marker]:hidden">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-md font-display text-xl italic text-[#061625] transition-colors hover:text-[#EA6F33] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739] [&::-webkit-details-marker]:hidden">
                   {faq.question}
-                  <ChevronDown className="h-5 w-5 shrink-0 text-[#e89d79] transition-transform duration-300 group-open:rotate-180" aria-hidden="true" />
+                  <ChevronDown className="h-5 w-5 shrink-0 text-[#EE9739] transition-transform duration-300 group-open:rotate-180" aria-hidden="true" />
                 </summary>
                 <p className="mt-3 pr-8 text-[15px] leading-[1.6] text-[#061625]/80">{faq.answer}</p>
               </details>

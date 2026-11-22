@@ -26,6 +26,10 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
   },
+  icons: {
+    icon: "/images/icon.png",
+    apple: "/apple-touch-icon.png",
+  },
 };
 
 export default function RootLayout({
@@ -44,7 +48,7 @@ export default function RootLayout({
         {/* Skip link for accessibility */}
         <a
           href="#main-content"
-          className="skip-link sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-[100] focus:bg-[#FF7F50] focus:text-white focus:px-4 focus:py-2"
+          className="skip-link sr-only focus:not-sr-only focus:absolute focus:top-0 focus:left-0 focus:z-[100] focus:bg-[#EE9739] focus:text-white focus:px-4 focus:py-2"
         >
           Skip to main content
         </a>

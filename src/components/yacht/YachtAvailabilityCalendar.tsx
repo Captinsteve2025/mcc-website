@@ -119,7 +119,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
     return (
       <div className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <CalendarDays className="h-6 w-6 shrink-0 text-[#e89d79]" aria-hidden="true" />
+          <CalendarDays className="h-6 w-6 shrink-0 text-[#EE9739]" aria-hidden="true" />
           <div className="min-w-0 flex-1">
             <h3 className="font-display text-lg italic text-[#061625]">Availability data currently unavailable</h3>
             <p className="mt-0.5 text-sm text-[#061625]/70">
@@ -129,7 +129,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
           </div>
           <a
             href="#enquire"
-            className="shrink-0 rounded-full bg-[#e89d79] px-5 py-2.5 text-center text-sm font-semibold text-[#061625] transition-colors hover:bg-[#d88a66]"
+            className="shrink-0 rounded-full bg-[#EE9739] px-5 py-2.5 text-center text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]"
           >
             Ask about your dates
           </a>
@@ -205,7 +205,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
                       aria-pressed={selected}
                       className={`relative aspect-square rounded-md text-xs tabular-nums transition-colors ${
                         selected
-                          ? "bg-[#e89d79] font-bold text-[#061625] ring-2 ring-[#061625] ring-offset-1"
+                          ? "bg-[#EE9739] font-bold text-[#061625] ring-2 ring-[#061625] ring-offset-1"
                           : ""
                       } ${!selected && style && !isPast ? style.cell : !selected ? "text-[#061625]/70" : ""} ${
                         isPast ? "cursor-default text-[#061625]/25 line-through" : "cursor-pointer hover:ring-1 hover:ring-[#061625]/20"
@@ -226,7 +226,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
 
       <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5 text-xs text-[#061625]/70" aria-label="Colour legend">
         <li className="flex items-center gap-1.5">
-          <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#e89d79]" aria-hidden="true" />
+          <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#EE9739]" aria-hidden="true" />
           Your selected dates
         </li>
         {(Object.keys(STATUS_STYLES) as Array<keyof typeof STATUS_STYLES>).map((key) => (
@@ -242,7 +242,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
       </ul>
 
       {selectStart && (
-        <div className="mt-3 rounded-lg bg-[#e89d79]/15 p-3 text-sm text-[#061625]" role="status">
+        <div className="mt-3 rounded-lg bg-[#EE9739]/15 p-3 text-sm text-[#061625]" role="status">
           {selectEnd ? (
             <>
               <p className="font-medium">
@@ -257,7 +257,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
               </p>
               <a
                 href="#enquire"
-                className="mt-2 inline-block rounded-full bg-[#e89d79] px-4 py-2 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#d88a66]"
+                className="mt-2 inline-block rounded-full bg-[#EE9739] px-4 py-2 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]"
               >
                 Continue to proposal form
               </a>

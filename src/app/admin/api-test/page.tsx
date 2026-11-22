@@ -164,14 +164,14 @@ export default function AdminApiTestPage() {
             onChange={(e) => setToken(e.target.value)}
             autoComplete="off"
             required
-            className="w-full rounded-md border border-[#061625]/20 bg-white px-4 py-3 text-[#061625] focus:outline-none focus:ring-2 focus:ring-[#e89d79]"
+            className="w-full rounded-md border border-[#061625]/20 bg-white px-4 py-3 text-[#061625] focus:outline-none focus:ring-2 focus:ring-[#EE9739]"
             placeholder="Enter ADMIN_API_TOKEN"
           />
         </label>
         <button
           type="submit"
           disabled={loading || !token}
-          className="rounded-full bg-[#e89d79] px-6 py-3 text-sm font-medium text-[#061625] transition-colors hover:bg-[#d88a66] disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-[#EE9739] px-6 py-3 text-sm font-medium text-[#061625] transition-colors hover:bg-[#EA6F33] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? "Testing…" : "Run diagnostic"}
         </button>
@@ -203,7 +203,7 @@ export default function AdminApiTestPage() {
               onClick={() => setYachtIdInput(y.id)}
               className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
                 yachtIdInput === y.id
-                  ? "border-[#e89d79] bg-[#e89d79]/15 text-[#061625]"
+                  ? "border-[#EE9739] bg-[#EE9739]/15 text-[#061625]"
                   : "border-[#061625]/20 text-[#061625]/70 hover:bg-[#061625]/5"
               }`}
             >
@@ -218,7 +218,7 @@ export default function AdminApiTestPage() {
             onChange={(e) => setYachtIdInput(e.target.value)}
             autoComplete="off"
             spellCheck={false}
-            className="w-full rounded-md border border-[#061625]/20 bg-white px-4 py-3 font-mono text-sm text-[#061625] focus:outline-none focus:ring-2 focus:ring-[#e89d79]"
+            className="w-full rounded-md border border-[#061625]/20 bg-white px-4 py-3 font-mono text-sm text-[#061625] focus:outline-none focus:ring-2 focus:ring-[#EE9739]"
             placeholder="CYA yacht id"
           />
           <button
@@ -306,7 +306,7 @@ export default function AdminApiTestPage() {
           </div>
 
           {typeof result.body.likelyCause === "string" && (
-            <div className="rounded-lg border border-[#e89d79]/40 bg-[#e89d79]/10 p-4">
+            <div className="rounded-lg border border-[#EE9739]/40 bg-[#EE9739]/10 p-4">
               <p className="text-sm font-semibold text-[#061625]">Likely explanation</p>
               <p className="mt-1 text-sm text-[#061625]/80">{result.body.likelyCause}</p>
             </div>
@@ -430,7 +430,7 @@ function AvailabilityReport({ body }: { body: Record<string, unknown> }) {
           </table>
         </div>
       ) : (
-        <p className="rounded-md bg-[#e89d79]/10 px-4 py-3 text-sm text-[#061625]/80">
+        <p className="rounded-md bg-[#EE9739]/10 px-4 py-3 text-sm text-[#061625]/80">
           Zero booking records in the response. This is NOT proof the yacht is free: it means no calendar
           records are visible to the key for this yacht (or the account holds none at all — see the scope
           finding above).
