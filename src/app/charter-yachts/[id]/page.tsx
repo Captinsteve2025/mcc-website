@@ -20,7 +20,10 @@ import { Footer } from "@/components/Footer";
 import { YachtEnquiryForm } from "@/components/yacht/YachtEnquiryForm";
 import { YachtHeroGallery } from "@/components/yacht/YachtHeroGallery";
 import { YachtSectionNav, type SectionTab } from "@/components/yacht/YachtSectionNav";
+import { YachtAvailabilityCalendar } from "@/components/yacht/YachtAvailabilityCalendar";
+import { YachtCrewSection } from "@/components/yacht/YachtCrewSection";
 import { getYachtDetail } from "@/lib/cya";
+import { getYachtCrew, getYachtAvailability } from "@/lib/yacht-content";
 import {
   beamWithUnit,
   cleanText,
@@ -89,6 +92,8 @@ export default async function YachtDetailPage({
 
   if (!yacht) notFound();
 
+  const [crew, availability] = await Promise.all([getYachtCrew(id), getYachtAvailability(id)]);
+
   const name = str(yacht.yachtName) ?? "Unnamed yacht";
   const gallery = collectGallery(yacht);
   const accommodation = parseAccommodation(yacht);
@@ -153,11 +158,13 @@ export default async function YachtDetailPage({
 
   // Only render tabs for sections that have real data for this yacht.
   const tabs: SectionTab[] = [{ id: "overview", label: "Overview" }];
+  tabs.push({ id: "availability", label: "Availability" });
   if (accommodation.cabins !== null || accommodation.pax !== null || accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0)
     tabs.push({ id: "accommodation", label: "Accommodation" });
   if (gallery.length > 0) tabs.push({ id: "gallery", label: "Gallery" });
   if (watersports.length > 0) tabs.push({ id: "watersports", label: "Watersports" });
   if (amenities.length > 0) tabs.push({ id: "amenities", label: "Amenities" });
+  if (crew.length > 0) tabs.push({ id: "crew", label: "Crew" });
   if (seasons.length > 0) tabs.push({ id: "rates", label: "Rates" });
   tabs.push({ id: "enquire", label: "Enquire" });
 
@@ -203,6 +210,16 @@ export default async function YachtDetailPage({
               ))}
             </dl>
           )}
+
+          {/* Inline availability calendar — visible on page load, right after
+              the spec strip, before the long brochure content. */}
+          <div id="availability" className="mt-8 scroll-mt-32">
+            <YachtAvailabilityCalendar
+              yachtId={id}
+              ranges={availability.ranges}
+              lastUpdated={availability.lastUpdated}
+            />
+          </div>
         </section>
 
         <YachtSectionNav tabs={tabs} yachtId={id} />
@@ -330,6 +347,9 @@ export default async function YachtDetailPage({
               </section>
             )}
 
+            {/* --- Crew (only when approved profiles exist) --- */}
+            <YachtCrewSection crew={crew} yachtId={id} />
+
             {/* --- Charter rates --- */}
             {seasons.length > 0 && (
               <section className="mt-14">
@@ -392,15 +412,16 @@ export default async function YachtDetailPage({
               </section>
             )}
 
-            {/* --- Availability (not fabricated) --- */}
+            {/* --- Availability (calendar lives above; this is the terms note) --- */}
             <section className="mt-14 rounded-xl bg-white p-6 shadow-sm">
               <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                 <CalendarDays className="h-8 w-8 shrink-0 text-[#e89d79]" aria-hidden="true" />
                 <div className="flex-1">
-                  <h3 className="font-display text-xl italic text-[#061625]">Live availability</h3>
+                  <h3 className="font-display text-xl italic text-[#061625]">Booking conditions</h3>
                   <p className="text-sm text-[#061625]/70">
-                    Charter calendars are confirmed personally by our team, so your dates are always checked against
-                    the real schedule before any commitment.
+                    Charter availability shown above reflects confirmed dates on record and is re-checked with you
+                    before any commitment. Select your dates on the calendar or in the form, and our team confirms
+                    everything personally with your proposal.
                   </p>
                 </div>
                 <a

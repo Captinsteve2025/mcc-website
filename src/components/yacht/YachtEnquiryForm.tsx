@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type FormEvent } from "react";
+import { useEffect } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -97,6 +98,19 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
   const [serverError, setServerError] = useState<string | null>(null);
   const [requestId] = useState(() => crypto.randomUUID());
   const startTracked = useRef(false);
+
+  // The availability calendar publishes selected dates on this event; the
+  // form adopts them so calendar choices flow straight into the enquiry.
+  useEffect(() => {
+    const onDates = (event: Event) => {
+      const detail = (event as CustomEvent<{ dates?: string }>).detail;
+      if (detail && typeof detail.dates === "string" && detail.dates) {
+        setValues((prev) => ({ ...prev, preferredDates: detail.dates as string }));
+      }
+    };
+    window.addEventListener("mcc:yacht-dates", onDates);
+    return () => window.removeEventListener("mcc:yacht-dates", onDates);
+  }, []);
 
   const set = <K extends keyof FormValues>(key: K, value: FormValues[K]) => {
     setValues((prev) => ({ ...prev, [key]: value }));
