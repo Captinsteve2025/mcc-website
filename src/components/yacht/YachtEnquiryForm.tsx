@@ -11,6 +11,9 @@ import { MCC_PHONE_DISPLAY, MCC_PHONE_HREF } from "@/lib/managed-yachts";
 interface YachtEnquiryFormProps {
   yachtSlug: string;
   yachtName: string;
+  /** Values carried from the visitor's search, offered as starting points. */
+  initialDates?: string;
+  initialGuests?: string;
 }
 
 interface FormValues {
@@ -81,8 +84,12 @@ const inputClass = "h-11 rounded-md border-[#CBD5DF] bg-white text-[#061625] pla
 const labelClass = "mb-1.5 block text-sm font-medium text-[#061625]";
 const errorClass = "mt-1.5 text-sm text-[#B42318]";
 
-export function YachtEnquiryForm({ yachtSlug, yachtName }: YachtEnquiryFormProps) {
-  const [values, setValues] = useState<FormValues>(EMPTY_VALUES);
+export function YachtEnquiryForm({ yachtSlug, yachtName, initialDates, initialGuests }: YachtEnquiryFormProps) {
+  const [values, setValues] = useState<FormValues>({
+    ...EMPTY_VALUES,
+    preferredDates: initialDates ?? "",
+    guestCount: initialGuests ?? "",
+  });
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<"idle" | "submitting" | "saved" | "error">("idle");
   const [serverError, setServerError] = useState<string | null>(null);

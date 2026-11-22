@@ -26,9 +26,26 @@ export function Hero() {
 
   // Search form state
   const [destination, setDestination] = useState("");
-  const [dates, setDates] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [yachtType, setYachtType] = useState("");
   const [guests, setGuests] = useState("");
+
+  const searchParams = () => {
+    const params = new URLSearchParams();
+    if (destination) params.set("destination", destination);
+    if (startDate) params.set("start", startDate);
+    if (endDate) params.set("end", endDate);
+    if (yachtType) params.set("type", yachtType);
+    if (guests) params.set("guests", guests);
+    return params.toString();
+  };
+
+  const qs = searchParams();
+
+  const handleSearch = () => {
+    window.location.href = `/charter-yachts?${qs}`;
+  };
 
   useEffect(() => {
     const video = videoRef.current;
@@ -49,14 +66,6 @@ export function Hero() {
         setIsPlaying(true);
       }).catch(console.error);
     }
-  };
-
-  const handleSearch = () => {
-    const params = new URLSearchParams();
-    if (destination) params.set("destination", destination);
-    if (yachtType) params.set("type", yachtType);
-    if (guests) params.set("guests", guests);
-    window.location.href = `/search?${params.toString()}`;
   };
 
   const scrollToContent = () => {
@@ -135,13 +144,22 @@ export function Hero() {
                 <label className="absolute -top-6 left-2 text-xs text-white/70 font-medium">When</label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
-                  <input
-                    type="text"
-                    placeholder="Choose dates"
-                    value={dates}
-                    onChange={(e) => setDates(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 bg-white/10 border border-white/20 rounded-md text-white placeholder:text-white/50 text-sm focus:outline-none focus:border-white/40"
-                  />
+                  <div className="flex gap-1.5">
+                    <input
+                      type="date"
+                      aria-label="Charter start date"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      className="w-full h-12 min-w-0 px-2 bg-white/10 border border-white/20 rounded-md text-white text-sm focus:outline-none focus:border-white/40 [color-scheme:dark]"
+                    />
+                    <input
+                      type="date"
+                      aria-label="Charter end date"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      className="w-full h-12 min-w-0 px-2 bg-white/10 border border-white/20 rounded-md text-white text-sm focus:outline-none focus:border-white/40 [color-scheme:dark]"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -171,7 +189,11 @@ export function Hero() {
                 <div className="relative">
                   <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/50" />
                   <input
-                    type="text"
+                    type="number"
+                    min={1}
+                    max={12}
+                    inputMode="numeric"
+                    aria-label="Number of guests"
                     placeholder="How many"
                     value={guests}
                     onChange={(e) => setGuests(e.target.value)}
@@ -195,7 +217,7 @@ export function Hero() {
         {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <Button asChild size="lg" className="bg-accent hover:bg-accent/90 text-white px-8 py-6 text-base">
-            <Link href="/search">Explore Yachts</Link>
+            <Link href={qs ? `/charter-yachts?${qs}` : "/charter-yachts"}>Explore Yachts</Link>
           </Button>
           <Button asChild variant="outline" size="lg" className="border-white/50 text-white hover:bg-white/10 px-8 py-6 text-base bg-transparent">
             <Link href="#enquire">Get Expert Advice</Link>
