@@ -246,11 +246,11 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
         </div>
       )}
 
-      {lastUpdated && (
+      {(lastUpdated || hasLiveData) && (
         <p className="mt-3 text-xs text-[#061625]/50">
-          {hasLiveData ? "Live calendar data from Central Yacht Agent, last updated " : "Availability records last updated "}
-          {new Date(lastUpdated).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}.
-          Always re-confirmed before booking.
+          {hasLiveData ? "Live calendar data from Central Yacht Agent" : "Availability records last updated "}
+          {lastUpdated ? `, last updated ${new Date(lastUpdated).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}` : ""}
+          . Always re-confirmed before booking.
         </p>
       )}
     </div>
