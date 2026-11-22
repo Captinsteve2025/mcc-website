@@ -10,6 +10,7 @@
     "format": "bunx biome format --write"
   },
   "dependencies": {
+    "@netlify/plugin-nextjs": "^5.16.8",
     "@radix-ui/react-checkbox": "^1.1.4",
     "@radix-ui/react-dialog": "^1.1.6",
     "@radix-ui/react-scroll-area": "^1.2.10",
