@@ -104,10 +104,10 @@ export function Header() {
             </div>
 
             <Link
-              href="/search"
+              href="/charter-yachts"
               className={`text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#FF7F50] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#FF7F50]" : "text-white hover:text-white/80"}`}
             >
-              Browse Yachts
+              All Charter Yachts
             </Link>
 
             <Link
@@ -178,6 +178,15 @@ export function Header() {
                           {dest.name}
                         </Link>
                       ))}
+                    </div>
+                    <div>
+                      <Link
+                        href="/charter-yachts"
+                        onClick={() => setIsOpen(false)}
+                        className="block py-2 text-[#061625] hover:text-[#FF7F50] transition-colors font-semibold focus:outline-none focus-visible:underline"
+                      >
+                        All Charter Yachts
+                      </Link>
                     </div>
                     <div>
                       <Link
