@@ -225,6 +225,9 @@ export type SearchCriteria = {
   areaNames: string[];
   typeWords: string[];
   minGuests: number | null;
+  /** Yacht-name search: sent to CYA as searchTerm AND verified locally, since
+   *  live checks showed CYA may ignore searchTerm (totals unchanged). */
+  nameQuery?: string;
 };
 
 export type YachtSearchSession = {
@@ -351,11 +354,30 @@ export async function startYachtSearchSession(
   let localMatchCount: number | null = null;
   let unverifiableAreaCount = 0;
   const loweredAreaNames = criteria.areaNames.map((n) => n.toLowerCase());
+  // Yacht-name matching is always applied locally. CYA's searchTerm is
+  // documented as "Search by yacht name", but live checks must confirm it —
+  // an unconfirmed searchTerm cannot be trusted to hide non-matching yachts,
+  // and conversely a word-for-word prefix match could miss tokens mid-name.
+  // The local matcher is case-insensitive, whitespace- and punctuation-
+  // tolerant (all whitespace runs and -/. commas collapse to one space).
+  const nameQuery = (criteria.nameQuery ?? "").trim();
+  const norm = (s: string) => s.toLowerCase().replace(/[\s\-–—/.,'’]+/g, " ").replace(/\s+/g, " ").trim();
+  const normedQuery = norm(nameQuery);
+  const queryTokens = normedQuery.split(" ").filter(Boolean);
+  const nameMatches = (y: Yacht): boolean => {
+    if (!normedQuery) return true;
+    const name = norm(typeof y.yachtName === "string" ? y.yachtName : "");
+    if (!name) return false;
+    if (name.includes(normedQuery)) return true;
+    // Every query token must appear in the yacht name ("endless h" etc.).
+    return queryTokens.every((t) => name.includes(t));
+  };
   // Local area-label verification only runs when CYA did NOT confirm the
   // destination filter — a confirmed server filter already proves coverage.
   // Evaluated lazily: serverFilterApplied is only known after the probe below.
   const locallyVerifiesArea = () => loweredAreaNames.length > 0 && !serverFilterApplied;
   const keepYacht = (y: Yacht): boolean => {
+    if (!nameMatches(y)) return false;
     if (locallyVerifiesArea()) {
       if (yachtSeasonAreaNames(y).length === 0) {
         unverifiableAreaCount += 1;
@@ -373,14 +395,16 @@ export async function startYachtSearchSession(
     try {
       // Confirmation probe: filtered page 1 vs identical unfiltered page 1.
       const [withFilters, withoutFilters] = await Promise.all([
-        fetchPage({ page: 1, limit: 10, searchTerm: "", filters: documentedFilters }, "filtered_page1"),
+        fetchPage({ page: 1, limit: 10, searchTerm: nameQuery, filters: documentedFilters }, "filtered_page1"),
         fetchPage({ page: 1, limit: 10, searchTerm: "", filters: {} }, "unfiltered_page1"),
       ]);
       const filteredTotal = withFilters.total;
       unfilteredTotal = withoutFilters.total;
       const noTypeViolations = !withFilters.yachts.some((y) => typeViolated(y, criteria.typeWords));
+      const noNameViolations = !withFilters.yachts.some((y) => !nameMatches(y));
       serverFilterApplied = Boolean(
         noTypeViolations &&
+          noNameViolations &&
           filteredTotal !== null &&
           unfilteredTotal !== null &&
           filteredTotal < unfilteredTotal
@@ -424,12 +448,32 @@ export async function startYachtSearchSession(
     }
   }
 
+  // searchTerm confirmation when no destination/type filters are set: whether
+  // CYA honored the name query must be confirmed before its totals can be
+  // trusted. Confirmed when page 1's total is strictly smaller than the
+  // unfiltered total and every returned record matches locally.
+  if (!hasServerFilters && normedQuery) {
+    try {
+      const [withTerm, withoutTerm] = await Promise.all([
+        fetchPage({ page: 1, limit: 10, searchTerm: nameQuery, filters: {} }, "searchterm_probe"),
+        fetchPage({ page: 1, limit: 10, searchTerm: "", filters: {} }, "unfiltered_page1"),
+      ]);
+      unfilteredTotal = withoutTerm.total;
+      const recordsOk = !withTerm.yachts.some((y) => !nameMatches(y));
+      const totalShrunk = withTerm.total !== null && unfilteredTotal !== null && withTerm.total < unfilteredTotal;
+      serverFilterApplied = recordsOk && totalShrunk;
+      serverTotal = serverFilterApplied ? withTerm.total : null;
+    } catch {
+      serverFilterApplied = false;
+    }
+  }
+
   // Capacity is never a CYA filter: when a minimum guest count is requested,
   // walk the best inventory available (the confirmed server-filtered set, or
   // the unfiltered catalogue with type words applied locally) and keep only
   // yachts whose pax is known and sufficient.
   const guestWalk = criteria.minGuests !== null;
-  const fallbackWalk = hasServerFilters && !serverFilterApplied && !guestWalk;
+  const fallbackWalk = (hasServerFilters && !serverFilterApplied && !guestWalk) || (!hasServerFilters && !serverFilterApplied && Boolean(normedQuery));
 
   if (guestWalk && !lightweight) {
     const serverFilters = serverFilterApplied ? documentedFilters : {};
@@ -459,8 +503,8 @@ export async function startYachtSearchSession(
     try {
       const walk = await walkInventory(
         fetchPage,
-        (p) => ({ page: p, limit: WALK_PAGE_SIZE, searchTerm: "", filters: {} }),
-        "unfiltered",
+        (p) => ({ page: p, limit: WALK_PAGE_SIZE, searchTerm: nameQuery, filters: {} }),
+        "name_walk",
         keepYacht,
         unfilteredTotal
       );
@@ -492,14 +536,14 @@ export async function startYachtSearchSession(
     probeLog,
     async getPage(page, limit) {
       if (localYachts) {
-        // Local walk (guest capacity pass or fallback): serve from matches.
+        // Local walk (name/guest pass or fallback): serve from matches.
         return localYachts.slice((page - 1) * limit, page * limit);
       }
       if (hasServerFilters && serverFilterApplied) {
-        const { yachts } = await fetchPage({ page, limit, searchTerm: "", filters: documentedFilters }, `filtered_page${page}`);
+        const { yachts } = await fetchPage({ page, limit, searchTerm: nameQuery, filters: documentedFilters }, `filtered_page${page}`);
         return yachts;
       }
-      const { yachts } = await fetchPage({ page, limit, searchTerm: "", filters: {} }, `page${page}`);
+      const { yachts } = await fetchPage({ page, limit, searchTerm: nameQuery, filters: {} }, `page${page}`);
       return yachts;
     },
   };

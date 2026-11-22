@@ -4,6 +4,7 @@ import { ArrowRight, Users, BedDouble, Ruler, SlidersHorizontal, CalendarDays, T
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { YachtPhoto } from "@/components/yacht/YachtPhoto";
+import { YachtNameSearch } from "@/components/yacht/YachtNameSearch";
 import {
   startYachtSearchSession,
   getOperatingAreas,
@@ -29,6 +30,7 @@ type Filters = {
   end: string;
   type: string;
   guests: string;
+  name: string;
 };
 
 const TYPE_WORDS: Record<string, string[]> = {
@@ -49,6 +51,7 @@ function readFilters(searchParams: Record<string, string | string[] | undefined>
     end: one("end").slice(0, 10),
     type: one("type").slice(0, 30),
     guests: one("guests").slice(0, 3).replace(/\D/g, ""),
+    name: one("name").slice(0, 60),
   };
 }
 
@@ -131,7 +134,15 @@ function YachtCard({ yacht, detailHref }: { yacht: Yacht; detailHref: (id: strin
   );
 }
 
-function RefinementBar({ filters, basePath }: { filters: Filters; basePath: string }) {
+function RefinementBar({
+  filters,
+  basePath,
+  fetchSuggestions,
+}: {
+  filters: Filters;
+  basePath: string;
+  fetchSuggestions: (query: string) => Promise<string[]>;
+}) {
   const destinations = [
     { slug: "", name: "All Destinations" },
     { slug: "british-virgin-islands", name: "British Virgin Islands" },
@@ -154,6 +165,7 @@ function RefinementBar({ filters, basePath }: { filters: Filters; basePath: stri
   return (
     <form action={basePath} method="get" className="mb-10 rounded-lg bg-white p-4 shadow-sm">
       <div className="grid grid-cols-2 gap-3 md:grid-cols-6">
+        <YachtNameSearch defaultValue={filters.name} fetchSuggestions={fetchSuggestions} />
         <select
           name="destination"
           defaultValue={filters.destination}
@@ -215,6 +227,37 @@ function RefinementBar({ filters, basePath }: { filters: Filters; basePath: stri
   );
 }
 
+// Server-side suggestion source: matches yacht names from the full catalogue
+// walk (cached), case-insensitively, for the autocomplete list.
+async function fetchNameSuggestions(query: string): Promise<string[]> {
+  const norm = (s: string) => s.toLowerCase().replace(/[\s\-–—/.,'’]+/g, " ").replace(/\s+/g, " ").trim();
+  const normed = norm(query);
+  const tokens = normed.split(" ").filter(Boolean);
+  try {
+    const session = await startYachtSearchSession(
+      { areaIds: [], areaNames: [], typeWords: [], minGuests: null, nameQuery: query },
+      { lightweight: true }
+    );
+    // The lightweight session serves page 1 of the (server-filtered or local)
+    // matches; for suggestions we take the first page and filter by name.
+    const local = await session.getPage(1, 100);
+    const names = local
+      .map((y) => (typeof y.yachtName === "string" ? y.yachtName.trim() : ""))
+      .filter((n) => {
+        if (!n) return false;
+        const name = norm(n);
+        return name.includes(normed) || tokens.every((t) => name.includes(t));
+      });
+    return [...new Set(names)].sort((a, b) => {
+      const aStarts = norm(a).startsWith(normed) ? 0 : 1;
+      const bStarts = norm(b).startsWith(normed) ? 0 : 1;
+      return aStarts - bStarts || a.localeCompare(b);
+    }).slice(0, 8);
+  } catch {
+    return [];
+  }
+}
+
 export default async function CharterYachtsPage({
   searchParams,
 }: {
@@ -234,6 +277,7 @@ export default async function CharterYachtsPage({
   let localMatches: number | null = null;
   let regionNote: string | null = null;
   let unverifiableArea = false;
+  let searchTermUnconfirmed = false;
 
   try {
     const areas = filters.destination ? await getOperatingAreas() : [];
@@ -244,7 +288,7 @@ export default async function CharterYachtsPage({
       unmatchedDestination = true;
     } else {
       const typeWords = filters.type ? TYPE_WORDS[filters.type] ?? [filters.type.toLowerCase()] : [];
-      anyCriteria = Boolean(filters.destination) || typeWords.length > 0 || Boolean(filters.guests);
+      anyCriteria = Boolean(filters.destination) || typeWords.length > 0 || Boolean(filters.guests) || Boolean(filters.name);
       const session = await startYachtSearchSession({
         areaIds: matched.map((a) => a.id).filter(Boolean),
         // CYA's own labels for the mapped areas, used to verify yacht
@@ -252,11 +296,16 @@ export default async function CharterYachtsPage({
         areaNames: matched.map((a) => a.name),
         typeWords,
         minGuests: filters.guests ? Number(filters.guests) : null,
+        nameQuery: filters.name,
       });
       pageYachts = await session.getPage(page, PAGE_SIZE);
       checkedRecords = session.checkedRecordCount;
       localMatches = session.localMatchCount;
       if (session.unverifiableAreaCount > 0) unverifiableArea = true;
+      // An unconfirmed searchTerm means the served page could contain records
+      // CYA returned despite the name not matching; the session's local filter
+      // already excludes them, but CYA's total may include non-matches.
+      searchTermUnconfirmed = Boolean(filters.name) && !session.localWalkUsed && !session.serverFilterApplied;
       if (session.localWalkUsed) {
         // Local walk: its own checked/match counts are the only honest numbers.
         effectiveTotal = session.localTotal;
@@ -285,6 +334,7 @@ export default async function CharterYachtsPage({
     if (filters.end) params.set("end", filters.end);
     if (filters.type) params.set("type", filters.type);
     if (filters.guests) params.set("guests", filters.guests);
+    if (filters.name) params.set("name", filters.name);
     if (targetPage > 1) params.set("page", String(targetPage));
     const qs = params.toString();
     return qs ? `/charter-yachts?${qs}` : "/charter-yachts";
@@ -342,7 +392,7 @@ export default async function CharterYachtsPage({
       </section>
 
       <main className="container mx-auto flex-1 px-4 py-16 md:py-20">
-        <RefinementBar filters={filters} basePath="/charter-yachts" />
+        <RefinementBar filters={filters} basePath="/charter-yachts" fetchSuggestions={fetchNameSuggestions} />
 
         {loadError ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">{loadError}</p>
@@ -355,9 +405,20 @@ export default async function CharterYachtsPage({
             No matches found in the {checkedRecords} catalogue records checked so far — more records remain unchecked, so matching yachts may still exist. Try widening your search, or enquire and we will check the full inventory.
           </p>
         ) : pageYachts.length === 0 ? (
-          <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">
-            No matching yachts exist for this search in the live catalogue right now. Try widening your destination or guest count, or enquire — new yachts are added regularly.
-          </p>
+          <div className="rounded-lg bg-white p-8 text-center">
+            <p className="text-[#061625]/75">No yachts found</p>
+            {filters.name && (
+              <p className="mt-1 text-sm text-[#061625]/60">
+                No yacht named &ldquo;{filters.name}&rdquo; matches in the live catalogue.
+              </p>
+            )}
+            <Link
+              href="/charter-yachts"
+              className="mt-4 inline-block rounded-full border border-[#061625]/20 px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#061625]/5"
+            >
+              Clear the search
+            </Link>
+          </div>
         ) : (
           <>
             <ul className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
