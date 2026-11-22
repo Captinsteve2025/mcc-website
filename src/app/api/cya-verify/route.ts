@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
-import { getOperatingAreas, searchYachts, CyaApiError } from "@/lib/cya";
+import {
+  getOperatingAreasRaw,
+  normalizeOperatingAreas,
+  searchYachts,
+  getYachtDetail,
+  CyaApiError,
+} from "@/lib/cya";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -13,21 +19,30 @@ function adminTokenMatches(provided: string | null, expected: string | undefined
   return timingSafeEqual(a, b);
 }
 
-// Recursively collect the distinct field paths present in a JSON structure so
-// the report shows the real response shape without echoing full listings.
-function collectFieldPaths(value: unknown, prefix: string, out: Map<string, number>, depth = 0): void {
-  if (depth > 4) return;
+function jsonType(value: unknown): string {
+  if (value === null) return "null";
+  if (Array.isArray(value)) return "array";
+  return typeof value;
+}
+
+function describeJsonStructure(value: unknown, depth = 0, out: string[] = []): string[] {
+  if (depth > 2) return out;
   if (Array.isArray(value)) {
-    for (const item of value) collectFieldPaths(item, prefix + "[]", out, depth + 1);
-    return;
+    out.push(`array (${value.length} items)`);
+    if (value.length > 0) describeJsonStructure(value[0], depth + 1, out);
+    return out;
   }
   if (value && typeof value === "object") {
     for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-      const path = prefix ? `${prefix}.${key}` : key;
-      out.set(path, (out.get(path) ?? 0) + 1);
-      collectFieldPaths(child, path, out, depth + 1);
+      out.push(`${key}: ${jsonType(child)}${child && typeof child === "object" ? "" : ` = ${String(child).slice(0, 40)}`}`);
+      if (child && typeof child === "object") describeJsonStructure(child, depth + 1, out);
     }
   }
+  return out;
+}
+
+function errorInfo(err: unknown): string {
+  return err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.";
 }
 
 export async function GET(request: Request) {
@@ -45,52 +60,89 @@ export async function GET(request: Request) {
 
   const report: Record<string, unknown> = { mccAuth: "successful", executedServerSide: true };
 
-  // Task 2: operating areas
+  // --- Operating areas: report structure, then normalize ---
   try {
-    const areas = await getOperatingAreas();
-    report.operatingAreas = {
-      success: true,
-      count: areas.length,
-      sampleNames: areas.slice(0, 5).map((a) => String((a as { name?: unknown }).name ?? "")),
-      topLevelFields: [...new Set(areas.flatMap((a) => Object.keys(a)))],
-    };
+    const raw = await getOperatingAreasRaw();
+    const topLevel = describeJsonStructure(raw);
+    const normalized = normalizeOperatingAreas(raw);
+    report.operatingAreas = normalized
+      ? {
+          success: true,
+          httpStatus: 200,
+          validJson: true,
+          topLevelStructure: topLevel.slice(0, 30),
+          arrayLocation: normalized.arrayLocation,
+          count: normalized.areas.length,
+          samples: normalized.areas.slice(0, 5).map((a) => ({
+            id: String(a.id ?? a.area_id ?? a.uuid ?? "(no id field)"),
+            name: String(a.name ?? a.label ?? a.title ?? "(no name field)"),
+          })),
+        }
+      : {
+          success: false,
+          httpStatus: 200,
+          validJson: true,
+          topLevelStructure: topLevel.slice(0, 30),
+          note: "Response was valid JSON but no cruising-area array could be located in it.",
+        };
   } catch (err) {
-    report.operatingAreas = {
-      success: false,
-      error: err instanceof CyaApiError ? `${err.status}: ${err.message}` : "Network or unexpected error.",
-    };
+    report.operatingAreas = { success: false, error: errorInfo(err) };
   }
 
-  // Task 3: yacht inventory — empty search body returns unfiltered listings;
-  // the exact filter format still needs confirmation from CYA's interactive docs.
+  // --- Yacht search page 1 ---
+  const requestBody = { page: 1, limit: 10, searchTerm: "", filters: {} };
+  let page1Ids: string[] = [];
   try {
-    const search = await searchYachts({});
-    const fields = new Map<string, number>();
-    collectFieldPaths(search, "", fields);
-    const listings =
-      (Array.isArray(search) ? search : undefined) ??
-      (search.yachts as unknown[] | undefined) ??
-      (search.data as unknown[] | undefined) ??
-      (search.results as unknown[] | undefined) ??
-      (search.items as unknown[] | undefined) ??
-      [];
-    const first = listings[0] as Record<string, unknown> | undefined;
-    report.yachtSearch = {
+    const search = await searchYachts(requestBody);
+    const yachts = (search.yachts as Record<string, unknown>[] | undefined) ?? [];
+    page1Ids = yachts.map((y) => String(y.id ?? ""));
+    report.yachtSearchPage1 = {
       success: true,
-      listingsReturned: listings.length,
-      collectionFieldName: Array.isArray(search)
-        ? "(response is itself an array)"
-        : Object.keys(search).find((k) => Array.isArray((search as Record<string, unknown>)[k])) ?? null,
-      firstYachtId: first ? String(first.id ?? first.yacht_id ?? first.uuid ?? "(no id field found)") : null,
-      observedFields: [...fields.entries()]
-        .slice(0, 80)
-        .map(([path, count]) => `${path} (${count})`),
+      requestBody,
+      totalYachts: search.totalYachts ?? null,
+      listingsReturned: yachts.length,
+      firstYachtId: page1Ids[0] ?? null,
+      observedFields: yachts[0] ? Object.keys(yachts[0]) : [],
     };
   } catch (err) {
-    report.yachtSearch = {
-      success: false,
-      error: err instanceof CyaApiError ? `${err.status}: ${err.message}` : "Network or unexpected error.",
+    report.yachtSearchPage1 = { success: false, error: errorInfo(err) };
+  }
+
+  // --- Yacht search page 2: confirm pagination ---
+  try {
+    const search2 = await searchYachts({ ...requestBody, page: 2 });
+    const yachts2 = (search2.yachts as Record<string, unknown>[] | undefined) ?? [];
+    const page2Ids = yachts2.map((y) => String(y.id ?? ""));
+    const overlap = page2Ids.filter((id) => page1Ids.includes(id)).length;
+    report.yachtSearchPage2 = {
+      success: true,
+      listingsReturned: yachts2.length,
+      firstYachtId: page2Ids[0] ?? null,
+      idsDifferFromPage1: page2Ids.length > 0 && overlap < page2Ids.length,
+      overlappingIds: overlap,
+      totalYachts: search2.totalYachts ?? null,
     };
+  } catch (err) {
+    report.yachtSearchPage2 = { success: false, error: errorInfo(err) };
+  }
+
+  // --- Yacht detail for the first page-1 yacht ---
+  if (page1Ids[0]) {
+    try {
+      const detail = await getYachtDetail(page1Ids[0]);
+      report.yachtDetail = {
+        success: true,
+        yachtId: page1Ids[0],
+        presentFields: Object.keys(detail),
+        topLevelTypes: Object.fromEntries(
+          Object.entries(detail)
+            .slice(0, 40)
+            .map(([k, v]) => [k, jsonType(v)])
+        ),
+      };
+    } catch (err) {
+      report.yachtDetail = { success: false, error: errorInfo(err) };
+    }
   }
 
   return NextResponse.json(report);

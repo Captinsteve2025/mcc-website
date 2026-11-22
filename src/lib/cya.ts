@@ -1,10 +1,10 @@
 // Server-only Central Yacht Agent API client. Never import from client code:
 // it reads CYA_API_KEY from the environment and must not reach the browser.
 //
-// Domain headers follow the observed successful diagnostic (Test B: Origin +
-// Referer set to the registered domain produced HTTP 200 where the key alone
-// returned 403). CYA should confirm this header behavior is supported for
-// ongoing server-side integration.
+// Domain headers follow the observed successful diagnostic (Origin + Referer
+// set to the registered domain produced HTTP 200 where the key alone returned
+// 403). CYA should confirm this behavior is supported for ongoing
+// server-side integration.
 
 const DEFAULT_ALLOWED_ORIGIN = "https://mcc-website-one.vercel.app";
 
@@ -22,7 +22,7 @@ export class CyaApiError extends Error {
   }
 }
 
-export function getCyaConfig(): { key: string; baseUrl: string; origin: string } {
+function getCyaConfig(): { key: string; baseUrl: string; origin: string } {
   const key = process.env.CYA_API_KEY;
   const baseUrl = process.env.CYA_API_BASE;
   if (!key || !baseUrl) {
@@ -36,16 +36,6 @@ export function getCyaConfig(): { key: string; baseUrl: string; origin: string }
     key,
     baseUrl: parsed.toString().replace(/\/+$/, ""),
     origin: process.env.CYA_ALLOWED_ORIGIN ?? DEFAULT_ALLOWED_ORIGIN,
-  };
-}
-
-function cyaHeaders(origin: string, extra?: Record<string, string>): Record<string, string> {
-  return {
-    "X-API-Key": getCyaConfig().key,
-    Origin: origin,
-    Referer: `${origin}/`,
-    Accept: "application/json",
-    ...extra,
   };
 }
 
@@ -90,50 +80,78 @@ async function parseErrorResponse(response: Response): Promise<CyaApiError> {
   );
 }
 
-const cache = new Map<string, { data: unknown; expiresAt: number }>();
+// Caching uses Next's fetch data cache (revalidate), which Vercel shares
+// across serverless instances. An in-memory Map would NOT be shared, so it is
+// only used as a same-instance fast path.
+const memoryCache = new Map<string, { data: unknown; expiresAt: number }>();
 
-// Simple server-side cache; CYA allows 60 requests per minute, so caching
-// reference data and search results keeps normal traffic well under that.
-export async function cyaFetch<T>(path: string, init?: RequestInit, cacheTtlMs = 60_000): Promise<T> {
+export async function cyaFetch<T>(
+  path: string,
+  init?: RequestInit & { revalidate?: number }
+): Promise<T> {
   const { baseUrl, origin } = getCyaConfig();
+  const revalidate = init?.revalidate ?? 300;
   const cacheKey = `${path}:${JSON.stringify(init?.body ?? "")}`;
-  if (cacheTtlMs > 0) {
-    const hit = cache.get(cacheKey);
-    if (hit && hit.expiresAt > Date.now()) return hit.data as T;
-  }
+
+  const hit = memoryCache.get(cacheKey);
+  if (hit && hit.expiresAt > Date.now()) return hit.data as T;
 
   const response = await fetch(`${baseUrl}${path}`, {
-    ...init,
-    headers: cyaHeaders(origin, init?.headers as Record<string, string> | undefined),
+    method: init?.method,
+    headers: {
+      "X-API-Key": getCyaConfig().key,
+      Origin: origin,
+      Referer: `${origin}/`,
+      Accept: "application/json",
+      ...(init?.headers as Record<string, string> | undefined),
+    },
+    body: init?.body,
     signal: AbortSignal.timeout(10_000),
-    cache: "no-store",
+    next: { revalidate },
   });
 
   if (!response.ok) throw await parseErrorResponse(response);
 
   const data = (await response.json()) as T;
-  if (cacheTtlMs > 0) {
-    cache.set(cacheKey, { data, expiresAt: Date.now() + cacheTtlMs });
-    if (cache.size > 50) {
-      const now = Date.now();
-      for (const [k, v] of cache) if (v.expiresAt <= now) cache.delete(k);
-    }
+  memoryCache.set(cacheKey, { data, expiresAt: Date.now() + revalidate * 1000 });
+  if (memoryCache.size > 50) {
+    const now = Date.now();
+    for (const [k, v] of memoryCache) if (v.expiresAt <= now) memoryCache.delete(k);
   }
   return data;
 }
 
-export type OperatingArea = { id: number | string; name: string } & Record<string, unknown>;
+// The /operating_areas response shape is not documented as a bare array in all
+// cases; normalize without inventing values. Returns null when no array can
+// be located.
+export function normalizeOperatingAreas(payload: unknown): { areas: Record<string, unknown>[]; arrayLocation: string } | null {
+  if (Array.isArray(payload)) return { areas: payload as Record<string, unknown>[], arrayLocation: "(response is itself an array)" };
+  if (payload && typeof payload === "object") {
+    for (const key of ["areas", "operating_areas", "operatingAreas", "data", "results", "items"]) {
+      const value = (payload as Record<string, unknown>)[key];
+      if (Array.isArray(value)) return { areas: value as Record<string, unknown>[], arrayLocation: `top-level field "${key}"` };
+    }
+    const firstArray = Object.entries(payload as Record<string, unknown>).find(([, v]) => Array.isArray(v));
+    if (firstArray) return { areas: firstArray[1] as Record<string, unknown>[], arrayLocation: `top-level field "${firstArray[0]}"` };
+  }
+  return null;
+}
 
-export function getOperatingAreas(): Promise<OperatingArea[]> {
-  return cyaFetch<OperatingArea[]>("/operating_areas", undefined, 3600_000);
+export async function getOperatingAreasRaw(): Promise<unknown> {
+  return cyaFetch<unknown>("/operating_areas", { revalidate: 3600 });
 }
 
 export type YachtSearchResponse = Record<string, unknown>;
 
-export function searchYachts(body: Record<string, unknown>, cacheTtlMs = 300_000): Promise<YachtSearchResponse> {
+export function searchYachts(body: Record<string, unknown>): Promise<YachtSearchResponse> {
   return cyaFetch<YachtSearchResponse>("/yachts_search", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
-  }, cacheTtlMs);
+    revalidate: 300,
+  });
+}
+
+export function getYachtDetail(id: string): Promise<Record<string, unknown>> {
+  return cyaFetch<Record<string, unknown>>(`/yachts/${encodeURIComponent(id)}`, { revalidate: 300 });
 }
