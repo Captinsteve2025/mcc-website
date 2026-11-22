@@ -5,13 +5,10 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { YachtPhoto } from "@/components/yacht/YachtPhoto";
 import {
-  searchYachtsPage,
+  startYachtSearchSession,
   getOperatingAreas,
   resolveDestinationAreas,
-  destinationSynonyms,
   yachtSeasonAreaNames,
-  yachtAreaMatchesSynonymsIn,
-  yachtTypeWordsMatch,
   type Yacht,
 } from "@/lib/cya";
 
@@ -24,9 +21,6 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 10;
-// Upper bound for the local-filter page walk so a huge inventory can never
-// push a single page render past the 60 req/min CYA limit.
-const MAX_PAGES = 5;
 
 type Filters = {
   destination: string;
@@ -42,10 +36,6 @@ const TYPE_WORDS: Record<string, string[]> = {
   motor: ["motor", "power"],
   "power-catamaran": ["power cat", "powercat"],
 };
-
-function yachtAreaMatchesSynonyms(yacht: Yacht, synonyms: string[]): boolean {
-  return yachtAreaMatchesSynonymsIn(yacht, synonyms.map((s) => s.toLowerCase()));
-}
 
 function readFilters(searchParams: Record<string, string | string[] | undefined>): Filters {
   const one = (key: string) => {
@@ -235,65 +225,33 @@ export default async function CharterYachtsPage({
   const page = Math.max(1, Number.parseInt(Array.isArray(params.page) ? params.page[0] : params.page ?? "1", 10) || 1);
 
   let pageYachts: Yacht[] = [];
-  let serverTotal: number | null = null;
-  let serverFilterApplied = false;
+  let effectiveTotal: number | null = null;
   let unmatchedDestination = false;
   let loadError: string | null = null;
+  let resultsIncomplete = false;
 
   try {
-    if (filters.destination) {
-      const areas = await getOperatingAreas();
-      const matched = resolveDestinationAreas(areas, filters.destination);
-      if (matched.length === 0) {
-        unmatchedDestination = true;
-      } else {
-        const synonyms = matched.map((a) => a.name.toLowerCase());
-        const result = await searchYachtsPage({
-          page,
-          limit: PAGE_SIZE,
-          filters: { operating_area_ids: matched.map((a) => a.id).filter(Boolean) },
-          verify: (yachts) => yachts.every((y) => yachtAreaMatchesSynonymsIn(y, synonyms)),
-        });
-        pageYachts = result.yachts;
-        serverTotal = result.totalYachts;
-        serverFilterApplied = result.serverFilterApplied;
-      }
+    const areas = filters.destination ? await getOperatingAreas() : [];
+    const matched = filters.destination ? resolveDestinationAreas(areas, filters.destination) : [];
+    if (filters.destination && matched.length === 0) {
+      unmatchedDestination = true;
     } else {
-      const result = await searchYachtsPage({ page, limit: PAGE_SIZE });
-      pageYachts = result.yachts;
-      serverTotal = result.totalYachts;
+      const typeWords = filters.type ? TYPE_WORDS[filters.type] ?? [filters.type.toLowerCase()] : [];
+      const session = await startYachtSearchSession({
+        areaIds: matched.map((a) => a.id).filter(Boolean),
+        loweredAreaNames: matched.map((a) => a.name.toLowerCase()),
+        typeWords,
+        minGuests: filters.guests ? Number(filters.guests) : null,
+      });
+      pageYachts = await session.getPage(page, PAGE_SIZE);
+      effectiveTotal = session.serverFilterApplied ? session.serverTotal : session.localTotal;
+      resultsIncomplete = session.localResultsIncomplete;
     }
   } catch {
     loadError = "Yacht listings are temporarily unavailable. Please try again shortly — our team has been notified.";
   }
 
-  // Local refinement only when CYA did not accept the server-side filter.
-  let localTotal: number | null = null;
-  if (!loadError && !unmatchedDestination && !serverFilterApplied && (filters.destination || filters.type || filters.guests)) {
-    const synonyms = destinationSynonyms(filters.destination);
-    const typeWords = filters.type ? TYPE_WORDS[filters.type] ?? [filters.type.toLowerCase()] : [];
-    const minGuests = filters.guests ? Number(filters.guests) : null;
-    const visible: Yacht[] = [];
-    // Walk result pages (small size, one request per page, rate-limit safe)
-    // until the matching set is complete so counts and pagination are accurate.
-    for (let p = 1; p <= MAX_PAGES; p++) {
-      const result = await searchYachtsPage({ page: p, limit: PAGE_SIZE });
-      const batch = result.yachts.filter((y) => {
-        if (filters.destination && !yachtAreaMatchesSynonyms(y, synonyms)) return false;
-        if (typeWords.length > 0 && !yachtTypeWordsMatch(y, typeWords)) return false;
-        if (minGuests !== null && typeof y.pax === "number" && y.pax < minGuests) return false;
-        return true;
-      });
-      visible.push(...batch);
-      if (result.yachts.length < PAGE_SIZE) break;
-    }
-    localTotal = visible.length;
-    const localTotalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
-    pageYachts = visible.slice((Math.min(page, localTotalPages) - 1) * PAGE_SIZE, Math.min(page, localTotalPages) * PAGE_SIZE);
-  }
-
   // Normalized pagination state for both paths (server-filtered or local).
-  const effectiveTotal = localTotal ?? serverTotal;
   const totalPages = Math.max(1, Math.ceil((effectiveTotal ?? pageYachts.length) / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
 
@@ -336,6 +294,14 @@ export default async function CharterYachtsPage({
         {unmatchedDestination && (
           <p className="mx-auto mt-3 max-w-xl rounded-md bg-white/10 p-3 text-sm text-white/90">
             That destination is not in the live cruising-area list yet — showing all yachts instead. Our team can confirm coverage for it directly.
+          </p>
+        )}
+        {resultsIncomplete && (
+          <p className="mx-auto mt-3 flex max-w-xl items-start gap-2 rounded-md bg-[#e89d79]/20 p-3 text-left text-sm text-white">
+            <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
+            <span>
+              These results cover the first part of the live catalogue only and may not list every matching yacht. Our team can check the full inventory for you — just ask.
+            </span>
           </p>
         )}
       </section>

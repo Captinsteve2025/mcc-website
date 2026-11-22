@@ -6,8 +6,7 @@ import {
   resolveDestinationAreas,
   normalizeOperatingAreas,
   searchYachts,
-  searchYachtsPage,
-  yachtAreaMatchesSynonymsIn,
+  startYachtSearchSession,
   getYachtDetail,
   destinationSynonyms,
   CyaApiError,
@@ -214,34 +213,63 @@ export async function GET(request: Request) {
     report.destinationResolution = { success: false, error: errorInfo(err) };
   }
 
-  // --- Server-side filter acceptance: area filter, page size, pagination ---
+  // --- Live filter verification: each criterion separately, then combined ---
+  // Uses startYachtSearchSession so the reported verdict comes from the same
+  // filtered-vs-unfiltered total comparison the site itself relies on.
   try {
     const areas = await getOperatingAreas();
-    const bvi = resolveDestinationAreas(areas, "british-virgin-islands");
-    const areaIds = bvi.map((a) => a.id).filter(Boolean);
-    if (areaIds.length === 0) {
-      report.serverFilterCheck = { success: false, note: "No CYA area IDs resolved for British Virgin Islands; cannot probe the area filter." };
-    } else {
-      const synonyms = bvi.map((a) => a.name.toLowerCase());
-      const result = await searchYachtsPage({
-        page: 1,
-        limit: 10,
-        filters: { operating_area_ids: areaIds },
-        verify: (yachts) => yachts.every((y) => yachtAreaMatchesSynonymsIn(y, synonyms)),
-      });
-      report.serverFilterCheck = {
-        success: true,
-        requestedFilters: { operating_area_ids: areaIds },
-        serverFilterAccepted: result.serverFilterApplied,
-        listingsReturned: result.yachts.length,
-        totalYachts: result.totalYachts,
-        interpretation: result.serverFilterApplied
-          ? "CYA accepted the operating_area_ids filter and every returned yacht cruises in the requested area; server-side filtering and totals are live."
-          : "CYA did not accept this filter format (or returned unfiltered results); the site falls back to accurate local matching.",
+    const bviAreas = resolveDestinationAreas(areas, "british-virgin-islands");
+    const bviIds = bviAreas.map((a) => a.id).filter(Boolean);
+    const bviNames = bviAreas.map((a) => a.name.toLowerCase());
+    const filterCases: Array<{ key: string; criteria: Parameters<typeof startYachtSearchSession>[0] }> = [
+      { key: "bviDestination", criteria: { areaIds: bviIds, loweredAreaNames: bviNames, typeWords: [], minGuests: null } },
+      { key: "catamaranType", criteria: { areaIds: [], loweredAreaNames: [], typeWords: ["catamaran"], minGuests: null } },
+      { key: "eightGuests", criteria: { areaIds: [], loweredAreaNames: [], typeWords: [], minGuests: 8 } },
+      { key: "bviCatamaranEightGuests", criteria: { areaIds: bviIds, loweredAreaNames: bviNames, typeWords: ["catamaran"], minGuests: 8 } },
+    ];
+    for (const c of filterCases) {
+      const session = await startYachtSearchSession(c.criteria);
+      const firstPage = await session.getPage(1, 10);
+      (report as Record<string, unknown>)[`filter_${c.key}`] = {
+        requestedCriteria: {
+          areaIds: c.criteria.areaIds,
+          yachtTypes: c.criteria.typeWords,
+          guests: c.criteria.minGuests,
+        },
+        serverFilterConfirmed: session.serverFilterApplied,
+        cyasReportedMatchingTotal: session.serverFilterApplied ? session.serverTotal : null,
+        unfilteredCatalogueTotal: session.probeLog.find((p) => p.label === "unfiltered_page1")?.totalYachts ?? null,
+        filteredPage1Listings: firstPage.length,
+        localFallbackUsed: !session.serverFilterApplied,
+        localResultsComplete: session.localResultsIncomplete ? false : session.localTotal !== null,
+        localMatchingTotal: session.localTotal,
+        probeLog: session.probeLog,
       };
     }
+
+    // Pagination: fetch page 2 of the combined case and check overlap.
+    const session = await startYachtSearchSession({
+      areaIds: bviIds,
+      loweredAreaNames: bviNames,
+      typeWords: ["catamaran"],
+      minGuests: 8,
+    });
+    const page1 = await session.getPage(1, 10);
+    const page2 = await session.getPage(2, 10);
+    const ids1 = page1.map((y) => String(y.id ?? ""));
+    const ids2 = page2.map((y) => String(y.id ?? ""));
+    const overlap = ids2.filter((id) => ids1.includes(id)).length;
+    report.paginationCheck = {
+      success: true,
+      page1Count: page1.length,
+      page2Count: page2.length,
+      overlappingIds: overlap,
+      pagesDiffer: page2.length > 0 ? overlap < ids2.length : false,
+      serverFilterConfirmed: session.serverFilterApplied,
+      totalYachts: session.serverFilterApplied ? session.serverTotal : session.localTotal,
+    };
   } catch (err) {
-    report.serverFilterCheck = { success: false, error: errorInfo(err) };
+    report.liveFilterChecks = { success: false, error: errorInfo(err) };
   }
 
   return NextResponse.json(report);

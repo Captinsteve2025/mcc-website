@@ -85,6 +85,28 @@ async function parseErrorResponse(response: Response): Promise<CyaApiError> {
 // only used as a same-instance fast path.
 const memoryCache = new Map<string, { data: unknown; expiresAt: number }>();
 
+/* Global outbound-rate guard shared by every request in this server instance:
+ * a sliding 60-second window capped below CYA's documented 60 req/min, so
+ * concurrent visitors cannot collectively exceed the limit. Next's fetch data
+ * cache absorbs most repeats; this bounds whatever still reaches CYA. */
+const CYA_MAX_REQUESTS_PER_MINUTE = 40;
+const requestTimestamps: number[] = [];
+
+async function waitForRateSlot(): Promise<void> {
+  for (;;) {
+    const now = Date.now();
+    while (requestTimestamps.length > 0 && requestTimestamps[0] <= now - 60_000) {
+      requestTimestamps.shift();
+    }
+    if (requestTimestamps.length < CYA_MAX_REQUESTS_PER_MINUTE) {
+      requestTimestamps.push(now);
+      return;
+    }
+    const waitMs = Math.min(requestTimestamps[0] + 60_000 - now, 2_000);
+    await new Promise((resolve) => setTimeout(resolve, Math.max(waitMs, 50)));
+  }
+}
+
 export async function cyaFetch<T>(
   path: string,
   init?: RequestInit & { revalidate?: number }
@@ -95,6 +117,8 @@ export async function cyaFetch<T>(
 
   const hit = memoryCache.get(cacheKey);
   if (hit && hit.expiresAt > Date.now()) return hit.data as T;
+
+  await waitForRateSlot();
 
   const response = await fetch(`${baseUrl}${path}`, {
     method: init?.method,
@@ -153,78 +177,135 @@ export function searchYachts(body: Record<string, unknown>): Promise<YachtSearch
   });
 }
 
-function readYachts(response: YachtSearchResponse): Yacht[] {
-  return (response.yachts as Yacht[] | undefined) ?? [];
-}
-
-function readTotal(response: YachtSearchResponse): number | null {
-  return typeof response.totalYachts === "number" ? response.totalYachts : null;
-}
-
-export type YachtSearchPage = {
-  yachts: Yacht[];
-  totalYachts: number | null;
-  serverFilterApplied: boolean;
-};
-
-// Server-side filter decisions are remembered per instance for 10 minutes so
-// paginated requests do not re-probe (and double) the request count.
-const filterDecisionCache = new Map<string, { applied: boolean; expiresAt: number }>();
-const FILTER_DECISION_TTL_MS = 10 * 60 * 1000;
-
-/*
- * Run one page of yacht search with CYA's documented filter object. CYA's
- * accepted filter keys are not fully confirmed, so the result is verified with
- * `verify` (every returned yacht must pass the caller's field checks):
- * - verification passes -> the filter is treated as applied server-side.
- * - verification fails, the page is empty, or CYA rejects the body with a
- *   client error -> fall back to an unfiltered request and let the caller
- *   filter locally, so results stay accurate either way.
- */
-export async function searchYachtsPage(params: {
-  page: number;
-  limit: number;
-  searchTerm?: string;
-  filters?: Record<string, unknown>;
-  verify?: (yachts: Yacht[]) => boolean;
-}): Promise<YachtSearchPage> {
-  const { page, limit, searchTerm = "", filters = {}, verify } = params;
-
-  if (Object.keys(filters).length === 0) {
-    const response = await searchYachts({ page, limit, searchTerm, filters: {} });
-    return { yachts: readYachts(response), totalYachts: readTotal(response), serverFilterApplied: false };
-  }
-
-  const signature = `${JSON.stringify(filters)}`;
-  const cached = filterDecisionCache.get(signature);
-  if (cached && cached.expiresAt > Date.now()) {
-    if (cached.applied) {
-      const response = await searchYachts({ page, limit, searchTerm, filters });
-      return { yachts: readYachts(response), totalYachts: readTotal(response), serverFilterApplied: true };
-    }
-    const response = await searchYachts({ page, limit, searchTerm, filters: {} });
-    return { yachts: readYachts(response), totalYachts: readTotal(response), serverFilterApplied: false };
-  }
-
-  try {
-    const withFilters = await searchYachts({ page, limit, searchTerm, filters });
-    const yachts = readYachts(withFilters);
-    if (yachts.length > 0 && verify && verify(yachts)) {
-      filterDecisionCache.set(signature, { applied: true, expiresAt: Date.now() + FILTER_DECISION_TTL_MS });
-      return { yachts, totalYachts: readTotal(withFilters), serverFilterApplied: true };
-    }
-  } catch (err) {
-    if (!(err instanceof CyaApiError) || ![400, 404, 422].includes(err.status)) throw err;
-  }
-
-  filterDecisionCache.set(signature, { applied: false, expiresAt: Date.now() + FILTER_DECISION_TTL_MS });
-  const plain = await searchYachts({ page, limit, searchTerm, filters: {} });
-  return { yachts: readYachts(plain), totalYachts: readTotal(plain), serverFilterApplied: false };
-}
-
 export function yachtTypeWordsMatch(yacht: Yacht, words: string[]): boolean {
   const type = typeof yacht.yachtType === "string" ? yacht.yachtType.toLowerCase() : "";
   return words.some((w) => type.includes(w));
+}
+
+// --- Yacht search session ---------------------------------------------------
+
+export type SearchCriteria = {
+  areaIds: string[];
+  loweredAreaNames: string[];
+  typeWords: string[];
+  minGuests: number | null;
+};
+
+export type YachtSearchSession = {
+  /** One page of results, server-filtered when CYA accepted the filters. */
+  getPage(page: number, limit: number): Promise<Yacht[]>;
+  /** Accurate matching total when CYA filters server-side, else null. */
+  serverTotal: number | null;
+  /** CYA confirmed it applies the filters itself (with evidence). */
+  serverFilterApplied: boolean;
+  /** True when the local fallback hit its page cap and counts are partial. */
+  localResultsIncomplete: boolean;
+  /** Matching total from the completed local walk, when it finished. */
+  localTotal: number | null;
+  /** CYA request bodies recorded for the admin verification report. */
+  probeLog: Array<{ label: string; body: Record<string, unknown>; totalYachts: number | null; listings: number }>;
+};
+
+const LOCAL_FALLBACK_MAX_PAGES = 8;
+
+/*
+ * One search session per page render. Sends the documented CYA filter object
+ * (filters.location_areas, filters.yachtTypes, filters.guests) and CONFIRMS
+ * the filter was actually applied before trusting it: a page-1 fetch with
+ * filters is compared against an identical fetch without filters. The filter
+ * counts as confirmed only when CYA reports a strictly smaller total (and
+ * returns no yacht that clearly violates the criteria). A mere "every returned
+ * yacht happens to match" is explicitly NOT confirmation — with a small
+ * inventory an unfiltered result can look identical.
+ *
+ * When the filter is not confirmed, the session falls back to a full local
+ * walk (pages of 10 until exhausted, capped at 8 pages for rate safety) and
+ * flags results incomplete when the inventory exceeds the cap.
+ */
+export async function startYachtSearchSession(criteria: SearchCriteria): Promise<YachtSearchSession> {
+  const documentedFilters: Record<string, unknown> = {};
+  if (criteria.areaIds.length > 0) documentedFilters.location_areas = criteria.areaIds;
+  if (criteria.typeWords.length > 0) documentedFilters.yachtTypes = criteria.typeWords;
+  if (criteria.minGuests !== null) documentedFilters.guests = criteria.minGuests;
+  const hasFilters = Object.keys(documentedFilters).length > 0;
+
+  const probeLog: YachtSearchSession["probeLog"] = [];
+
+  const fetchPage = async (body: Record<string, unknown>, label: string) => {
+    const response = await searchYachts(body);
+    const yachts = (response.yachts as Yacht[] | undefined) ?? [];
+    const total = typeof response.totalYachts === "number" ? response.totalYachts : null;
+    probeLog.push({ label, body, totalYachts: total, listings: yachts.length });
+    return { yachts, total };
+  };
+
+  let serverFilterApplied = false;
+  let serverTotal: number | null = null;
+  let localResultsIncomplete = false;
+  let localTotal: number | null = null;
+  let localYachts: Yacht[] | null = null;
+
+  const violatesCriteria = (yacht: Yacht): boolean => {
+    if (criteria.loweredAreaNames.length > 0 && !yachtAreaMatchesSynonymsIn(yacht, criteria.loweredAreaNames)) return true;
+    if (criteria.typeWords.length > 0 && !yachtTypeWordsMatch(yacht, criteria.typeWords)) return true;
+    if (criteria.minGuests !== null && typeof yacht.pax === "number" && yacht.pax < criteria.minGuests) return true;
+    return false;
+  };
+
+  if (hasFilters) {
+    try {
+      // Confirmation probe: filtered page 1 vs identical unfiltered page 1.
+      // Cached bodies make repeat probes cheap; two requests per session max.
+      const [withFilters, withoutFilters] = await Promise.all([
+        fetchPage({ page: 1, limit: 10, searchTerm: "", filters: documentedFilters }, "filtered_page1"),
+        fetchPage({ page: 1, limit: 10, searchTerm: "", filters: {} }, "unfiltered_page1"),
+      ]);
+      const filteredTotal = withFilters.total;
+      const unfilteredTotal = withoutFilters.total;
+      const noObviousViolations = !withFilters.yachts.some((y) => violatesCriteria(y));
+      const confirmed =
+        noObviousViolations &&
+        filteredTotal !== null &&
+        unfilteredTotal !== null &&
+        filteredTotal < unfilteredTotal;
+      serverFilterApplied = confirmed;
+      serverTotal = confirmed ? filteredTotal : null;
+    } catch {
+      serverFilterApplied = false;
+    }
+  }
+
+  if (hasFilters && !serverFilterApplied) {
+    // Full local walk so counts and pagination stay accurate.
+    const matching: Yacht[] = [];
+    for (let p = 1; p <= LOCAL_FALLBACK_MAX_PAGES; p++) {
+      const { yachts } = await fetchPage({ page: p, limit: 10, searchTerm: "", filters: {} }, `unfiltered_page${p}`);
+      matching.push(...yachts.filter((y) => !violatesCriteria(y)));
+      if (yachts.length < 10) break;
+      if (p === LOCAL_FALLBACK_MAX_PAGES) localResultsIncomplete = true;
+    }
+    localYachts = matching;
+    localTotal = matching.length;
+  }
+
+  return {
+    serverTotal,
+    serverFilterApplied,
+    localResultsIncomplete,
+    localTotal,
+    probeLog,
+    async getPage(page, limit) {
+      if (hasFilters && serverFilterApplied) {
+        const { yachts } = await fetchPage({ page, limit, searchTerm: "", filters: documentedFilters }, `filtered_page${page}`);
+        return yachts;
+      }
+      if (localYachts) {
+        return localYachts.slice((page - 1) * limit, page * limit);
+      }
+      const { yachts } = await fetchPage({ page, limit, searchTerm: "", filters: {} }, `page${page}`);
+      return yachts;
+    },
+  };
 }
 
 // --- Destinations: MCC slugs to CYA operating areas -------------------------
@@ -298,13 +379,6 @@ export function yachtAreaMatchesSynonymsIn(yacht: Yacht, loweredSynonyms: string
     const name = n.toLowerCase();
     return loweredSynonyms.some((s) => name.includes(s) || s.includes(name));
   });
-}
-
-// Verifier for searchYachtsPage: every returned yacht must cruise in one of
-// the selected CYA areas.
-export function makeDestinationVerifier(areaNames: string[]): (yachts: Yacht[]) => boolean {
-  const lowered = areaNames.map((a) => a.toLowerCase());
-  return (yachts) => yachts.every((y) => yachtAreaMatchesSynonymsIn(y, lowered));
 }
 
 // --- Yacht detail -----------------------------------------------------------
