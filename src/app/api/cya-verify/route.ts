@@ -8,6 +8,8 @@ import {
   getYachtDetail,
   getYachtBookings,
   resolveLegacyYachtId,
+  traceLegacyIdMapping,
+  traceBookings,
   DESTINATION_AREA_MAPPING,
   resolveDestinationAreas,
   CyaApiError,
@@ -315,6 +317,42 @@ export async function GET(request: Request) {
   report.bookingsVerification = {
     endpoint: "GET /api/v1/bookings?yacht_id=... (documented in CYA's public OpenAPI spec)",
     today,
+    // One yacht is traced through the complete request sequence with actual
+    // statuses and sanitized bodies; the rest get the summarized probe.
+    tracedYacht: bookingTargetIds[0]
+      ? (async () => {
+          const mapping = await traceLegacyIdMapping(bookingTargetIds[0]);
+          const currentId = mapping.extractedCurrentId ?? bookingTargetIds[0];
+          const bookings = await traceBookings(currentId);
+          return {
+            catalogueYachtId: bookingTargetIds[0],
+            step1_legacyMapping: {
+              requestPath: mapping.requestPath,
+              httpStatus: mapping.httpStatus,
+              sanitizedResponse: mapping.body,
+              extractedCurrentId: mapping.extractedCurrentId,
+              error: mapping.error,
+            },
+            step2_bookings: {
+              requestPath: bookings.requestPath,
+              yachtIdUsed: bookings.yachtIdUsed,
+              httpStatus: bookings.httpStatus,
+              responseBodyShape: bookings.bodyShape,
+              bookingCount: bookings.bookingCount,
+              sampleBookings: bookings.sampleBookings,
+              error: bookings.error,
+            },
+            interpretation:
+              mapping.error
+                ? "Step 1 failed — the mapping endpoint's own status/error above identifies the cause."
+                : bookings.error
+                  ? "Step 2 failed using the resolved ID — the bookings endpoint's own status/error above identifies the cause."
+                  : bookings.bookingCount === 0
+                    ? "Both steps succeeded; the yacht has no ongoing/future calendar records in CYA — its dates legitimately show no bookings (never interpreted as confirmed available)."
+                    : "Bookings retrieved; the calendar maps them to statuses by category (booked/hold via hold_expire_date/transit/unavailable).",
+          };
+        })()
+      : Promise.resolve({ note: "No yacht id available to trace." }),
     yachts: await Promise.all(
       bookingTargetIds.map(async (yachtId) => {
         try {

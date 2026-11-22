@@ -494,6 +494,100 @@ export async function startYachtSearchSession(
   };
 }
 
+// --- Traced variants for the production diagnostic ---------------------------
+// These record the actual request path, HTTP status and a sanitized body at
+// each step so a failure is identified from the API's own response, not
+// inferred. Guests' personal data never appears (only calendar titles).
+
+export type LegacyMappingTrace = {
+  requestPath: string;
+  httpStatus: number | null;
+  body: unknown;
+  extractedCurrentId: string | null;
+  error: string | null;
+};
+
+export async function traceLegacyIdMapping(legacyId: string): Promise<LegacyMappingTrace> {
+  const requestPath = `/api/v1/yachts/legacy/${encodeURIComponent(legacyId)}`;
+  try {
+    const payload = await cyaFetch<Record<string, unknown>>(requestPath, { revalidate: 86_400 });
+    let extractedCurrentId: string | null = null;
+    if (payload && typeof payload === "object") {
+      for (const key of ["new_yacht_id", "yacht_id", "new_id", "id", "current_yacht_id"]) {
+        const value = payload[key];
+        if (typeof value === "string" && /^[a-f0-9]{8,32}$/i.test(value)) {
+          extractedCurrentId = value;
+          break;
+        }
+        if (typeof value === "number") {
+          extractedCurrentId = String(value);
+          break;
+        }
+      }
+    }
+    return { requestPath, httpStatus: 200, body: payload, extractedCurrentId, error: null };
+  } catch (err) {
+    return {
+      requestPath,
+      httpStatus: err instanceof CyaApiError ? err.status : null,
+      body: null,
+      extractedCurrentId: null,
+      error: err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
+    };
+  }
+}
+
+export type BookingsTrace = {
+  requestPath: string;
+  yachtIdUsed: string;
+  httpStatus: number | null;
+  bodyShape: string;
+  bookingCount: number | null;
+  sampleBookings: Array<{ start: string; end: string; category: string; holdExpire: string | null; title: string | null }>;
+  error: string | null;
+};
+
+export async function traceBookings(yachtId: string): Promise<BookingsTrace> {
+  const requestPath = `/api/v1/bookings?yacht_id=${encodeURIComponent(yachtId)}`;
+  try {
+    const payload = await cyaFetch<{ bookings?: unknown } | unknown[]>(requestPath, { revalidate: 300 });
+    const list = Array.isArray(payload)
+      ? payload
+      : payload && typeof payload === "object" && Array.isArray((payload as { bookings?: unknown }).bookings)
+        ? (payload as { bookings: unknown[] }).bookings
+        : null;
+    const sample = (list ?? []).slice(0, 5).map((raw) => {
+      const b = (raw ?? {}) as Record<string, unknown>;
+      return {
+        start: typeof b.event_start_date === "string" ? b.event_start_date.slice(0, 10) : "",
+        end: typeof b.event_end_date === "string" ? b.event_end_date.slice(0, 10) : "",
+        category: typeof b.category === "string" ? b.category : "",
+        holdExpire: typeof b.hold_expire_date === "string" ? b.hold_expire_date.slice(0, 10) : null,
+        title: typeof b.title === "string" ? b.title.slice(0, 40) : null,
+      };
+    });
+    return {
+      requestPath,
+      yachtIdUsed: yachtId,
+      httpStatus: 200,
+      bodyShape: Array.isArray(payload) ? "bare array" : payload && typeof payload === "object" ? `object with keys [${Object.keys(payload).join(", ")}]` : "other",
+      bookingCount: list ? list.length : null,
+      sampleBookings: sample,
+      error: null,
+    };
+  } catch (err) {
+    return {
+      requestPath,
+      yachtIdUsed: yachtId,
+      httpStatus: err instanceof CyaApiError ? err.status : null,
+      bodyShape: "unavailable",
+      bookingCount: null,
+      sampleBookings: [],
+      error: err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
+    };
+  }
+}
+
 // --- Destinations: MCC slugs to CYA operating areas -------------------------
 
 export type CyaOperatingArea = { id: string; name: string };
