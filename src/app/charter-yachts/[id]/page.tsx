@@ -50,9 +50,9 @@ function lengthUnit(detail: Record<string, unknown>): string {
   return unit ?? "m";
 }
 
-// Collect gallery URLs from `main_image` + `Images` (uppercase I). `Images`
-// may be an array of URL strings or an array of objects with a url field —
-// both are handled defensively without inventing data.
+// Collect gallery URLs from `main_image` + `Images` (uppercase I). Verified
+// live: `Images` is an array of objects whose photograph URL is `image_src`.
+// Deduplicated; original CYA sources are preserved.
 function collectPhotos(detail: Record<string, unknown>): string[] {
   const photos: string[] = [];
   const main = str(detail.main_image);
@@ -63,7 +63,8 @@ function collectPhotos(detail: Record<string, unknown>): string[] {
       if (typeof item === "string" && item.startsWith("https://")) {
         photos.push(item);
       } else if (item && typeof item === "object") {
-        const url = str((item as Record<string, unknown>).url);
+        const obj = item as Record<string, unknown>;
+        const url = str(obj.image_src) ?? str(obj.src) ?? str(obj.url);
         if (url) photos.push(url);
       }
     }
@@ -73,18 +74,43 @@ function collectPhotos(detail: Record<string, unknown>): string[] {
   return [...new Set(photos)];
 }
 
-// Accommodations may be a single text block or a list of entries (strings or
-// objects). Render whatever shape arrives; never fabricate.
+// CYA toy/equipment fields may contain HTML. Rendering as plain text is safe
+// (React escapes it); stripping tags keeps the text readable.
+function stripHtml(value: unknown): string | null {
+  const text = str(value);
+  if (text === null) return null;
+  const cleaned = text
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<[^>]*>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+  return cleaned.length > 0 ? cleaned : null;
+}
+
+// Accommodations: verified to be an object of cabin/accommodation attributes.
+// Rendered as label/value pairs from its actual properties; arrays of strings
+// and plain text are also handled.
 function AccommodationsBlock({ value }: { value: unknown }) {
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const entries = Object.entries(value as Record<string, unknown>).filter(
+      ([, v]) => stripHtml(v) !== null || typeof v === "number" || typeof v === "boolean"
+    );
+    if (entries.length === 0) return null;
+    return (
+      <dl className="grid gap-3 sm:grid-cols-2">
+        {entries.map(([key, v]) => (
+          <div key={key} className="rounded-lg bg-white p-4 shadow-sm">
+            <dt className="text-xs uppercase tracking-wide text-[#061625]/60">{key.replace(/_/g, " ")}</dt>
+            <dd className="whitespace-pre-line text-[#061625]">{typeof v === "object" ? JSON.stringify(v) : String(v)}</dd>
+          </div>
+        ))}
+      </dl>
+    );
+  }
   if (Array.isArray(value)) {
     const items = value
-      .map((item) =>
-        typeof item === "string"
-          ? item.trim()
-          : item && typeof item === "object"
-            ? str((item as Record<string, unknown>).detail ?? (item as Record<string, unknown>).description ?? (item as Record<string, unknown>).text)
-            : null
-      )
+      .map((item) => (typeof item === "string" ? stripHtml(item) : item && typeof item === "object" ? stripHtml((item as Record<string, unknown>).detail ?? (item as Record<string, unknown>).description ?? (item as Record<string, unknown>).text) : null))
       .filter((s): s is string => Boolean(s));
     if (items.length === 0) return null;
     return (
@@ -95,7 +121,7 @@ function AccommodationsBlock({ value }: { value: unknown }) {
       </ul>
     );
   }
-  const text = str(value);
+  const text = stripHtml(value);
   return text ? <p className="whitespace-pre-line leading-relaxed text-[#061625]/80">{text}</p> : null;
 }
 
@@ -105,9 +131,9 @@ function ListBlock({ value }: { value: unknown }) {
     const items = value
       .map((item) =>
         typeof item === "string"
-          ? item.trim()
+          ? stripHtml(item)
           : item && typeof item === "object"
-            ? str((item as Record<string, unknown>).name ?? (item as Record<string, unknown>).title ?? (item as Record<string, unknown>).label)
+            ? stripHtml((item as Record<string, unknown>).name ?? (item as Record<string, unknown>).title ?? (item as Record<string, unknown>).label)
             : null
       )
       .filter((s): s is string => Boolean(s));
@@ -120,64 +146,71 @@ function ListBlock({ value }: { value: unknown }) {
       </ul>
     );
   }
-  const text = str(value);
-  return text ? <p className="leading-relaxed text-[#061625]/80">{text}</p> : null;
+  const text = stripHtml(value);
+  return text ? <p className="whitespace-pre-line leading-relaxed text-[#061625]/80">{text}</p> : null;
 }
 
-// Seasonal pricing: CYA provides `seasons` plus weekly `low_price`/`high_price`
-// and a `min_price_usd`. Only rows that CYA actually provides are rendered.
+// Seasonal pricing: verified live structure — seasons[] carries title,
+// start_date, end_date, base_price and a per-season currency. Currency is
+// never assumed to be USD; only rows CYA actually provides are rendered.
+function formatMoney(amount: number, currency: string | null): string {
+  const rounded = Math.round(amount).toLocaleString("en-US");
+  if (currency === "USD") return `${rounded}`;
+  if (currency === "EUR") return `\u20ac${rounded}`;
+  if (currency === "GBP") return `\u00a3${rounded}`;
+  return currency ? `${currency} ${rounded}` : `${rounded}`;
+}
+
 function SeasonPricing({ detail }: { detail: Record<string, unknown> }) {
   const seasons = detail.seasons;
-  type SeasonRow = { label: string; price: string };
+  type SeasonRow = { label: string; dates: string | null; area: string | null; price: string };
   const rows: SeasonRow[] = [];
 
   if (Array.isArray(seasons)) {
     for (const s of seasons) {
       if (!s || typeof s !== "object") continue;
       const obj = s as Record<string, unknown>;
-      const label =
-        str(obj.season_name ?? obj.seasonName ?? obj.name ?? obj.label) ??
-        [str(obj.start_date ?? obj.startDate), str(obj.end_date ?? obj.endDate)].filter(Boolean).join(" – ") ??
-        "Season";
-      const low = num(obj.low_price ?? obj.lowPrice) ?? num(obj.price);
-      const high = num(obj.high_price ?? obj.highPrice);
-      const price =
-        low !== null && high !== null
-          ? `$${Math.round(low).toLocaleString("en-US")} – $${Math.round(high).toLocaleString("en-US")} / week`
-          : low !== null
-            ? `From $${Math.round(low).toLocaleString("en-US")} / week`
-            : str(obj.price) ?? null;
-      if (price) rows.push({ label, price });
+      const title = str(obj.title ?? obj.season_name ?? obj.name);
+      const start = str(obj.start_date);
+      const end = str(obj.end_date);
+      const label = title ?? [start, end].filter(Boolean).join(" \u2013 ") ?? "Season";
+      const dates = title && (start || end) ? [start, end].filter(Boolean).join(" \u2013 ") : null;
+      const rawPrice = obj.base_price;
+      const priceNum = typeof rawPrice === "number" ? rawPrice : typeof rawPrice === "string" ? Number.parseFloat(rawPrice) : null;
+      const currency = str(obj.currency);
+      if (priceNum !== null && Number.isFinite(priceNum)) {
+        const areaNames = Array.isArray(obj.location_areas)
+          ? obj.location_areas
+              .map((a) => (typeof a === "string" ? a : a && typeof a === "object" ? str((a as Record<string, unknown>).label ?? (a as Record<string, unknown>).name) : null))
+              .filter((n): n is string => Boolean(n))
+              .slice(0, 3)
+              .join(", ")
+          : null;
+        rows.push({ label, dates, area: areaNames, price: `${formatMoney(priceNum, currency)} / week` });
+      }
     }
   }
 
-  const low = num(detail.low_price);
-  const high = num(detail.high_price);
-  const overall =
-    low !== null && high !== null
-      ? `$${Math.round(low).toLocaleString("en-US")} – $${Math.round(high).toLocaleString("en-US")} / week`
-      : low !== null
-        ? `From $${Math.round(low).toLocaleString("en-US")} / week`
-        : null;
-
-  if (rows.length === 0 && overall === null) return null;
+  if (rows.length === 0) return null;
 
   return (
     <>
       <h2 className="mb-4 mt-12 font-display text-3xl font-normal italic text-[#061625]">Seasonal rates</h2>
-      {rows.length > 0 && (
-        <dl className="divide-y divide-[#061625]/10 rounded-lg bg-white shadow-sm">
-          {rows.map((row, i) => (
-            <div key={i} className="flex items-center justify-between gap-4 p-4">
+      <dl className="divide-y divide-[#061625]/10 rounded-lg bg-white shadow-sm">
+        {rows.map((row, i) => (
+          <div key={i} className="p-4">
+            <div className="flex items-center justify-between gap-4">
               <dt className="text-[#061625]/80">{row.label}</dt>
               <dd className="text-right font-medium text-[#061625]">{row.price}</dd>
             </div>
-          ))}
-        </dl>
-      )}
-      {rows.length === 0 && overall !== null && (
-        <p className="rounded-lg bg-white p-4 shadow-sm text-[#061625]">{overall}</p>
-      )}
+            {(row.dates || row.area) && (
+              <p className="mt-1 text-xs text-[#061625]/60">
+                {[row.dates, row.area].filter(Boolean).join(" \u00b7 ")}
+              </p>
+            )}
+          </div>
+        ))}
+      </dl>
       <p className="mt-3 text-xs text-[#061625]/50">Indicative rates only, subject to confirmation.</p>
     </>
   );
@@ -333,10 +366,10 @@ export default async function YachtDetailPage({
                 </h2>
                 <div className="space-y-4">
                   <ListBlock value={yacht.watersports} />
-                  {str(yacht.other_toys) !== null && yacht.other_toys !== yacht.watersports && (
+                  {stripHtml(yacht.other_toys) !== null && yacht.other_toys !== yacht.watersports && (
                     <ListBlock value={yacht.other_toys} />
                   )}
-                  {str(yacht.yachtEngines) && <p className="text-sm text-[#061625]/70">Engines: {str(yacht.yachtEngines)}</p>}
+                  {stripHtml(yacht.yachtEngines) && <p className="text-sm text-[#061625]/70">Engines: {stripHtml(yacht.yachtEngines)}</p>}
                 </div>
               </>
             ) : null}

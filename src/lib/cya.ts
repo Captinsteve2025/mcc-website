@@ -230,42 +230,77 @@ export type YachtSearchSession = {
   localTotal: number | null;
   /** Yachts matching from the checked records when the walk was capped. */
   checkedRecordCount: number;
+  /** True when a local walk (guest capacity pass or fallback) produced the results. */
+  localWalkUsed: boolean;
   /** CYA request bodies recorded for the admin verification report. */
   probeLog: Array<{ label: string; body: Record<string, unknown>; totalYachts: number | null; listings: number }>;
 };
 
-const LOCAL_FALLBACK_MAX_PAGES = 8;
+const WALK_PAGE_SIZE = 100;
+const WALK_MAX_PAGES = 8;
 
-function criterionViolated(yacht: Yacht, criteria: SearchCriteria): boolean {
-  if (criteria.typeWords.length > 0 && !yachtTypeWordsMatch(yacht, criteria.typeWords)) return true;
-  if (criteria.minGuests !== null && typeof yacht.pax === "number" && yacht.pax < criteria.minGuests) return true;
-  return false;
+function typeViolated(yacht: Yacht, typeWords: string[]): boolean {
+  return typeWords.length > 0 && !yachtTypeWordsMatch(yacht, typeWords);
+}
+
+// Verified live: CYA rejects filters.guests (HTTP 422) and ignores filters.pax,
+// so guest capacity is never sent server-side. Unknown capacities are excluded
+// from local matches rather than assumed to comply.
+function guestViolated(yacht: Yacht, minGuests: number | null): boolean {
+  return minGuests !== null && (typeof yacht.pax !== "number" || yacht.pax < minGuests);
+}
+
+type PageFetcher = (
+  body: Record<string, unknown>,
+  label: string
+) => Promise<{ yachts: Yacht[]; total: number | null }>;
+
+async function walkInventory(
+  fetchPage: PageFetcher,
+  makeBody: (page: number) => Record<string, unknown>,
+  labelPrefix: string,
+  keep: (y: Yacht) => boolean,
+  knownTotal: number | null
+): Promise<{ matches: Yacht[]; checked: number; incomplete: boolean }> {
+  const matches: Yacht[] = [];
+  let checked = 0;
+  let pageSize = 0;
+  let incomplete = false;
+  for (let p = 1; p <= WALK_MAX_PAGES; p++) {
+    const { yachts } = await fetchPage(makeBody(p), `${labelPrefix}_page${p}`);
+    if (p === 1) pageSize = yachts.length;
+    checked += yachts.length;
+    matches.push(...yachts.filter(keep));
+    if (pageSize > 0 && yachts.length < pageSize) break;
+    if (p === WALK_MAX_PAGES) incomplete = true;
+  }
+  if (knownTotal !== null && checked < knownTotal) incomplete = true;
+  return { matches, checked, incomplete };
 }
 
 /*
- * One search session per page render. Sends the documented CYA filter object
- * (filters.location_areas, filters.yachtTypes, filters.guests) and CONFIRMS
- * each criterion was actually applied before trusting it: a filtered page-1
- * fetch is compared against an identical unfiltered fetch. A criterion counts
- * as accepted only when CYA reports a strictly smaller total with that single
- * criterion added back (an unfiltered-equivalent total proves nothing) AND no
- * returned record violates it. With several criteria, the filtered-vs-
- * unfiltered totals prove the SET is applied, not each member, so each
- * criterion is additionally validated against the records CYA returns.
- *
- * When acceptance is not proven, the session falls back to a full local walk
- * (pages of 10 until exhausted, capped at 8 pages for rate safety) and flags
- * results incomplete when the inventory exceeds the cap.
+ * One search session per page render. Verified live (2026-11-22):
+ * - filters.location_areas: ["13","15"] -> 400 yachts (server-side, confirmed)
+ * - filters.yachtTypes: ["catamaran"] -> 694 (server-side, confirmed)
+ * - filters.guests -> HTTP 422; filters.pax -> ignored. Never sent.
+ * The session sends only the two confirmed server filters, CONFIRMS they were
+ * applied (filtered page-1 total strictly smaller than unfiltered, no
+ * violating records), and applies minimum guest capacity locally over the
+ * resulting inventory, excluding yachts with unknown pax. Walks use large
+ * pages capped for rate safety; a capped walk is flagged incomplete rather
+ * than presented as complete.
  */
 export async function startYachtSearchSession(
   criteria: SearchCriteria,
   options?: { lightweight?: boolean }
 ): Promise<YachtSearchSession> {
+  // filters.guests is deliberately absent: CYA rejects it with HTTP 422 and
+  // ignores filters.pax, so capacity filtering happens locally (verified live
+  // on 2026-11-22). Only location_areas and yachtTypes go to CYA.
   const documentedFilters: Record<string, unknown> = {};
   if (criteria.areaIds.length > 0) documentedFilters.location_areas = criteria.areaIds;
   if (criteria.typeWords.length > 0) documentedFilters.yachtTypes = criteria.typeWords;
-  if (criteria.minGuests !== null) documentedFilters.guests = criteria.minGuests;
-  const hasFilters = Object.keys(documentedFilters).length > 0;
+  const hasServerFilters = Object.keys(documentedFilters).length > 0;
   const lightweight = options?.lightweight ?? false;
 
   const probeLog: YachtSearchSession["probeLog"] = [];
@@ -284,9 +319,11 @@ export async function startYachtSearchSession(
   let localTotal: number | null = null;
   let localYachts: Yacht[] | null = null;
   let checkedRecordCount = 0;
+  let unfilteredTotal: number | null = null;
+  let localWalkUsed = false;
   const filterAcceptance: Record<string, "confirmed" | "rejected" | "inconclusive"> = {};
 
-  if (hasFilters) {
+  if (hasServerFilters) {
     try {
       // Confirmation probe: filtered page 1 vs identical unfiltered page 1.
       const [withFilters, withoutFilters] = await Promise.all([
@@ -294,10 +331,10 @@ export async function startYachtSearchSession(
         fetchPage({ page: 1, limit: 10, searchTerm: "", filters: {} }, "unfiltered_page1"),
       ]);
       const filteredTotal = withFilters.total;
-      const unfilteredTotal = withoutFilters.total;
-      const noObviousViolations = !withFilters.yachts.some((y) => criterionViolated(y, criteria));
+      unfilteredTotal = withoutFilters.total;
+      const noTypeViolations = !withFilters.yachts.some((y) => typeViolated(y, criteria.typeWords));
       serverFilterApplied = Boolean(
-        noObviousViolations &&
+        noTypeViolations &&
           filteredTotal !== null &&
           unfilteredTotal !== null &&
           filteredTotal < unfilteredTotal
@@ -320,12 +357,6 @@ export async function startYachtSearchSession(
             filters: { yachtTypes: criteria.typeWords },
             check: (y) => yachtTypeWordsMatch(y, criteria.typeWords),
           });
-        if (criteria.minGuests !== null)
-          single.push({
-            name: "guests",
-            filters: { guests: criteria.minGuests },
-            check: (y) => typeof y.pax !== "number" || y.pax >= (criteria.minGuests as number),
-          });
         for (const s of single) {
           try {
             const probe = await fetchPage({ page: 1, limit: 10, searchTerm: "", filters: s.filters }, `single_${s.name}`);
@@ -347,18 +378,55 @@ export async function startYachtSearchSession(
     }
   }
 
-  if (hasFilters && !serverFilterApplied && !lightweight) {
-    // Full local walk so counts and pagination stay accurate.
-    const matching: Yacht[] = [];
-    for (let p = 1; p <= LOCAL_FALLBACK_MAX_PAGES; p++) {
-      const { yachts } = await fetchPage({ page: p, limit: 10, searchTerm: "", filters: {} }, `unfiltered_page${p}`);
-      checkedRecordCount += yachts.length;
-      matching.push(...yachts.filter((y) => !criterionViolated(y, criteria)));
-      if (yachts.length < 10) break;
-      if (p === LOCAL_FALLBACK_MAX_PAGES) localResultsIncomplete = true;
+  // Capacity is never a CYA filter: when a minimum guest count is requested,
+  // walk the best inventory available (the confirmed server-filtered set, or
+  // the unfiltered catalogue with type words applied locally) and keep only
+  // yachts whose pax is known and sufficient.
+  const guestWalk = criteria.minGuests !== null;
+  const fallbackWalk = hasServerFilters && !serverFilterApplied && !guestWalk;
+
+  if (guestWalk && !lightweight) {
+    const serverFilters = serverFilterApplied ? documentedFilters : {};
+    const knownTotal = serverFilterApplied ? serverTotal : unfilteredTotal;
+    try {
+      const walk = await walkInventory(
+        fetchPage,
+        (p) => ({ page: p, limit: WALK_PAGE_SIZE, searchTerm: "", filters: serverFilters }),
+        serverFilterApplied ? "guestwalk_filtered" : "guestwalk_unfiltered",
+        (y) => !guestViolated(y, criteria.minGuests) && (serverFilterApplied || !typeViolated(y, criteria.typeWords)),
+        knownTotal
+      );
+      localYachts = walk.matches;
+      localTotal = walk.incomplete ? null : walk.matches.length;
+      localResultsIncomplete = walk.incomplete;
+      checkedRecordCount = walk.checked;
+      localWalkUsed = true;
+    } catch {
+      localYachts = [];
+      localTotal = null;
+      localResultsIncomplete = true;
+      localWalkUsed = true;
     }
-    localYachts = matching;
-    localTotal = localResultsIncomplete ? null : matching.length;
+  } else if (fallbackWalk && !lightweight) {
+    try {
+      const walk = await walkInventory(
+        fetchPage,
+        (p) => ({ page: p, limit: WALK_PAGE_SIZE, searchTerm: "", filters: {} }),
+        "unfiltered",
+        (y) => !typeViolated(y, criteria.typeWords),
+        unfilteredTotal
+      );
+      localYachts = walk.matches;
+      localTotal = walk.incomplete ? null : walk.matches.length;
+      localResultsIncomplete = walk.incomplete;
+      checkedRecordCount = walk.checked;
+      localWalkUsed = true;
+    } catch {
+      localYachts = [];
+      localTotal = null;
+      localResultsIncomplete = true;
+      localWalkUsed = true;
+    }
   }
 
   return {
@@ -368,14 +436,16 @@ export async function startYachtSearchSession(
     localResultsIncomplete,
     localTotal,
     checkedRecordCount,
+    localWalkUsed,
     probeLog,
     async getPage(page, limit) {
-      if (hasFilters && serverFilterApplied) {
+      if (localYachts) {
+        // Local walk (guest capacity pass or fallback): serve from matches.
+        return localYachts.slice((page - 1) * limit, page * limit);
+      }
+      if (hasServerFilters && serverFilterApplied) {
         const { yachts } = await fetchPage({ page, limit, searchTerm: "", filters: documentedFilters }, `filtered_page${page}`);
         return yachts;
-      }
-      if (localYachts) {
-        return localYachts.slice((page - 1) * limit, page * limit);
       }
       const { yachts } = await fetchPage({ page, limit, searchTerm: "", filters: {} }, `page${page}`);
       return yachts;
@@ -389,21 +459,41 @@ export type CyaOperatingArea = { id: string; name: string };
 
 /* Explicit, reviewed mapping from live verification (2026-11-22):
  * CYA /operating_areas returns 57 areas using { id, label }.
- * Confirmed: 13 = "Caribbean Virgin Islands (BVI)", 15 = "Caribbean Virgin
- * Islands (US/BVI)" (CYA's combined area — included in the USVI mapping),
- * 6 = Bahamas. Antigua, St Martin and Grenadines have NO confirmed matching
- * area yet — they are deliberately left unmapped until their labels are
- * reviewed in the admin diagnostic rather than guessed at broad regions. */
+ * Exact: 13 = "Caribbean Virgin Islands (BVI)", 15 = "Caribbean Virgin
+ * Islands (US/BVI)" (CYA's combined area — included in the BVI and USVI
+ * mappings), 14 = USVI, 6 = Bahamas.
+ * Regional: 12 = Caribbean Leewards (covers Antigua and St Martin), 16 =
+ * Caribbean Windwards (covers the Grenadines). Regional results span the
+ * broader cruising region — exact-island availability is confirmed with the
+ * charter team, never assumed. */
 export const DESTINATION_AREA_MAPPING: Record<
   string,
-  { label: string; areaIds: number[]; status: "mapped" | "pending-review" }
+  { label: string; areaIds: number[]; scope: "exact" | "regional"; regionNote: string }
 > = {
-  "british-virgin-islands": { label: "British Virgin Islands", areaIds: [13, 15], status: "mapped" },
-  "us-virgin-islands": { label: "US Virgin Islands", areaIds: [15], status: "mapped" },
-  bahamas: { label: "Bahamas", areaIds: [6], status: "mapped" },
-  antigua: { label: "Antigua", areaIds: [], status: "pending-review" },
-  "st-martin": { label: "St Martin", areaIds: [], status: "pending-review" },
-  grenadines: { label: "The Grenadines", areaIds: [], status: "pending-review" },
+  "british-virgin-islands": { label: "British Virgin Islands", areaIds: [13, 15], scope: "exact", regionNote: "" },
+  "us-virgin-islands": { label: "US Virgin Islands", areaIds: [14, 15], scope: "exact", regionNote: "" },
+  bahamas: { label: "Bahamas", areaIds: [6], scope: "exact", regionNote: "" },
+  antigua: {
+    label: "Antigua",
+    areaIds: [12],
+    scope: "regional",
+    regionNote:
+      "Antigua results cover CYA's broader Caribbean Leewards area, so they include neighbouring Leeward islands. Exact-island cruising availability is confirmed by our team with your enquiry.",
+  },
+  "st-martin": {
+    label: "St Martin",
+    areaIds: [12],
+    scope: "regional",
+    regionNote:
+      "St Martin results cover CYA's broader Caribbean Leewards area, so they include neighbouring Leeward islands. Exact-island cruising availability is confirmed by our team with your enquiry.",
+  },
+  grenadines: {
+    label: "The Grenadines",
+    areaIds: [16],
+    scope: "regional",
+    regionNote:
+      "Grenadines results cover CYA's broader Caribbean Windwards area, so they include neighbouring Windward islands. Exact-island cruising availability is confirmed by our team with your enquiry.",
+  },
 };
 
 export async function getOperatingAreas(): Promise<CyaOperatingArea[]> {

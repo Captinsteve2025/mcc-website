@@ -27,8 +27,8 @@ function str(value: unknown): string | null {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
-// Describe one yacht exactly as it appeared in the ACTUAL filtered response —
-// no enrichment, no local matching, no fallback records.
+// Describe one yacht exactly as it appeared in the CYA response named by its
+// probe — no enrichment, no local matching, no fallback records.
 function describeYacht(y: Yacht) {
   return {
     id: String(y.id ?? ""),
@@ -102,8 +102,14 @@ export async function GET(request: Request) {
   const report: Record<string, unknown> = {
     mccAuth: "successful",
     executedServerSide: true,
-    // The diagnostic never runs local fallback walks; every record below comes
-    // from the CYA response named in its probe.
+    // Verified live 2026-11-22. No speculative probes run in this diagnostic.
+    verifiedFilterFacts: {
+      "filters.location_areas": '["13","15"] returns 400 yachts (server-side, confirmed).',
+      "filters.yachtTypes": '["catamaran"] returns 694 yachts (server-side, confirmed).',
+      "filters.guests": "HTTP 422 — rejected. Never sent by the application.",
+      "filters.pax": "Ignored by CYA (returns all 1,920). Never sent by the application.",
+      guestCapacity: "Applied locally from each yacht's pax; unknown pax excluded from matches.",
+    },
     diagnosticPolicy: { fallbackWalksRun: false, recordsCiteTheirOwnResponse: true },
   };
 
@@ -130,7 +136,7 @@ export async function GET(request: Request) {
     };
   }
 
-  // --- Reviewed destination mapping vs the live area list ---
+  // --- Destination mapping (exact vs regional) vs the live area list ---
   try {
     const raw = await getOperatingAreasRaw();
     const normalized = normalizeOperatingAreas(raw);
@@ -152,15 +158,16 @@ export async function GET(request: Request) {
           slug,
           {
             label: entry.label,
-            status: entry.status,
+            scope: entry.scope,
             mappedAreaIds: entry.areaIds,
             liveMatches: matched.map((a) => ({ id: a.id, name: a.name })),
+            regionNote: entry.regionNote || null,
             note:
-              entry.status === "pending-review"
-                ? "Deliberately unmapped until the matching area label is reviewed in the allAreas dump above."
-                : matched.length === 0
-                  ? "Mapped IDs were not found in the live area list — search will show all yachts."
-                  : "Resolved against the live area list.",
+              matched.length === 0
+                ? "Mapped IDs were not found in the live area list — search shows all yachts for this destination."
+                : entry.scope === "regional"
+                  ? "Regional mapping: results span CYA's broader area; exact-island availability is confirmed per enquiry."
+                  : "Exact mapping resolved against the live area list.",
           },
         ];
       })
@@ -172,65 +179,25 @@ export async function GET(request: Request) {
     };
   }
 
-  // --- Bounded filter probes (Task 2). Ten single-page requests total; no
-  // local walks. Each entry reports the exact request body, the HTTP status,
-  // CYA's own reported total, and records from THAT response only. ---
+  // --- Server-filter probes (guest capacity is never sent to CYA) ---
   const unfiltered = await probe("unfiltered_baseline", {});
-
-  const bviString = await probe("bvi_string_ids", { location_areas: ["13", "15"] });
-  const bviNumber = await probe("bvi_number_ids", { location_areas: [13, 15] });
-
-  const guestsNumber = await probe("guests_number_8", { guests: 8 });
-  const guestsString = await probe("guests_string_8", { guests: "8" });
-  const guestsPax = await probe("guests_pax_8", { pax: 8 });
-
+  const bvi = await probe("bvi_string_ids", { location_areas: ["13", "15"] });
   const catamaran = await probe("catamaran", { yachtTypes: ["catamaran"] });
-
-  // Combined case uses the string IDs confirmed live (["13","15"] -> 400).
-  const combined = await probe("bvi_catamaran_8guests", {
+  const combined = await probe("bvi_catamaran_server", {
     location_areas: ["13", "15"],
     yachtTypes: ["catamaran"],
-    guests: 8,
   });
-
-  report.bviIdTypeFinding = {
-    stringIdsTotal: bviString.cyasReportedTotal,
-    numberIdsTotal: bviNumber.cyasReportedTotal,
-    conclusion:
-      bviString.success && bviNumber.success
-        ? bviString.cyasReportedTotal === bviNumber.cyasReportedTotal
-          ? "Both ID types return the same CYA total — either is accepted."
-          : bviString.cyasReportedTotal !== null &&
-              (bviNumber.cyasReportedTotal === null ||
-                bviString.cyasReportedTotal < bviNumber.cyasReportedTotal ||
-                bviNumber.cyasReportedTotal > 1920)
-            ? "String IDs filtered; number IDs did not (or errored). Use string IDs."
-            : "Number IDs filtered; string IDs did not. Use number IDs."
-        : "Inconclusive — see the individual probes' errors.",
-  };
-  report.guestFilterFinding = {
-    probesRun: ["guests_number_8", "guests_string_8", "guests_pax_8"],
-    successfulFormats: [
-      guestsNumber.success && guestsNumber.cyasReportedTotal !== unfiltered.cyasReportedTotal ? "guests: 8 (number)" : null,
-      guestsString.success && guestsString.cyasReportedTotal !== unfiltered.cyasReportedTotal ? "guests: \"8\" (string)" : null,
-      guestsPax.success && guestsPax.cyasReportedTotal !== unfiltered.cyasReportedTotal ? "pax: 8" : null,
-    ].filter((f): f is string => f !== null),
-    note:
-      "A format counts as accepted only when CYA returns its own smaller total. Equal-to-unfiltered totals or errors mean NOT accepted — read the probes' errorCode/errorMessage.",
-  };
 
   report.filterProbes = {
     unfiltered_baseline: unfiltered,
-    bvi_string_ids: bviString,
-    bvi_number_ids: bviNumber,
-    guests_number_8: guestsNumber,
-    guests_string_8: guestsString,
-    guests_pax_8: guestsPax,
+    bvi_string_ids: bvi,
     catamaran: catamaran,
-    bvi_catamaran_8guests: combined,
+    bvi_catamaran_server: combined,
+    note:
+      "Eight-guest results are produced by a local pax pass over the server-filtered inventory, never by a CYA guests/pax filter (both verified rejected/ignored).",
   };
 
-  // --- Pagination on the combined case: page 2 must differ from page 1 ---
+  // --- Pagination on the combined server filters: page 2 differs from page 1 ---
   let paginationCheck: Record<string, unknown> = { success: false, note: "Combined probe did not succeed." };
   if (combined.success) {
     try {

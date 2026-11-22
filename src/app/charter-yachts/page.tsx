@@ -8,6 +8,7 @@ import {
   startYachtSearchSession,
   getOperatingAreas,
   resolveDestinationAreas,
+  DESTINATION_AREA_MAPPING,
   yachtSeasonAreaNames,
   type Yacht,
 } from "@/lib/cya";
@@ -232,9 +233,12 @@ export default async function CharterYachtsPage({
   let checkedRecords = 0;
   let anyCriteria = false;
   let localMatches: number | null = null;
+  let regionNote: string | null = null;
 
   try {
     const areas = filters.destination ? await getOperatingAreas() : [];
+    const mappingEntry = filters.destination ? DESTINATION_AREA_MAPPING[filters.destination] : undefined;
+    if (mappingEntry && mappingEntry.regionNote) regionNote = mappingEntry.regionNote;
     const matched = filters.destination ? resolveDestinationAreas(areas, filters.destination) : [];
     if (filters.destination && matched.length === 0) {
       unmatchedDestination = true;
@@ -248,7 +252,13 @@ export default async function CharterYachtsPage({
       });
       pageYachts = await session.getPage(page, PAGE_SIZE);
       checkedRecords = session.checkedRecordCount;
-      if (session.serverFilterApplied) {
+      if (session.localWalkUsed) {
+        // Local walk (guest capacity pass or fallback): only its own checked
+        // match count is honest — never CYA's unfiltered or server total.
+        effectiveTotal = session.localTotal;
+        localMatches = session.localTotal;
+        resultsIncomplete = session.localResultsIncomplete;
+      } else if (session.serverFilterApplied) {
         // CYA confirmed the filters: its reported total is authoritative.
         effectiveTotal = session.serverTotal;
       } else if (!anyCriteria) {
@@ -308,6 +318,9 @@ export default async function CharterYachtsPage({
               ? `${effectiveTotal} ${effectiveTotal === 1 ? "yacht" : "yachts"} matching your search`
               : "Live charter yachts from Central Yacht Agent"}
         </p>
+        {regionNote && (
+          <p className="mx-auto mt-3 max-w-xl rounded-md bg-white/10 p-3 text-sm text-white/90">{regionNote}</p>
+        )}
         {unmatchedDestination && (
           <p className="mx-auto mt-3 max-w-xl rounded-md bg-white/10 p-3 text-sm text-white/90">
             This destination is not mapped to the live cruising-area list yet — showing all yachts instead. Our team can confirm coverage for it directly.
