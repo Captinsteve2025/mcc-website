@@ -588,3 +588,63 @@ export async function getYachtDetail(id: string): Promise<Record<string, unknown
     revalidate: 300,
   });
 }
+
+// --- Bookings (authorized availability) -------------------------------------
+
+/* Documented in CYA's public OpenAPI spec (api.centralyachtagent.com/public/
+ * documentation): GET /api/v1/bookings?yacht_id=... returns all ongoing and
+ * future bookings from the yacht calendar collection. Note the spec's base
+ * URL is /public/api/v1 while the legacy endpoints above are served at the
+ * host root — the base comes from CYA_API_BASE, so the full path is used. */
+export type CyaBooking = {
+  id: string;
+  yachtId: string;
+  category: string;
+  yachtName: string | null;
+  startDate: string;
+  endDate: string;
+  /** When present and still in the future, the booking is an option/hold. */
+  holdExpireDate: string | null;
+  title: string | null;
+};
+
+function isoDay(value: unknown): string | null {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}/.test(value)) return null;
+  return value.slice(0, 10);
+}
+
+export async function getYachtBookings(yachtId: string): Promise<CyaBooking[]> {
+  const payload = await cyaFetch<{ bookings?: unknown } | unknown[]>(
+    `/api/v1/bookings?yacht_id=${encodeURIComponent(yachtId)}`,
+    { revalidate: 300 }
+  );
+  const list = Array.isArray(payload)
+    ? payload
+    : payload && typeof payload === "object" && Array.isArray((payload as { bookings?: unknown }).bookings)
+      ? (payload as { bookings: unknown[] }).bookings
+      : [];
+  const today = new Date().toISOString().slice(0, 10);
+  const bookings: CyaBooking[] = [];
+  for (const raw of list) {
+    if (!raw || typeof raw !== "object") continue;
+    const b = raw as Record<string, unknown>;
+    const start = isoDay(b.event_start_date);
+    const end = isoDay(b.event_end_date);
+    const id = typeof b._id === "string" ? b._id : "";
+    const category = typeof b.category === "string" ? b.category : "";
+    if (!start || !end || !id || !category) continue;
+    if (end < today) continue; // documented: only ongoing/future bookings
+    const holdExpire = isoDay(b.hold_expire_date);
+    bookings.push({
+      id,
+      yachtId: typeof b.yacht_id === "string" ? b.yacht_id : yachtId,
+      category,
+      yachtName: typeof b.yacht_name === "string" ? b.yacht_name : null,
+      startDate: start,
+      endDate: end,
+      holdExpireDate: holdExpire,
+      title: typeof b.title === "string" && b.title.trim() ? b.title.trim() : null,
+    });
+  }
+  return bookings;
+}

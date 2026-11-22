@@ -47,9 +47,11 @@ type Props = {
   yachtId: string;
   ranges: AvailabilityRange[];
   lastUpdated: string | null;
+  /** True when at least one range comes from CYA's live bookings feed. */
+  hasLiveData?: boolean;
 };
 
-export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated }: Props) {
+export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiveData = false }: Props) {
   const today = new Date();
   const [monthOffset, setMonthOffset] = useState(0); // months from the current month
   const [selectStart, setSelectStart] = useState<string | null>(null);
@@ -247,7 +249,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated }: Prop
 
       {lastUpdated && (
         <p className="mt-3 text-xs text-[#061625]/50">
-          Availability last updated{" "}
+          {hasLiveData ? "Live calendar data from Central Yacht Agent, last updated " : "Availability records last updated "}
           {new Date(lastUpdated).toLocaleDateString("en-US", { day: "numeric", month: "long", year: "numeric" })}.
           Always re-confirmed before booking.
         </p>

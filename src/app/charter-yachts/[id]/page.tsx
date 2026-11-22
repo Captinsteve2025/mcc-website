@@ -220,6 +220,7 @@ export default async function YachtDetailPage({
               yachtId={id}
               ranges={availability.ranges}
               lastUpdated={availability.lastUpdated}
+              hasLiveData={availability.hasLiveData}
             />
           </div>
         </section>
