@@ -56,7 +56,6 @@ function yachtAreaLabel(yacht: Yacht): string | null {
   const names = yachtSeasonAreaNames(yacht);
   return names.length > 0 ? names[0] : null;
 }
-
 function yachtPrice(yacht: Yacht): string | null {
   if (typeof yacht.min_price_usd === "number") {
     return `$${Math.round(yacht.min_price_usd).toLocaleString("en-US")}+ indicative`;
@@ -234,6 +233,7 @@ export default async function CharterYachtsPage({
   let anyCriteria = false;
   let localMatches: number | null = null;
   let regionNote: string | null = null;
+  let unverifiableArea = false;
 
   try {
     const areas = filters.destination ? await getOperatingAreas() : [];
@@ -247,16 +247,19 @@ export default async function CharterYachtsPage({
       anyCriteria = Boolean(filters.destination) || typeWords.length > 0 || Boolean(filters.guests);
       const session = await startYachtSearchSession({
         areaIds: matched.map((a) => a.id).filter(Boolean),
+        // CYA's own labels for the mapped areas, used to verify yacht
+        // seasonAreas locally when the server filter cannot be confirmed.
+        areaNames: matched.map((a) => a.name),
         typeWords,
         minGuests: filters.guests ? Number(filters.guests) : null,
       });
       pageYachts = await session.getPage(page, PAGE_SIZE);
       checkedRecords = session.checkedRecordCount;
+      localMatches = session.localMatchCount;
+      if (session.unverifiableAreaCount > 0) unverifiableArea = true;
       if (session.localWalkUsed) {
-        // Local walk (guest capacity pass or fallback): only its own checked
-        // match count is honest — never CYA's unfiltered or server total.
+        // Local walk: its own checked/match counts are the only honest numbers.
         effectiveTotal = session.localTotal;
-        localMatches = session.localTotal;
         resultsIncomplete = session.localResultsIncomplete;
       } else if (session.serverFilterApplied) {
         // CYA confirmed the filters: its reported total is authoritative.
@@ -265,11 +268,6 @@ export default async function CharterYachtsPage({
         // Unfiltered catalogue: CYA's own totalYachts drives pagination.
         effectiveTotal = session.probeLog.find((p) => p.label.startsWith("unfiltered_page1") || p.label.startsWith("page1") || p.label.startsWith("filtered_page1"))?.totalYachts ?? null;
         if (effectiveTotal === null) effectiveTotal = session.probeLog[0]?.totalYachts ?? null;
-      } else {
-        // Local fallback: only quote a complete, walked match count.
-        effectiveTotal = session.localTotal;
-        localMatches = session.localTotal;
-        resultsIncomplete = session.localResultsIncomplete;
       }
     }
   } catch {
@@ -312,14 +310,21 @@ export default async function CharterYachtsPage({
         </h1>
         <div className="mx-auto h-px w-16 bg-[#e89d79]" aria-hidden="true" />
         <p className="mt-6 text-white/80">
-          {resultsIncomplete
-            ? `Checked ${checkedRecords} catalogue records so far${localMatches !== null ? ` — ${localMatches} ${localMatches === 1 ? "yacht" : "yachts"} matched` : ""}; the full inventory is larger.`
-            : effectiveTotal !== null
-              ? `${effectiveTotal} ${effectiveTotal === 1 ? "yacht" : "yachts"} matching your search`
-              : "Live charter yachts from Central Yacht Agent"}
+          {resultsIncomplete && localMatches !== null
+            ? `Checked ${checkedRecords} catalogue records so far — ${localMatches} ${localMatches === 1 ? "yacht" : "yachts"} matched; the full inventory is larger, so more matches may exist.`
+            : resultsIncomplete
+              ? `Checked ${checkedRecords} catalogue records so far; the full inventory is larger.`
+              : effectiveTotal !== null
+                ? `${effectiveTotal} ${effectiveTotal === 1 ? "yacht" : "yachts"} matching your search`
+                : "Live charter yachts from Central Yacht Agent"}
         </p>
         {regionNote && (
           <p className="mx-auto mt-3 max-w-xl rounded-md bg-white/10 p-3 text-sm text-white/90">{regionNote}</p>
+        )}
+        {unverifiableArea && (
+          <p className="mx-auto mt-3 max-w-xl rounded-md bg-white/10 p-3 text-sm text-white/90">
+            Some scanned records do not list their cruising areas, so we could not fully verify this destination's results. Our team can confirm coverage directly — just ask with an enquiry.
+          </p>
         )}
         {unmatchedDestination && (
           <p className="mx-auto mt-3 max-w-xl rounded-md bg-white/10 p-3 text-sm text-white/90">
@@ -330,7 +335,7 @@ export default async function CharterYachtsPage({
           <p className="mx-auto mt-3 flex max-w-xl items-start gap-2 rounded-md bg-[#e89d79]/20 p-3 text-left text-sm text-white">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
             <span>
-              These results come from the first {checkedRecords} records of the live catalogue and may not list every matching yacht. Our team can check the full inventory for you — just ask.
+              This search scanned the first {checkedRecords} records of the live catalogue and found {localMatches ?? "some"} {localMatches === 1 ? "match" : "matches"}; more records remain unchecked, so this is not the complete result. Our team can check the full inventory for you — just ask.
             </span>
           </p>
         )}
@@ -347,11 +352,11 @@ export default async function CharterYachtsPage({
           </p>
         ) : pageYachts.length === 0 && anyCriteria && resultsIncomplete ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">
-            No matches found in the {checkedRecords} catalogue records checked so far — more records remain unchecked, so matching yachts may still exist. Try widening your search, or call us and we will check the full inventory.
+            No matches found in the {checkedRecords} catalogue records checked so far — more records remain unchecked, so matching yachts may still exist. Try widening your search, or enquire and we will check the full inventory.
           </p>
         ) : pageYachts.length === 0 ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">
-            No matching yachts exist for this search in the live catalogue right now. Try widening your destination or guest count, or call us — new yachts are added regularly.
+            No matching yachts exist for this search in the live catalogue right now. Try widening your destination or guest count, or enquire — new yachts are added regularly.
           </p>
         ) : (
           <>

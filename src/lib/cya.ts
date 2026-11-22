@@ -209,6 +209,9 @@ export function yachtTypeWordsMatch(yacht: Yacht, words: string[]): boolean {
 
 export type SearchCriteria = {
   areaIds: (string | number)[];
+  /** CYA area labels for the requested destination, used ONLY for local
+   *  seasonAreas verification when the server filter cannot be confirmed. */
+  areaNames: string[];
   typeWords: string[];
   minGuests: number | null;
 };
@@ -230,6 +233,12 @@ export type YachtSearchSession = {
   localTotal: number | null;
   /** Yachts matching from the checked records when the walk was capped. */
   checkedRecordCount: number;
+  /** Match count from the local walk, exposed separately from any complete
+   *  total — shown even when the walk was capped. */
+  localMatchCount: number | null;
+  /** Scanned records carrying no area labels while locally verifying a
+   *  destination: their destination membership could not be established. */
+  unverifiableAreaCount: number;
   /** True when a local walk (guest capacity pass or fallback) produced the results. */
   localWalkUsed: boolean;
   /** CYA request bodies recorded for the admin verification report. */
@@ -248,6 +257,13 @@ function typeViolated(yacht: Yacht, typeWords: string[]): boolean {
 // from local matches rather than assumed to comply.
 function guestViolated(yacht: Yacht, minGuests: number | null): boolean {
   return minGuests !== null && (typeof yacht.pax !== "number" || yacht.pax < minGuests);
+}
+
+// Local destination verification: match a yacht's season area labels against
+// the reviewed mapping's CYA area labels (substring in either direction).
+function areaLabelMatches(yacht: Yacht, loweredNames: string[]): boolean {
+  const labels = yachtSeasonAreaNames(yacht).map((n) => n.toLowerCase());
+  return labels.some((label) => loweredNames.some((n) => label.includes(n) || n.includes(label)));
 }
 
 type PageFetcher = (
@@ -321,6 +337,25 @@ export async function startYachtSearchSession(
   let checkedRecordCount = 0;
   let unfilteredTotal: number | null = null;
   let localWalkUsed = false;
+  let localMatchCount: number | null = null;
+  let unverifiableAreaCount = 0;
+  const loweredAreaNames = criteria.areaNames.map((n) => n.toLowerCase());
+  // Local area-label verification only runs when CYA did NOT confirm the
+  // destination filter — a confirmed server filter already proves coverage.
+  // Evaluated lazily: serverFilterApplied is only known after the probe below.
+  const locallyVerifiesArea = () => loweredAreaNames.length > 0 && !serverFilterApplied;
+  const keepYacht = (y: Yacht): boolean => {
+    if (locallyVerifiesArea()) {
+      if (yachtSeasonAreaNames(y).length === 0) {
+        unverifiableAreaCount += 1;
+        return false;
+      }
+      if (!areaLabelMatches(y, loweredAreaNames)) return false;
+    }
+    if (guestViolated(y, criteria.minGuests)) return false;
+    if (!serverFilterApplied && typeViolated(y, criteria.typeWords)) return false;
+    return true;
+  };
   const filterAcceptance: Record<string, "confirmed" | "rejected" | "inconclusive"> = {};
 
   if (hasServerFilters) {
@@ -393,17 +428,19 @@ export async function startYachtSearchSession(
         fetchPage,
         (p) => ({ page: p, limit: WALK_PAGE_SIZE, searchTerm: "", filters: serverFilters }),
         serverFilterApplied ? "guestwalk_filtered" : "guestwalk_unfiltered",
-        (y) => !guestViolated(y, criteria.minGuests) && (serverFilterApplied || !typeViolated(y, criteria.typeWords)),
+        keepYacht,
         knownTotal
       );
       localYachts = walk.matches;
       localTotal = walk.incomplete ? null : walk.matches.length;
+      localMatchCount = walk.matches.length;
       localResultsIncomplete = walk.incomplete;
       checkedRecordCount = walk.checked;
       localWalkUsed = true;
     } catch {
       localYachts = [];
       localTotal = null;
+      localMatchCount = 0;
       localResultsIncomplete = true;
       localWalkUsed = true;
     }
@@ -413,17 +450,19 @@ export async function startYachtSearchSession(
         fetchPage,
         (p) => ({ page: p, limit: WALK_PAGE_SIZE, searchTerm: "", filters: {} }),
         "unfiltered",
-        (y) => !typeViolated(y, criteria.typeWords),
+        keepYacht,
         unfilteredTotal
       );
       localYachts = walk.matches;
       localTotal = walk.incomplete ? null : walk.matches.length;
+      localMatchCount = walk.matches.length;
       localResultsIncomplete = walk.incomplete;
       checkedRecordCount = walk.checked;
       localWalkUsed = true;
     } catch {
       localYachts = [];
       localTotal = null;
+      localMatchCount = 0;
       localResultsIncomplete = true;
       localWalkUsed = true;
     }
@@ -436,6 +475,8 @@ export async function startYachtSearchSession(
     localResultsIncomplete,
     localTotal,
     checkedRecordCount,
+    localMatchCount,
+    unverifiableAreaCount,
     localWalkUsed,
     probeLog,
     async getPage(page, limit) {
