@@ -71,6 +71,8 @@ export default function AdminApiTestPage() {
   const [result, setResult] = useState<TestResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [verifyResult, setVerifyResult] = useState<TestResult | null>(null);
+  const [verifyLoading, setVerifyLoading] = useState(false);
 
   async function runTest(e: React.FormEvent) {
     e.preventDefault();
@@ -87,6 +89,24 @@ export default function AdminApiTestPage() {
       setError("The request to this website's server failed. Check your connection and try again.");
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function runVerify(e: React.FormEvent) {
+    e.preventDefault();
+    setVerifyLoading(true);
+    setError(null);
+    setVerifyResult(null);
+    try {
+      const response = await fetch("/api/cya-verify", {
+        headers: { "x-admin-token": token },
+      });
+      const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      setVerifyResult({ status: response.status, ok: response.ok, body });
+    } catch {
+      setError("The request to this website's server failed. Check your connection and try again.");
+    } finally {
+      setVerifyLoading(false);
     }
   }
 
@@ -122,6 +142,32 @@ export default function AdminApiTestPage() {
           {loading ? "Testing…" : "Run diagnostic"}
         </button>
       </form>
+
+      <form onSubmit={runVerify} className="mb-8">
+        <button
+          type="submit"
+          disabled={verifyLoading || !token}
+          className="rounded-full border border-[#061625]/30 px-6 py-3 text-sm font-medium text-[#061625] transition-colors hover:bg-[#061625]/5 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {verifyLoading ? "Verifying…" : "Verify live data (areas + yachts)"}
+        </button>
+      </form>
+
+      {verifyResult && (
+        <div className="mb-8 rounded-lg border border-[#061625]/10 bg-white p-6" aria-live="polite">
+          <h2 className="mb-4 text-sm font-semibold text-[#061625]">Live data verification</h2>
+          <dl className="space-y-3 text-sm">
+            {Object.entries(verifyResult.body).map(([key, value]) => (
+              <div key={key} className="flex flex-col gap-0.5 sm:flex-row sm:gap-2">
+                <dt className="shrink-0 font-medium text-[#061625]">{key}:</dt>
+                <dd className="text-[#061625]/75 break-words">
+                  {typeof value === "object" ? JSON.stringify(value, null, 1) : String(value)}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      )}
 
       {error && (
         <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
