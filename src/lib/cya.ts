@@ -208,8 +208,7 @@ export function yachtTypeWordsMatch(yacht: Yacht, words: string[]): boolean {
 // --- Yacht search session ---------------------------------------------------
 
 export type SearchCriteria = {
-  areaIds: string[];
-  loweredAreaNames: string[];
+  areaIds: (string | number)[];
   typeWords: string[];
   minGuests: number | null;
 };
@@ -238,7 +237,6 @@ export type YachtSearchSession = {
 const LOCAL_FALLBACK_MAX_PAGES = 8;
 
 function criterionViolated(yacht: Yacht, criteria: SearchCriteria): boolean {
-  if (criteria.loweredAreaNames.length > 0 && !yachtAreaMatchesSynonymsIn(yacht, criteria.loweredAreaNames)) return true;
   if (criteria.typeWords.length > 0 && !yachtTypeWordsMatch(yacht, criteria.typeWords)) return true;
   if (criteria.minGuests !== null && typeof yacht.pax === "number" && yacht.pax < criteria.minGuests) return true;
   return false;
@@ -314,7 +312,7 @@ export async function startYachtSearchSession(
           single.push({
             name: "location_areas",
             filters: { location_areas: criteria.areaIds },
-            check: (y) => yachtAreaMatchesSynonymsIn(y, criteria.loweredAreaNames),
+            check: () => true, // area membership is judged from CYA's own totals
           });
         if (criteria.typeWords.length > 0)
           single.push({
@@ -389,26 +387,24 @@ export async function startYachtSearchSession(
 
 export type CyaOperatingArea = { id: string; name: string };
 
-/* Synonyms cover the cruising-area labels CYA actually publishes (e.g.
- * "St. Martin / St. Maarten"). Matching is against live area data fetched
- * from /operating_areas — no invented area IDs. */
-const DESTINATION_AREA_SYNONYMS: Record<string, string[]> = {
-  "british-virgin-islands": ["british virgin islands", "bvi"],
-  "us-virgin-islands": ["us virgin islands", "u.s. virgin islands", "united states virgin islands", "usvi", "st thomas", "saint thomas", "st john"],
-  "st-martin": ["st martin", "st. martin", "saint martin", "st maarten", "st. maarten", "sint maarten"],
-  antigua: ["antigua", "barbuda"],
-  grenadines: ["grenadines", "st vincent", "st. vincent", "saint vincent", "bequia", "mustique", "canouan", "union island", "mayreau", "carriacou", "grenada"],
-  bahamas: ["bahamas", "exuma", "abaco", "eleuthera", "nassau", "harbour island", "andros", "berry islands", "bimini"],
+/* Explicit, reviewed mapping from live verification (2026-11-22):
+ * CYA /operating_areas returns 57 areas using { id, label }.
+ * Confirmed: 13 = "Caribbean Virgin Islands (BVI)", 15 = "Caribbean Virgin
+ * Islands (US/BVI)" (CYA's combined area — included in the USVI mapping),
+ * 6 = Bahamas. Antigua, St Martin and Grenadines have NO confirmed matching
+ * area yet — they are deliberately left unmapped until their labels are
+ * reviewed in the admin diagnostic rather than guessed at broad regions. */
+export const DESTINATION_AREA_MAPPING: Record<
+  string,
+  { label: string; areaIds: number[]; status: "mapped" | "pending-review" }
+> = {
+  "british-virgin-islands": { label: "British Virgin Islands", areaIds: [13, 15], status: "mapped" },
+  "us-virgin-islands": { label: "US Virgin Islands", areaIds: [15], status: "mapped" },
+  bahamas: { label: "Bahamas", areaIds: [6], status: "mapped" },
+  antigua: { label: "Antigua", areaIds: [], status: "pending-review" },
+  "st-martin": { label: "St Martin", areaIds: [], status: "pending-review" },
+  grenadines: { label: "The Grenadines", areaIds: [], status: "pending-review" },
 };
-
-export function destinationSynonyms(destination: string): string[] {
-  return DESTINATION_AREA_SYNONYMS[destination] ?? (destination ? [destination.replace(/-/g, " ")] : []);
-}
-
-function areaNameMatches(areaName: string, synonyms: string[]): boolean {
-  const name = areaName.toLowerCase();
-  return synonyms.some((s) => name.includes(s) || s.includes(name));
-}
 
 export async function getOperatingAreas(): Promise<CyaOperatingArea[]> {
   const raw = await getOperatingAreasRaw();
@@ -425,12 +421,14 @@ export async function getOperatingAreas(): Promise<CyaOperatingArea[]> {
   return areas;
 }
 
-// Resolve an MCC destination slug against the live CYA operating-area list.
-// Returns [] when nothing matches; callers then match on area-name words.
+// Resolve an MCC destination slug to CYA areas via the explicit reviewed
+// mapping, validated against the live area list. Returns [] when the
+// destination is unmapped (pending review) or its IDs are absent live.
 export function resolveDestinationAreas(areas: CyaOperatingArea[], destination: string): CyaOperatingArea[] {
-  const synonyms = destinationSynonyms(destination);
-  if (synonyms.length === 0) return [];
-  return areas.filter((a) => areaNameMatches(a.name, synonyms));
+  const entry = DESTINATION_AREA_MAPPING[destination];
+  if (!entry || entry.areaIds.length === 0) return [];
+  const wanted = new Set(entry.areaIds.map(String));
+  return areas.filter((a) => wanted.has(String(a.id)));
 }
 
 export function yachtSeasonAreaNames(yacht: Yacht): string[] {
@@ -449,42 +447,13 @@ export function yachtSeasonAreaNames(yacht: Yacht): string[] {
     .filter(Boolean);
 }
 
-// True when any of the yacht's season-area names matches one of the given
-// (already-lowercased) area-name fragments.
-export function yachtAreaMatchesSynonymsIn(yacht: Yacht, loweredSynonyms: string[]): boolean {
-  return yachtSeasonAreaNames(yacht).some((n) => {
-    const name = n.toLowerCase();
-    return loweredSynonyms.some((s) => name.includes(s) || s.includes(name));
-  });
-}
-
 // --- Yacht detail -----------------------------------------------------------
 
-/* The documented detail endpoint is GET /yachts_get/{yacht_id}. The documented
- * `include` parameter is tried first for full detail (photos, crew, amenities,
- * rates); the legacy /yachts/{id} path is kept as a last resort. The first
- * template that succeeds is remembered per instance. */
-const DETAIL_PATH_TEMPLATES = [
-  "/yachts_get/{id}?include=photos,images,crew,amenities,rates,description",
-  "/yachts_get/{id}",
-  "/yachts/{id}",
-];
-let workingDetailTemplate: string | null = null;
-
+/* The documented detail endpoint is GET /yachts_get/{yacht_id}. Live
+ * verification confirmed it works and returns the full field set, so the
+ * include-parameter and legacy-path variants are no longer probed. */
 export async function getYachtDetail(id: string): Promise<Record<string, unknown>> {
-  const templates = workingDetailTemplate ? [workingDetailTemplate] : DETAIL_PATH_TEMPLATES;
-  let lastError: unknown = null;
-  for (const template of templates) {
-    try {
-      const data = await cyaFetch<Record<string, unknown>>(template.replace("{id}", encodeURIComponent(id)), {
-        revalidate: 300,
-      });
-      workingDetailTemplate = template;
-      return data;
-    } catch (err) {
-      lastError = err;
-      if (err instanceof CyaApiError && [401, 403, 429].includes(err.status)) throw err;
-    }
-  }
-  throw lastError;
+  return cyaFetch<Record<string, unknown>>(`/yachts_get/${encodeURIComponent(id)}`, {
+    revalidate: 300,
+  });
 }

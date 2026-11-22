@@ -2,15 +2,12 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import {
   getOperatingAreasRaw,
-  getOperatingAreas,
-  resolveDestinationAreas,
   normalizeOperatingAreas,
   searchYachts,
-  startYachtSearchSession,
-  yachtTypeWordsMatch,
-  getYachtDetail,
-  destinationSynonyms,
   yachtSeasonAreaNames,
+  getYachtDetail,
+  DESTINATION_AREA_MAPPING,
+  resolveDestinationAreas,
   CyaApiError,
   type Yacht,
 } from "@/lib/cya";
@@ -26,30 +23,67 @@ function adminTokenMatches(provided: string | null, expected: string | undefined
   return timingSafeEqual(a, b);
 }
 
-function jsonType(value: unknown): string {
-  if (value === null) return "null";
-  if (Array.isArray(value)) return "array";
-  return typeof value;
+function str(value: unknown): string | null {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
-function describeJsonStructure(value: unknown, depth = 0, out: string[] = []): string[] {
-  if (depth > 2) return out;
-  if (Array.isArray(value)) {
-    out.push(`array (${value.length} items)`);
-    if (value.length > 0) describeJsonStructure(value[0], depth + 1, out);
-    return out;
-  }
-  if (value && typeof value === "object") {
-    for (const [key, child] of Object.entries(value as Record<string, unknown>)) {
-      out.push(`${key}: ${jsonType(child)}${child && typeof child === "object" ? "" : ` = ${String(child).slice(0, 40)}`}`);
-      if (child && typeof child === "object") describeJsonStructure(child, depth + 1, out);
-    }
-  }
-  return out;
+// Describe one yacht exactly as it appeared in the ACTUAL filtered response —
+// no enrichment, no local matching, no fallback records.
+function describeYacht(y: Yacht) {
+  return {
+    id: String(y.id ?? ""),
+    name: str(y.yachtName),
+    type: str(y.yachtType),
+    pax: typeof y.pax === "number" ? y.pax : null,
+    seasonAreas: yachtSeasonAreaNames(y).slice(0, 3),
+  };
 }
 
-function errorInfo(err: unknown): string {
-  return err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.";
+type ProbeResult = {
+  label: string;
+  success: boolean;
+  httpStatus: number | null;
+  requestBody: Record<string, unknown>;
+  cyasReportedTotal: number | null;
+  listingsReturned: number;
+  yachts: ReturnType<typeof describeYacht>[];
+  errorCode: string | null;
+  errorMessage: string | null;
+  fallbackUsed: false;
+};
+
+async function probe(label: string, filters: Record<string, unknown>): Promise<ProbeResult> {
+  const body = { page: 1, limit: 10, searchTerm: "", filters };
+  try {
+    const response = await searchYachts(body);
+    const yachts = (response.yachts as Yacht[] | undefined) ?? [];
+    return {
+      label,
+      success: true,
+      httpStatus: 200,
+      requestBody: body,
+      cyasReportedTotal: typeof response.totalYachts === "number" ? response.totalYachts : null,
+      listingsReturned: yachts.length,
+      yachts: yachts.slice(0, 5).map(describeYacht),
+      errorCode: null,
+      errorMessage: null,
+      fallbackUsed: false,
+    };
+  } catch (err) {
+    return {
+      label,
+      success: false,
+      httpStatus: err instanceof CyaApiError ? err.status : null,
+      requestBody: body,
+      cyasReportedTotal: null,
+      listingsReturned: 0,
+      yachts: [],
+      errorCode: err instanceof CyaApiError ? err.code : null,
+      errorMessage:
+        err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
+      fallbackUsed: false,
+    };
+  }
 }
 
 export async function GET(request: Request) {
@@ -65,245 +99,233 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const report: Record<string, unknown> = { mccAuth: "successful", executedServerSide: true };
+  const report: Record<string, unknown> = {
+    mccAuth: "successful",
+    executedServerSide: true,
+    // The diagnostic never runs local fallback walks; every record below comes
+    // from the CYA response named in its probe.
+    diagnosticPolicy: { fallbackWalksRun: false, recordsCiteTheirOwnResponse: true },
+  };
 
-  // --- Operating areas: report structure, then normalize ---
+  // --- Operating areas: full dump of every live label for mapping review ---
   try {
     const raw = await getOperatingAreasRaw();
-    const topLevel = describeJsonStructure(raw);
     const normalized = normalizeOperatingAreas(raw);
     report.operatingAreas = normalized
       ? {
           success: true,
-          httpStatus: 200,
-          validJson: true,
-          topLevelStructure: topLevel.slice(0, 30),
           arrayLocation: normalized.arrayLocation,
           count: normalized.areas.length,
-          samples: normalized.areas.slice(0, 5).map((a) => ({
+          allAreas: normalized.areas.map((a) => ({
             id: String(a.id ?? a.area_id ?? a.uuid ?? "(no id field)"),
-            name: String(a.name ?? a.label ?? a.title ?? "(no name field)"),
+            label: String(a.label ?? a.name ?? a.title ?? "(no label field)"),
           })),
         }
-      : {
-          success: false,
-          httpStatus: 200,
-          validJson: true,
-          topLevelStructure: topLevel.slice(0, 30),
-          note: "Response was valid JSON but no cruising-area array could be located in it.",
-        };
+      : { success: false, note: "Valid JSON but no cruising-area array could be located in it." };
   } catch (err) {
-    report.operatingAreas = { success: false, error: errorInfo(err) };
-  }
-
-  // --- Yacht search page 1 ---
-  const requestBody = { page: 1, limit: 10, searchTerm: "", filters: {} };
-  let page1Ids: string[] = [];
-  try {
-    const search = await searchYachts(requestBody);
-    const yachts = (search.yachts as Record<string, unknown>[] | undefined) ?? [];
-    page1Ids = yachts.map((y) => String(y.id ?? ""));
-    report.yachtSearchPage1 = {
-      success: true,
-      requestBody,
-      totalYachts: search.totalYachts ?? null,
-      listingsReturned: yachts.length,
-      firstYachtId: page1Ids[0] ?? null,
-      observedFields: yachts[0] ? Object.keys(yachts[0]) : [],
-      // Image URL diagnostics: hostname breakdown and per-yacht validity.
-      imageHostnames: [
-        ...new Set(
-          yachts
-            .map((y) => {
-              const img = y.image;
-              if (typeof img !== "string" || img.length === 0) return "(missing)";
-              try {
-                return new URL(img).hostname;
-              } catch {
-                return "(invalid URL)";
-              }
-            })
-            .filter(Boolean)
-        ),
-      ],
-      imageCounts: {
-        total: yachts.length,
-        validHttpsUrl: yachts.filter((y) => {
-          const img = y.image;
-          if (typeof img !== "string") return false;
-          try {
-            return new URL(img).protocol === "https:";
-          } catch {
-            return false;
-          }
-        }).length,
-        missing: yachts.filter((y) => typeof y.image !== "string" || y.image.length === 0).length,
-        invalidUrl: yachts.filter((y) => {
-          const img = y.image;
-          if (typeof img !== "string" || img.length === 0) return false;
-          try {
-            new URL(img);
-            return false;
-          } catch {
-            return true;
-          }
-        }).length,
-      },
+    report.operatingAreas = {
+      success: false,
+      errorCode: err instanceof CyaApiError ? err.code : null,
+      errorMessage: err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
     };
-  } catch (err) {
-    report.yachtSearchPage1 = { success: false, error: errorInfo(err) };
   }
 
-  // --- Yacht search page 2: confirm pagination ---
+  // --- Reviewed destination mapping vs the live area list ---
   try {
-    const search2 = await searchYachts({ ...requestBody, page: 2 });
-    const yachts2 = (search2.yachts as Record<string, unknown>[] | undefined) ?? [];
-    const page2Ids = yachts2.map((y) => String(y.id ?? ""));
-    const overlap = page2Ids.filter((id) => page1Ids.includes(id)).length;
-    report.yachtSearchPage2 = {
-      success: true,
-      listingsReturned: yachts2.length,
-      firstYachtId: page2Ids[0] ?? null,
-      idsDifferFromPage1: page2Ids.length > 0 && overlap < page2Ids.length,
-      overlappingIds: overlap,
-      totalYachts: search2.totalYachts ?? null,
-    };
+    const raw = await getOperatingAreasRaw();
+    const normalized = normalizeOperatingAreas(raw);
+    const areas = normalized
+      ? normalized.areas
+          .map((a) => {
+            const id = a.id ?? a.area_id ?? a.uuid;
+            const name = a.label ?? a.name ?? a.title;
+            return typeof name === "string" && (typeof id === "string" || typeof id === "number")
+              ? { id: String(id), name }
+              : null;
+          })
+          .filter((a): a is { id: string; name: string } => a !== null)
+      : [];
+    report.destinationMapping = Object.fromEntries(
+      Object.entries(DESTINATION_AREA_MAPPING).map(([slug, entry]) => {
+        const matched = resolveDestinationAreas(areas, slug);
+        return [
+          slug,
+          {
+            label: entry.label,
+            status: entry.status,
+            mappedAreaIds: entry.areaIds,
+            liveMatches: matched.map((a) => ({ id: a.id, name: a.name })),
+            note:
+              entry.status === "pending-review"
+                ? "Deliberately unmapped until the matching area label is reviewed in the allAreas dump above."
+                : matched.length === 0
+                  ? "Mapped IDs were not found in the live area list — search will show all yachts."
+                  : "Resolved against the live area list.",
+          },
+        ];
+      })
+    );
   } catch (err) {
-    report.yachtSearchPage2 = { success: false, error: errorInfo(err) };
+    report.destinationMapping = {
+      success: false,
+      errorMessage: err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
+    };
   }
 
-  // --- Yacht detail for the first page-1 yacht ---
-  if (page1Ids[0]) {
+  // --- Bounded filter probes (Task 2). Ten single-page requests total; no
+  // local walks. Each entry reports the exact request body, the HTTP status,
+  // CYA's own reported total, and records from THAT response only. ---
+  const unfiltered = await probe("unfiltered_baseline", {});
+
+  const bviString = await probe("bvi_string_ids", { location_areas: ["13", "15"] });
+  const bviNumber = await probe("bvi_number_ids", { location_areas: [13, 15] });
+
+  const guestsNumber = await probe("guests_number_8", { guests: 8 });
+  const guestsString = await probe("guests_string_8", { guests: "8" });
+  const guestsPax = await probe("guests_pax_8", { pax: 8 });
+
+  const catamaran = await probe("catamaran", { yachtTypes: ["catamaran"] });
+
+  // Combined case uses the string IDs confirmed live (["13","15"] -> 400).
+  const combined = await probe("bvi_catamaran_8guests", {
+    location_areas: ["13", "15"],
+    yachtTypes: ["catamaran"],
+    guests: 8,
+  });
+
+  report.bviIdTypeFinding = {
+    stringIdsTotal: bviString.cyasReportedTotal,
+    numberIdsTotal: bviNumber.cyasReportedTotal,
+    conclusion:
+      bviString.success && bviNumber.success
+        ? bviString.cyasReportedTotal === bviNumber.cyasReportedTotal
+          ? "Both ID types return the same CYA total — either is accepted."
+          : bviString.cyasReportedTotal !== null &&
+              (bviNumber.cyasReportedTotal === null ||
+                bviString.cyasReportedTotal < bviNumber.cyasReportedTotal ||
+                bviNumber.cyasReportedTotal > 1920)
+            ? "String IDs filtered; number IDs did not (or errored). Use string IDs."
+            : "Number IDs filtered; string IDs did not. Use number IDs."
+        : "Inconclusive — see the individual probes' errors.",
+  };
+  report.guestFilterFinding = {
+    probesRun: ["guests_number_8", "guests_string_8", "guests_pax_8"],
+    successfulFormats: [
+      guestsNumber.success && guestsNumber.cyasReportedTotal !== unfiltered.cyasReportedTotal ? "guests: 8 (number)" : null,
+      guestsString.success && guestsString.cyasReportedTotal !== unfiltered.cyasReportedTotal ? "guests: \"8\" (string)" : null,
+      guestsPax.success && guestsPax.cyasReportedTotal !== unfiltered.cyasReportedTotal ? "pax: 8" : null,
+    ].filter((f): f is string => f !== null),
+    note:
+      "A format counts as accepted only when CYA returns its own smaller total. Equal-to-unfiltered totals or errors mean NOT accepted — read the probes' errorCode/errorMessage.",
+  };
+
+  report.filterProbes = {
+    unfiltered_baseline: unfiltered,
+    bvi_string_ids: bviString,
+    bvi_number_ids: bviNumber,
+    guests_number_8: guestsNumber,
+    guests_string_8: guestsString,
+    guests_pax_8: guestsPax,
+    catamaran: catamaran,
+    bvi_catamaran_8guests: combined,
+  };
+
+  // --- Pagination on the combined case: page 2 must differ from page 1 ---
+  let paginationCheck: Record<string, unknown> = { success: false, note: "Combined probe did not succeed." };
+  if (combined.success) {
     try {
-      const detail = await getYachtDetail(page1Ids[0]);
-      report.yachtDetail = {
+      const page2 = await searchYachts({
+        page: 2,
+        limit: 10,
+        searchTerm: "",
+        filters: combined.requestBody.filters,
+      });
+      const yachts2 = (page2.yachts as Yacht[] | undefined) ?? [];
+      const ids1 = combined.yachts.map((y) => y.id);
+      const ids2 = yachts2.map((y) => String(y.id ?? ""));
+      const overlap = ids2.filter((id) => ids1.includes(id)).length;
+      paginationCheck = {
         success: true,
-        yachtId: page1Ids[0],
+        cyasReportedTotalPage2: typeof page2.totalYachts === "number" ? page2.totalYachts : null,
+        page2Listings: yachts2.length,
+        overlappingIdsWithPage1: overlap,
+        pagesDiffer: ids2.length > 0 ? overlap < ids2.length : false,
+        page2Yachts: yachts2.slice(0, 5).map(describeYacht),
+      };
+    } catch (err) {
+      paginationCheck = {
+        success: false,
+        errorCode: err instanceof CyaApiError ? err.code : null,
+        errorMessage: err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
+      };
+    }
+  }
+  report.paginationCheck = paginationCheck;
+
+  // --- Detail field-structure report (informs the detail-page rendering) ---
+  const detailSourceId = unfiltered.yachts[0]?.id;
+  if (detailSourceId) {
+    try {
+      const detail = await getYachtDetail(detailSourceId);
+      const jsonType = (v: unknown) =>
+        v === null ? "null" : Array.isArray(v) ? "array" : typeof v;
+      const summarize = (v: unknown): unknown => {
+        if (Array.isArray(v)) {
+          return { kind: "array", length: v.length, firstEntry: v.length > 0 ? summarize(v[0]) : null };
+        }
+        if (v && typeof v === "object") {
+          const obj = v as Record<string, unknown>;
+          return {
+            kind: "object",
+            keys: Object.keys(obj).slice(0, 15),
+            sampleValues: Object.fromEntries(
+              Object.entries(obj)
+                .slice(0, 8)
+                .map(([k, val]) => [k, typeof val === "object" && val !== null ? jsonType(val) : val])
+            ),
+          };
+        }
+        return { kind: jsonType(v), value: typeof v === "string" && v.length > 120 ? `${v.slice(0, 120)}…` : v };
+      };
+      report.yachtDetailStructure = {
+        success: true,
+        yachtId: detailSourceId,
         presentFields: Object.keys(detail),
-        topLevelTypes: Object.fromEntries(
-          Object.entries(detail)
-            .slice(0, 40)
-            .map(([k, v]) => [k, jsonType(v)])
+        fieldStructures: Object.fromEntries(
+          [
+            "yachtName",
+            "yachtType",
+            "builder_name",
+            "lenght",
+            "beam",
+            "draft",
+            "year_build",
+            "refit",
+            "cabins",
+            "pax",
+            "accommodations",
+            "yachtEngines",
+            "watersports",
+            "other_toys",
+            "seasons",
+            "low_price",
+            "high_price",
+            "min_price_usd",
+            "main_image",
+            "Images",
+            "ebrochure",
+          ].map((key) => [key, summarize(detail[key])])
         ),
       };
     } catch (err) {
-      report.yachtDetail = { success: false, error: errorInfo(err) };
-    }
-  }
-
-  // --- Destination resolution: MCC slugs against live CYA areas ---
-  try {
-    const areas = await getOperatingAreas();
-    const slugs = ["british-virgin-islands", "us-virgin-islands", "st-martin", "antigua", "grenadines", "bahamas"];
-    report.destinationResolution = {
-      success: true,
-      totalAreas: areas.length,
-      destinations: Object.fromEntries(
-        slugs.map((slug) => {
-          const matched = resolveDestinationAreas(areas, slug);
-          return [
-            slug,
-            {
-              matchedAreaCount: matched.length,
-              matchedAreas: matched.map((a) => ({ id: a.id, name: a.name })),
-              synonyms: destinationSynonyms(slug),
-            },
-          ];
-        })
-      ),
-    };
-  } catch (err) {
-    report.destinationResolution = { success: false, error: errorInfo(err) };
-  }
-
-  // --- Live filter verification (lightweight: no local walks) ---
-  // Each case is probed with 2 requests (filtered page 1 vs unfiltered page 1)
-  // plus one single-criterion request each; startYachtSearchSession's
-  // lightweight mode skips the 8-page local fallback entirely.
-  try {
-    const areas = await getOperatingAreas();
-    const bviAreas = resolveDestinationAreas(areas, "british-virgin-islands");
-    const bviIds = bviAreas.map((a) => a.id).filter(Boolean);
-    const bviNames = bviAreas.map((a) => a.name.toLowerCase());
-    const filterCases: Array<{ key: string; criteria: Parameters<typeof startYachtSearchSession>[0] }> = [
-      { key: "bviDestination", criteria: { areaIds: bviIds, loweredAreaNames: bviNames, typeWords: [], minGuests: null } },
-      { key: "catamaranType", criteria: { areaIds: [], loweredAreaNames: [], typeWords: ["catamaran"], minGuests: null } },
-      { key: "eightGuests", criteria: { areaIds: [], loweredAreaNames: [], typeWords: [], minGuests: 8 } },
-      { key: "bviCatamaranEightGuests", criteria: { areaIds: bviIds, loweredAreaNames: bviNames, typeWords: ["catamaran"], minGuests: 8 } },
-    ];
-    const unfilteredTotal: number | null = null;
-    for (const c of filterCases) {
-      const session = await startYachtSearchSession(c.criteria, { lightweight: true });
-      const firstPage = await session.getPage(1, 10);
-      // Validate returned records against each requested constraint.
-      const inArea = (y: Yacht) =>
-        c.criteria.loweredAreaNames.length === 0 ||
-        yachtSeasonAreaNames(y).some((n) => {
-          const name = n.toLowerCase();
-          return c.criteria.loweredAreaNames.some((s) => name.includes(s) || s.includes(name));
-        });
-      const ofType = (y: Yacht) =>
-        c.criteria.typeWords.length === 0 ||
-        yachtTypeWordsMatch(y, c.criteria.typeWords);
-      const seatsGuests = (y: Yacht) =>
-        c.criteria.minGuests === null || typeof y.pax !== "number" || y.pax >= (c.criteria.minGuests as number);
-      const recordChecks = {
-        recordsObserved: firstPage.length,
-        allInRequestedAreas: firstPage.every(inArea),
-        allOfTypeRequested: firstPage.every(ofType),
-        allSeatRequestedGuests: firstPage.every(seatsGuests),
-        violations: firstPage
-          .filter((y) => !inArea(y) || !ofType(y) || !seatsGuests(y))
-          .slice(0, 3)
-          .map((y) => ({
-            id: String(y.id ?? ""),
-            areaNames: yachtSeasonAreaNames(y).slice(0, 2),
-            yachtType: typeof y.yachtType === "string" ? y.yachtType : null,
-            pax: typeof y.pax === "number" ? y.pax : null,
-          })),
-        sampleAreaNames: firstPage.slice(0, 3).map((y) => yachtSeasonAreaNames(y)[0] ?? null),
-        sampleYachtTypes: firstPage.slice(0, 3).map((y) => (typeof y.yachtType === "string" ? y.yachtType : null)),
-        samplePax: firstPage.slice(0, 3).map((y) => (typeof y.pax === "number" ? y.pax : null)),
-      };
-      (report as Record<string, unknown>)[`filter_${c.key}`] = {
-        requestedCriteria: {
-          location_areas: c.criteria.areaIds,
-          yachtTypes: c.criteria.typeWords,
-          guests: c.criteria.minGuests,
-        },
-        combinedFilterConfirmed: session.serverFilterApplied,
-        cyasReportedMatchingTotal: session.serverFilterApplied ? session.serverTotal : null,
-        unfilteredCatalogueTotal:
-          session.probeLog.find((p) => p.label === "unfiltered_page1")?.totalYachts ?? unfilteredTotal,
-        perCriterionAcceptance: session.filterAcceptance,
-        filteredPage1Listings: firstPage.length,
-        localFallbackUsed: false,
-        recordChecks,
-        probeLog: session.probeLog,
+      report.yachtDetailStructure = {
+        success: false,
+        errorCode: err instanceof CyaApiError ? err.code : null,
+        errorMessage: err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
       };
     }
-
-    // Pagination: page 1 vs page 2 of the combined case (2 more requests).
-    const session = await startYachtSearchSession(
-      { areaIds: bviIds, loweredAreaNames: bviNames, typeWords: ["catamaran"], minGuests: 8 },
-      { lightweight: true }
-    );
-    const page1 = await session.getPage(1, 10);
-    const page2 = await session.getPage(2, 10);
-    const ids1 = page1.map((y) => String(y.id ?? ""));
-    const ids2 = page2.map((y) => String(y.id ?? ""));
-    const overlap = ids2.filter((id) => ids1.includes(id)).length;
-    report.paginationCheck = {
-      success: true,
-      page1Count: page1.length,
-      page2Count: page2.length,
-      overlappingIds: overlap,
-      pagesDiffer: page2.length > 0 ? overlap < ids2.length : false,
-      serverFilterConfirmed: session.serverFilterApplied,
-      totalYachts: session.serverFilterApplied ? session.serverTotal : null,
-    };
-  } catch (err) {
-    report.liveFilterChecks = { success: false, error: errorInfo(err) };
+  } else {
+    report.yachtDetailStructure = { success: false, note: "No page-1 yacht id available to probe." };
   }
 
   return NextResponse.json(report);

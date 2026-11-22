@@ -243,7 +243,6 @@ export default async function CharterYachtsPage({
       anyCriteria = Boolean(filters.destination) || typeWords.length > 0 || Boolean(filters.guests);
       const session = await startYachtSearchSession({
         areaIds: matched.map((a) => a.id).filter(Boolean),
-        loweredAreaNames: matched.map((a) => a.name.toLowerCase()),
         typeWords,
         minGuests: filters.guests ? Number(filters.guests) : null,
       });
@@ -311,7 +310,7 @@ export default async function CharterYachtsPage({
         </p>
         {unmatchedDestination && (
           <p className="mx-auto mt-3 max-w-xl rounded-md bg-white/10 p-3 text-sm text-white/90">
-            That destination is not in the live cruising-area list yet — showing all yachts instead. Our team can confirm coverage for it directly.
+            This destination is not mapped to the live cruising-area list yet — showing all yachts instead. Our team can confirm coverage for it directly.
           </p>
         )}
         {resultsIncomplete && (
@@ -331,7 +330,7 @@ export default async function CharterYachtsPage({
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">{loadError}</p>
         ) : unmatchedDestination ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">
-            That destination is not in the live cruising-area list yet. Try widening your search, or call us — our team can confirm coverage directly.
+            This destination is not mapped to the live cruising-area list yet. Try widening your search, or call us — our team can confirm coverage directly.
           </p>
         ) : pageYachts.length === 0 && anyCriteria && resultsIncomplete ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">
