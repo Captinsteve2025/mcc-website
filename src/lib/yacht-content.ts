@@ -1,5 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
-import { getYachtBookings, type CyaBooking } from "@/lib/cya";
+import { CyaApiError, getYachtBookings, type CyaBooking } from "@/lib/cya";
 
 // Server-side reads of MCC yacht content. Availability merges CYA's live,
 // documented bookings endpoint with MCC-maintained ranges in Supabase; crew
@@ -27,6 +27,9 @@ export type YachtAvailability = {
   lastUpdated: string | null;
   /** True when at least one range comes from CYA's live bookings endpoint. */
   hasLiveData: boolean;
+  /** Set when the live CYA bookings request genuinely failed (rate limit,
+   *  auth, network) — distinct from a valid empty calendar. */
+  liveError: string | null;
 };
 
 export async function getYachtCrew(cyaYachtId: string): Promise<CrewProfile[]> {
@@ -74,8 +77,10 @@ function bookingStatus(booking: CyaBooking, today: string): AvailabilityRange["s
 
 /* Converts CYA's live bookings (booked/hold/transit records) into calendar
  * ranges. Days without a CYA record stay unknown — never rendered as
- * available without a source record. Failures degrade to empty. */
-async function getCyaBookingRanges(cyaYachtId: string): Promise<AvailabilityRange[]> {
+ * available without a source record. A genuine API failure is logged with
+ * safe fields only and returned as an error marker so it can never be
+ * mistaken for a valid empty calendar. */
+async function getCyaBookingRanges(cyaYachtId: string): Promise<{ ranges: AvailabilityRange[]; error: string | null }> {
   try {
     const bookings = await getYachtBookings(cyaYachtId);
     const today = new Date().toISOString().slice(0, 10);
@@ -90,9 +95,17 @@ async function getCyaBookingRanges(cyaYachtId: string): Promise<AvailabilityRang
         note: booking.title,
       });
     }
-    return ranges;
-  } catch {
-    return [];
+    return { ranges, error: null };
+  } catch (err) {
+    const detail =
+      err instanceof CyaApiError
+        ? `HTTP ${err.status}${err.code ? ` (${err.code})` : ""}`
+        : "Network or unexpected error";
+    console.error("[availability] live CYA bookings request failed", {
+      yachtId: cyaYachtId,
+      detail,
+    });
+    return { ranges: [], error: detail };
   }
 }
 
@@ -142,28 +155,37 @@ function rangeCoversLiveDays(range: AvailabilityRange, liveDays: Set<string>): b
 }
 
 export async function getYachtAvailability(cyaYachtId: string): Promise<YachtAvailability> {
-  try {
-    const [{ data, error }, live] = await Promise.all([
-      getSupabase()
+  // The Supabase read and the live CYA fetch are isolated from each other: a
+  // failure in either must never wipe the other's data (previously one shared
+  // try/catch turned any single failure into a fully empty calendar, hiding
+  // nine good CYA records behind the unavailable fallback).
+  const localRead = (async (): Promise<{ ranges: AvailabilityRange[]; lastUpdated: string | null }> => {
+    try {
+      const { data, error } = await getSupabase()
         .from("yacht_availability")
         .select("start_date, end_date, status, note, updated_at")
         .eq("cya_yacht_id", cyaYachtId)
-        .order("start_date", { ascending: true }),
-      getCyaBookingRanges(cyaYachtId),
-    ]);
-    const local = error || !Array.isArray(data) ? [] : buildLocalRanges(data);
-    // Live CYA records win on overlapping dates: the yacht calendar is the
-    // operational source of truth over locally maintained ranges.
-    const liveDays = new Set<string>();
-    for (const r of live) {
-      for (let d = new Date(toUtc(r.startDate)); d <= toUtc(r.endDate); d = new Date(d.getTime() + 86_400_000)) {
-        liveDays.add(d.toISOString().slice(0, 10));
-      }
+        .order("start_date", { ascending: true });
+      if (error || !Array.isArray(data)) return { ranges: [], lastUpdated: null };
+      return { ranges: buildLocalRanges(data), lastUpdated: localLastUpdated(data) };
+    } catch (err) {
+      console.error("[availability] local ranges read failed", {
+        yachtId: cyaYachtId,
+        detail: err instanceof Error ? err.message.slice(0, 120) : "unknown",
+      });
+      return { ranges: [], lastUpdated: null };
     }
-    const merged = [...local.filter((r) => !rangeCoversLiveDays(r, liveDays)), ...live];
-    const lastUpdated = error || !Array.isArray(data) ? null : localLastUpdated(data);
-    return { ranges: merged, lastUpdated, hasLiveData: live.length > 0 };
-  } catch {
-    return { ranges: [], lastUpdated: null, hasLiveData: false };
+  })();
+  const liveRead = getCyaBookingRanges(cyaYachtId);
+  const [local, live] = await Promise.all([localRead, liveRead]);
+  // Live CYA records win on overlapping dates: the yacht calendar is the
+  // operational source of truth over locally maintained ranges.
+  const liveDays = new Set<string>();
+  for (const r of live.ranges) {
+    for (let d = new Date(toUtc(r.startDate)); d <= toUtc(r.endDate); d = new Date(d.getTime() + 86_400_000)) {
+      liveDays.add(d.toISOString().slice(0, 10));
+    }
   }
+  const merged = [...local.ranges.filter((r) => !rangeCoversLiveDays(r, liveDays)), ...live.ranges];
+  return { ranges: merged, lastUpdated: local.lastUpdated, hasLiveData: live.ranges.length > 0, liveError: live.error };
 }
