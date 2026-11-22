@@ -54,10 +54,15 @@ export async function getYachtCrew(cyaYachtId: string): Promise<CrewProfile[]> {
 
 /* CYA booking categories map to calendar statuses. Verified categories in
  * CYA's calendar include booked charters and time-limited options (holds);
- * unknown categories are shown as neutral blocked dates, never as available. */
-function bookingStatus(booking: CyaBooking): AvailabilityRange["status"] | null {
+ * unknown categories are shown as neutral blocked dates, never as available.
+ * An expired hold (hold_expire_date in the past) is no longer an active hold:
+ * it is dropped entirely so its days return to unknown rather than staying
+ * coloured as hold. */
+function bookingStatus(booking: CyaBooking, today: string): AvailabilityRange["status"] | null {
   const category = booking.category.toLowerCase();
-  if (booking.holdExpireDate || category.includes("hold") || category.includes("option")) return "hold";
+  const isHold = Boolean(booking.holdExpireDate) || category.includes("hold") || category.includes("option");
+  if (isHold && booking.holdExpireDate && booking.holdExpireDate < today) return null;
+  if (isHold) return "hold";
   if (category.includes("book")) return "booked";
   if (category.includes("transit") || category.includes("relocation")) return "transit";
   if (category.includes("unavailable") || category.includes("owner")) return "unavailable";
@@ -73,9 +78,10 @@ function bookingStatus(booking: CyaBooking): AvailabilityRange["status"] | null 
 async function getCyaBookingRanges(cyaYachtId: string): Promise<AvailabilityRange[]> {
   try {
     const bookings = await getYachtBookings(cyaYachtId);
+    const today = new Date().toISOString().slice(0, 10);
     const ranges: AvailabilityRange[] = [];
     for (const booking of bookings) {
-      const status = bookingStatus(booking);
+      const status = bookingStatus(booking, today);
       if (!status) continue;
       ranges.push({
         startDate: booking.startDate,

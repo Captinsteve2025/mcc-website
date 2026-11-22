@@ -6,6 +6,7 @@ import {
   searchYachts,
   yachtSeasonAreaNames,
   getYachtDetail,
+  getYachtBookings,
   DESTINATION_AREA_MAPPING,
   resolveDestinationAreas,
   CyaApiError,
@@ -294,6 +295,57 @@ export async function GET(request: Request) {
   } else {
     report.yachtDetailStructure = { success: false, note: "No page-1 yacht id available to probe." };
   }
+
+  // --- Bookings (authorized availability) verification -----------------------
+  // Probes the documented GET /api/v1/bookings endpoint for the requested
+  // yachts (or the first catalogue yacht when none given). Reports HTTP
+  // status, record counts, date ranges and categories — no credentials, no
+  // guest data. Distinguishes active holds from expired ones.
+  const url = new URL(request.url);
+  const requestedIds = (url.searchParams.get("yacht_ids") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter((s) => /^[a-f0-9]{8,32}$/i.test(s));
+  const bookingTargetIds = requestedIds.slice(0, 6);
+  if (bookingTargetIds.length === 0) {
+    bookingTargetIds.push(...unfiltered.yachts.slice(0, 3).map((y) => y.id).filter(Boolean));
+  }
+  const today = new Date().toISOString().slice(0, 10);
+  report.bookingsVerification = {
+    endpoint: "GET /api/v1/bookings?yacht_id=... (documented in CYA's public OpenAPI spec)",
+    today,
+    yachts: await Promise.all(
+      bookingTargetIds.map(async (yachtId) => {
+        try {
+          const bookings = await getYachtBookings(yachtId);
+          return {
+            yachtId,
+            apiStatus: 200,
+            bookingCount: bookings.length,
+            bookings: bookings.slice(0, 20).map((b) => ({
+              startDate: b.startDate,
+              endDate: b.endDate,
+              category: b.category,
+              holdExpireDate: b.holdExpireDate,
+              holdExpired: b.holdExpireDate ? b.holdExpireDate < today : null,
+              title: b.title,
+            })),
+          };
+        } catch (err) {
+          return {
+            yachtId,
+            apiStatus: err instanceof CyaApiError ? err.status : null,
+            bookingCount: null,
+            errorCode: err instanceof CyaApiError ? err.code : null,
+            errorMessage:
+              err instanceof CyaApiError ? `HTTP ${err.status}: ${err.message}` : "Network or unexpected error.",
+          };
+        }
+      })
+    ),
+    note:
+      "Expired holds (hold_expire_date in the past) are excluded from the calendar's active hold status by the mapping. A 401/403 here means the API key lacks bookings permission and must be raised with CYA.",
+  };
 
   return NextResponse.json(report);
 }
