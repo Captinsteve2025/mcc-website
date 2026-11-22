@@ -626,7 +626,7 @@ export type RawTrace = {
   error: string | null;
 };
 
-function sanitizeForReport(value: unknown, depth = 0): unknown {
+export function sanitizeForReport(value: unknown, depth = 0): unknown {
   if (value === null || typeof value !== "object") {
     if (typeof value === "string" && value.length > 200) return `${value.slice(0, 200)}…`;
     return value;

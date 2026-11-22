@@ -8,6 +8,20 @@ type TestResult = {
   body: Record<string, unknown>;
 };
 
+type AvailabilityResult = {
+  status: number;
+  ok: boolean;
+  body: Record<string, unknown>;
+  yachtId: string;
+};
+
+const PRESET_YACHTS: Array<{ name: string; id: string }> = [
+  { name: "ENDLESS HORIZON", id: "69f33df0b5a1600bf785869e" },
+  { name: "MISCHIEVOUS", id: "69f33df2b5a1600bf78586a2" },
+  { name: "OHANA", id: "6a023755ce6b8709506dfee5" },
+  { name: "VIVA LA VIDA", id: "69f83a8e8ae166becdd09df5" },
+];
+
 type TestDetail = {
   label?: string;
   httpStatus?: number;
@@ -73,6 +87,9 @@ export default function AdminApiTestPage() {
   const [error, setError] = useState<string | null>(null);
   const [verifyResult, setVerifyResult] = useState<TestResult | null>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
+  const [yachtIdInput, setYachtIdInput] = useState(PRESET_YACHTS[0].id);
+  const [availabilityResult, setAvailabilityResult] = useState<AvailabilityResult | null>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
 
   async function runTest(e: React.FormEvent) {
     e.preventDefault();
@@ -107,6 +124,23 @@ export default function AdminApiTestPage() {
       setError("The request to this website's server failed. Check your connection and try again.");
     } finally {
       setVerifyLoading(false);
+    }
+  }
+
+  async function runAvailability(yachtId: string) {
+    setAvailabilityLoading(true);
+    setError(null);
+    setAvailabilityResult(null);
+    try {
+      const response = await fetch(`/api/cya-availability?yacht_id=${encodeURIComponent(yachtId)}`, {
+        headers: { "x-admin-token": token },
+      });
+      const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      setAvailabilityResult({ status: response.status, ok: response.ok, body, yachtId });
+    } catch {
+      setError("The request to this website's server failed. Check your connection and try again.");
+    } finally {
+      setAvailabilityLoading(false);
     }
   }
 
@@ -152,6 +186,64 @@ export default function AdminApiTestPage() {
           {verifyLoading ? "Verifying…" : "Verify live data (areas + yachts)"}
         </button>
       </form>
+
+      <section className="mb-8 rounded-lg border border-[#061625]/10 bg-white p-6">
+        <h2 className="mb-1 font-display text-lg italic text-[#061625]">Yacht availability tester</h2>
+        <p className="mb-4 text-sm leading-relaxed text-[#061625]/70">
+          Tests one yacht&apos;s CYA bookings without running the full catalogue diagnostic: HTTP status,
+          booking count, date ranges and categories, the sanitized raw response, and whether the
+          endpoint returns only this yacht&apos;s records or the whole account&apos;s. An empty result means
+          &ldquo;no records visible to the key&rdquo; — it is never treated as the yacht being free.
+        </p>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {PRESET_YACHTS.map((y) => (
+            <button
+              key={y.id}
+              type="button"
+              onClick={() => setYachtIdInput(y.id)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                yachtIdInput === y.id
+                  ? "border-[#e89d79] bg-[#e89d79]/15 text-[#061625]"
+                  : "border-[#061625]/20 text-[#061625]/70 hover:bg-[#061625]/5"
+              }`}
+            >
+              {y.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            type="text"
+            value={yachtIdInput}
+            onChange={(e) => setYachtIdInput(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            className="w-full rounded-md border border-[#061625]/20 bg-white px-4 py-3 font-mono text-sm text-[#061625] focus:outline-none focus:ring-2 focus:ring-[#e89d79]"
+            placeholder="CYA yacht id"
+          />
+          <button
+            type="button"
+            disabled={availabilityLoading || !token || !yachtIdInput.trim()}
+            onClick={() => runAvailability(yachtIdInput.trim())}
+            className="shrink-0 rounded-full bg-[#061625] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#061625]/85 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {availabilityLoading ? "Testing…" : "Test Availability"}
+          </button>
+        </div>
+
+        {availabilityResult && (
+          <div className="mt-5" aria-live="polite">
+            {!availabilityResult.ok ? (
+              <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+                Tester request failed (server response {availabilityResult.status}).
+                {typeof availabilityResult.body.error === "string" ? ` ${availabilityResult.body.error}` : ""}
+              </p>
+            ) : (
+              <AvailabilityReport body={availabilityResult.body} />
+            )}
+          </div>
+        )}
+      </section>
 
       {verifyResult && (
         <div className="mb-8 rounded-lg border border-[#061625]/10 bg-white p-6" aria-live="polite">
@@ -236,6 +328,131 @@ export default function AdminApiTestPage() {
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+type BookingRow = {
+  id?: string | null;
+  start?: string | null;
+  end?: string | null;
+  category?: string | null;
+  holdExpireDate?: string | null;
+  holdExpired?: boolean | null;
+  title?: string | null;
+  yachtId?: string | null;
+  yachtName?: string | null;
+};
+
+function AvailabilityReport({ body }: { body: Record<string, unknown> }) {
+  const raw = (body.rawResponse ?? null) as Record<string, unknown> | null;
+  const appPath = (body.appPath ?? null) as Record<string, unknown> | null;
+  const scope = (body.scopeCheck ?? null) as Record<string, unknown> | null;
+  const yachtKnown = (body.yachtKnownToCya ?? null) as Record<string, unknown> | null;
+  const rows = (raw?.bookings ?? []) as BookingRow[];
+  const total = typeof raw?.totalBookings === "number" ? raw.totalBookings : null;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-1 text-sm">
+        <p className="text-[#061625]">
+          <span className="font-medium">Yacht id:</span>{" "}
+          <span className="font-mono">{String(body.yachtId ?? "")}</span>
+        </p>
+        <p className="break-words text-[#061625]/75">
+          <span className="font-medium text-[#061625]">Request:</span> {String(body.fullRequestPath ?? "")}
+        </p>
+        {yachtKnown && (
+          <p className="text-[#061625]/75">
+            <span className="font-medium text-[#061625]">Yacht known to CYA:</span>{" "}
+            {yachtKnown.known === true ? "Yes (catalogue 200)" : `No (${String(yachtKnown.httpStatus ?? "error")})`}
+          </p>
+        )}
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-md bg-[#061625]/5 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-[#061625]/60">HTTP status</p>
+          <p className={`text-lg ${raw?.httpStatus === 200 ? "text-green-700" : "text-red-700"}`}>
+            {String(raw?.httpStatus ?? "—")}
+          </p>
+        </div>
+        <div className="rounded-md bg-[#061625]/5 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-[#061625]/60">Total bookings</p>
+          <p className="text-lg text-[#061625]">{total ?? "—"}</p>
+        </div>
+        <div className="rounded-md bg-[#061625]/5 p-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-[#061625]/60">Response shape</p>
+          <p className="truncate text-lg text-[#061625]" title={String(raw?.shape ?? "")}>
+            {String(raw?.shape ?? "—")}
+          </p>
+        </div>
+      </div>
+
+      <div className="rounded-md border border-[#061625]/10 p-4">
+        <p className="mb-1 text-sm font-semibold text-[#061625]">Endpoint scope</p>
+        {scope ? (
+          <>
+            <p className="text-sm text-[#061625]">{String(scope.determination ?? "—")}</p>
+            <p className="mt-1 text-sm leading-relaxed text-[#061625]/70">{String(scope.explanation ?? "")}</p>
+          </>
+        ) : (
+          <p className="text-sm text-[#061625]/70">Not available.</p>
+        )}
+      </div>
+
+      {rows.length > 0 ? (
+        <div className="overflow-x-auto rounded-md border border-[#061625]/10">
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="bg-[#061625]/5 text-xs uppercase tracking-wide text-[#061625]/60">
+                <th className="px-3 py-2">Start</th>
+                <th className="px-3 py-2">End</th>
+                <th className="px-3 py-2">Category</th>
+                <th className="px-3 py-2">Hold expires</th>
+                <th className="px-3 py-2">Title</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((b, i) => (
+                <tr key={b.id ?? i} className="border-t border-[#061625]/10">
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{b.start ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2 font-mono text-xs">{b.end ?? "—"}</td>
+                  <td className="px-3 py-2">{b.category ?? "—"}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-xs">
+                    {b.holdExpireDate ?? "—"}
+                    {b.holdExpired ? " (expired)" : ""}
+                  </td>
+                  <td className="px-3 py-2 text-[#061625]/75">{b.title ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <p className="rounded-md bg-[#e89d79]/10 px-4 py-3 text-sm text-[#061625]/80">
+          Zero booking records in the response. This is NOT proof the yacht is free: it means no calendar
+          records are visible to the key for this yacht (or the account holds none at all — see the scope
+          finding above).
+        </p>
+      )}
+
+      {appPath && typeof appPath.bookingCount === "number" && (
+        <p className="text-sm text-[#061625]/75">
+          <span className="font-medium text-[#061625]">Calendar code path result:</span>{" "}
+          {String(appPath.bookingCount)} record(s) via the same function the public calendar uses
+          {typeof appPath.httpStatus === "number" ? ` (HTTP ${appPath.httpStatus})` : ""}.
+        </p>
+      )}
+
+      <details className="rounded-md border border-[#061625]/10 p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-[#061625]">
+          Sanitized raw response (for troubleshooting)
+        </summary>
+        <pre className="mt-3 max-h-96 overflow-auto rounded bg-[#061625] p-3 text-xs leading-relaxed text-[#f5f0e8]">
+          {JSON.stringify(raw?.sanitizedStructure ?? raw ?? body, null, 2)}
+        </pre>
+      </details>
     </div>
   );
 }
