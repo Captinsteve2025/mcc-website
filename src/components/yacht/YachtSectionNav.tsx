@@ -63,13 +63,13 @@ export function YachtSectionNav({ tabs, yachtId }: { tabs: SectionTab[]; yachtId
         <button
           type="button"
           onClick={() => {
-            trackEvent("yacht_availability_click", { yacht_id: yachtId });
+            trackEvent("yacht_proposal_click", { yacht_id: yachtId });
             const el = document.getElementById("enquire");
             if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 104, behavior: "smooth" });
           }}
-          className="ml-2 shrink-0 rounded-full bg-[#e89d79] px-4 py-2 text-sm font-medium text-[#061625] transition-colors hover:bg-[#d88a66]"
+          className="ml-2 shrink-0 rounded-full bg-[#e89d79] px-4 py-2 text-sm font-semibold uppercase tracking-wide text-[#061625] transition-colors hover:bg-[#d88a66]"
         >
-          Check Availability
+          Get My Charter Proposal
         </button>
       </div>
     </nav>

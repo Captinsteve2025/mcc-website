@@ -22,6 +22,7 @@ import { YachtHeroGallery } from "@/components/yacht/YachtHeroGallery";
 import { YachtSectionNav, type SectionTab } from "@/components/yacht/YachtSectionNav";
 import { YachtAvailabilityCalendar } from "@/components/yacht/YachtAvailabilityCalendar";
 import { YachtCrewSection } from "@/components/yacht/YachtCrewSection";
+import { YachtCtaButtons, YachtMobileActionBar } from "@/components/yacht/YachtCtaButtons";
 import { getYachtDetail } from "@/lib/cya";
 import { getYachtCrew, getYachtAvailability } from "@/lib/yacht-content";
 import {
@@ -189,6 +190,7 @@ export default async function YachtDetailPage({
               {[builder, year !== null ? `Built ${year}` : null].filter(Boolean).join(" | ") || (yachtType ?? "Charter yacht")}
             </p>
             <p className="mt-3 font-display text-2xl italic text-[#e89d79]">{heroPrice}</p>
+            <YachtCtaButtons yachtId={id} showAvailability={true} />
           </div>
         </section>
 
@@ -316,7 +318,43 @@ export default async function YachtDetailPage({
                 </div>
               </section>
             )}
+          </div>
 
+          {/* --- Enquiry panel (sticky beside the introductory content) --- */}
+          <div className="lg:col-span-2">
+            <div id="enquire" className="scroll-mt-32 lg:sticky lg:top-28">
+              <div className="rounded-2xl bg-[#061625] p-6 text-white md:p-8">
+                <h2 className="mb-2 font-display text-3xl font-normal italic">Request Your Personal Charter Proposal</h2>
+                <p className="mb-5 text-sm text-white/80">
+                  Tell us your preferred dates and guest details. Our charter team will confirm availability and
+                  prepare your personalized quotation.
+                </p>
+                {(preferredDates || guests) && (
+                  <p className="mb-5 flex items-start gap-2 rounded-lg bg-white/10 p-3 text-xs text-white/90">
+                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
+                    <span>
+                      {preferredDates && <>Dates carried from your search: {preferredDates}. </>}
+                      {guests && <>Guests: {guests}. </>}
+                      Please confirm the details below.
+                    </span>
+                  </p>
+                )}
+              </div>
+              <div className="mt-6">
+                <YachtEnquiryForm
+                  yachtSlug={slug}
+                  yachtName={name}
+                  cyaYachtId={id}
+                  initialDates={preferredDates || undefined}
+                  initialGuests={guests || undefined}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* --- Full-width browsing sections --- */}
+        <div className="container mx-auto px-4 pb-24">
             {/* --- Watersports --- */}
             {watersports.length > 0 && (
               <section className="mt-14">
@@ -426,9 +464,9 @@ export default async function YachtDetailPage({
                 </div>
                 <a
                   href="#enquire"
-                  className="shrink-0 rounded-full bg-[#e89d79] px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#d88a66]"
+                  className="shrink-0 rounded-full border border-[#061625]/20 px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#061625]/5"
                 >
-                  Check Availability for Your Dates
+                  Ask about your dates
                 </a>
               </div>
             </section>
@@ -437,40 +475,9 @@ export default async function YachtDetailPage({
               Yacht data and images provided by Central Yacht Agent. Rates shown are indicative only and subject to
               confirmation.
             </p>
-          </div>
-
-          {/* --- Enquiry panel --- */}
-          <div className="lg:col-span-2">
-            <div id="enquire" className="scroll-mt-32 lg:sticky lg:top-28">
-              <div className="rounded-2xl bg-[#061625] p-6 text-white md:p-8">
-                <h2 className="mb-2 font-display text-3xl font-normal italic">Check Availability &amp; Get My Proposal</h2>
-                <p className="mb-5 text-sm text-white/80">
-                  Tell us your plans and our charter team will confirm live availability for {name} and send a
-                  personalized proposal — usually within one business day.
-                </p>
-                {(preferredDates || guests) && (
-                  <p className="mb-5 flex items-start gap-2 rounded-lg bg-white/10 p-3 text-xs text-white/90">
-                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
-                    <span>
-                      {preferredDates && <>Dates carried from your search: {preferredDates}. </>}
-                      {guests && <>Guests: {guests}. </>}
-                      Please confirm the details below.
-                    </span>
-                  </p>
-                )}
-              </div>
-              <div className="mt-6">
-                <YachtEnquiryForm
-                  yachtSlug={slug}
-                  yachtName={name}
-                  cyaYachtId={id}
-                  initialDates={preferredDates || undefined}
-                  initialGuests={guests || undefined}
-                />
-              </div>
-            </div>
-          </div>
         </div>
+
+        <YachtMobileActionBar yachtId={id} showAvailability={true} />
       </main>
 
       <Footer />

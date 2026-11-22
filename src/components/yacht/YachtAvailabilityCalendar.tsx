@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import type { AvailabilityRange } from "@/lib/yacht-content";
@@ -57,6 +57,12 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated }: Prop
 
   const statusMap = useMemo(() => buildStatusMap(ranges), [ranges]);
 
+  // A calendar render is an availability view, never an enquiry event.
+  useEffect(() => {
+    trackEvent("yacht_availability_view", { yacht_id: yachtId, has_records: ranges.length > 0 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const visibleMonths = useMemo(() => {
     const months: Date[] = [];
     const base = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + monthOffset, 1, 12));
@@ -80,7 +86,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated }: Prop
     } else {
       setSelectEnd(iso);
     }
-    trackEvent("yacht_availability_click", { yacht_id: yachtId });
+    trackEvent("yacht_availability_date_select", { yacht_id: yachtId });
     const start = iso < selectStart ? iso : selectStart;
     const end = iso < selectStart ? selectStart : iso;
     window.dispatchEvent(
@@ -97,25 +103,25 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated }: Prop
   const canGoForward = monthOffset < 11;
 
   if (ranges.length === 0) {
-    // Honest empty state: no fabricated green calendar. Dates chosen here feed
-    // the MCC enquiry form directly.
+    // Honest empty state: no fabricated calendar. Selecting dates here does
+    // not open the enquiry form; the visitor chooses to request a proposal.
     return (
       <div className="rounded-xl bg-white p-6 shadow-sm">
         <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
           <CalendarDays className="h-8 w-8 shrink-0 text-[#e89d79]" aria-hidden="true" />
           <div className="flex-1">
-            <h3 className="font-display text-xl italic text-[#061625]">Availability awaiting confirmation</h3>
+            <h3 className="font-display text-xl italic text-[#061625]">Availability data currently unavailable</h3>
             <p className="text-sm text-[#061625]/70">
-              The confirmed charter calendar for this yacht is being updated. Choose your dates below and our team
-              will confirm live availability with your personalized proposal — availability is always re-confirmed
-              before any booking.
+              Our live calendar feed for this yacht is not connected yet, so we cannot show confirmed dates here.
+              Tell us the dates you have in mind and our charter team will confirm current availability personally —
+              availability is always re-confirmed before any booking.
             </p>
           </div>
           <a
             href="#enquire"
-            className="shrink-0 rounded-full bg-[#e89d79] px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#d88a66]"
+            className="shrink-0 rounded-full border border-[#061625]/20 px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#061625]/5"
           >
-            Check Availability for Your Dates
+            Ask about your dates
           </a>
         </div>
       </div>
@@ -222,11 +228,21 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated }: Prop
       </ul>
 
       {selectStart && (
-        <p className="mt-3 rounded-lg bg-[#e89d79]/15 p-3 text-sm text-[#061625]" role="status">
-          {selectEnd
-            ? `Dates selected: ${selectStart} to ${selectEnd} — carried into the enquiry form below. Availability will be re-confirmed with your proposal; this does not create a booking.`
-            : "Now select your check-out date."}
-        </p>
+        <div className="mt-3 rounded-lg bg-[#e89d79]/15 p-3 text-sm text-[#061625]" role="status">
+          <p>
+            {selectEnd
+              ? `Dates selected: ${selectStart} to ${selectEnd}.`
+              : "Now select your check-out date."}
+          </p>
+          {selectEnd && (
+            <a
+              href="#enquire"
+              className="mt-2 inline-block rounded-full bg-[#e89d79] px-4 py-2 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#d88a66]"
+            >
+              Request a proposal for these dates
+            </a>
+          )}
+        </div>
       )}
 
       {lastUpdated && (
