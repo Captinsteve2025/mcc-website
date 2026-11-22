@@ -613,9 +613,52 @@ function isoDay(value: unknown): string | null {
   return value.slice(0, 10);
 }
 
+// Bookings live in CYA's current (post-migration) id space; catalogue ids
+// from /yachts_search and /yachts_get are legacy ids. The documented
+// GET /api/v1/yachts/legacy/{legacy_id} endpoint resolves them. Resolution is
+// cached for the process lifetime plus a long data-cache window: the mapping
+// is stable, and a wrong lookup must not be re-asked per page view.
+const legacyResolutionCache = new Map<string, string | null>();
+
+export async function resolveLegacyYachtId(legacyId: string): Promise<string | null> {
+  if (legacyResolutionCache.has(legacyId)) return legacyResolutionCache.get(legacyId) ?? null;
+  try {
+    const payload = await cyaFetch<Record<string, unknown>>(
+      `/api/v1/yachts/legacy/${encodeURIComponent(legacyId)}`,
+      { revalidate: 86_400 }
+    );
+    let resolvedId: string | null = null;
+    if (payload && typeof payload === "object") {
+      for (const key of ["new_yacht_id", "yacht_id", "new_id", "id", "current_yacht_id"]) {
+        const value = payload[key];
+        if (typeof value === "string" && /^[a-f0-9]{8,32}$/i.test(value)) {
+          resolvedId = value;
+          break;
+        }
+        if (typeof value === "number") {
+          resolvedId = String(value);
+          break;
+        }
+      }
+    }
+    legacyResolutionCache.set(legacyId, resolvedId);
+    return resolvedId;
+  } catch {
+    // 404 means no mapping exists for this id — cache the negative result so
+    // the original id is used directly on subsequent calls.
+    legacyResolutionCache.set(legacyId, null);
+    return null;
+  }
+}
+
 export async function getYachtBookings(yachtId: string): Promise<CyaBooking[]> {
+  // Bookings live in CYA's current (post-migration) id space. Catalogue ids
+  // from /yachts_search and /yachts_get are legacy ids, so resolve first; if
+  // the id is already current (or no mapping exists) it is used as-is.
+  const resolved = await resolveLegacyYachtId(yachtId);
+  const targetId = resolved ?? yachtId;
   const payload = await cyaFetch<{ bookings?: unknown } | unknown[]>(
-    `/api/v1/bookings?yacht_id=${encodeURIComponent(yachtId)}`,
+    `/api/v1/bookings?yacht_id=${encodeURIComponent(targetId)}`,
     { revalidate: 300 }
   );
   const list = Array.isArray(payload)

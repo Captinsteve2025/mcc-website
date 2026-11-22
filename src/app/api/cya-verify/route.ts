@@ -7,6 +7,7 @@ import {
   yachtSeasonAreaNames,
   getYachtDetail,
   getYachtBookings,
+  resolveLegacyYachtId,
   DESTINATION_AREA_MAPPING,
   resolveDestinationAreas,
   CyaApiError,
@@ -317,9 +318,12 @@ export async function GET(request: Request) {
     yachts: await Promise.all(
       bookingTargetIds.map(async (yachtId) => {
         try {
+          const resolved = await resolveLegacyYachtId(yachtId);
           const bookings = await getYachtBookings(yachtId);
           return {
             yachtId,
+            resolvedCurrentId: resolved,
+            idResolution: resolved ? `Legacy id resolved to current id ${resolved}.` : "No legacy mapping returned; id used as-is.",
             apiStatus: 200,
             bookingCount: bookings.length,
             bookings: bookings.slice(0, 20).map((b) => ({
