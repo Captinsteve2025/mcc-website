@@ -110,13 +110,24 @@ async function waitForRateSlot(): Promise<void> {
   }
 }
 
+// One consistent URL builder: every request path is joined onto CYA_API_BASE,
+// which already carries the version prefix (verified live 2026-11-22:
+// https://api.centralyachtagent.com/public/api/v1). Callers must use paths
+// RELATIVE to that base (/bookings, /yachts_get/{id}, ...); any historical
+// leading /api/v1 or /public/api/v1 in a caller path is stripped here so the
+// duplicated-prefix 404 can never recur.
+export function joinCyaPath(path: string): string {
+  return path.replace(/^\/+public\/api\/v1(?=\/)|^\/+api\/v1(?=\/)/, "");
+}
+
 export async function cyaFetch<T>(
   path: string,
   init?: RequestInit & { revalidate?: number }
 ): Promise<T> {
   const { baseUrl, origin, key } = getCyaConfig();
+  const normalizedPath = joinCyaPath(path);
   const revalidate = init?.revalidate ?? 300;
-  const cacheKey = `${path}:${JSON.stringify(init?.body ?? "")}`;
+  const cacheKey = `${normalizedPath}:${JSON.stringify(init?.body ?? "")}`;
 
   const hit = memoryCache.get(cacheKey);
   if (hit && hit.expiresAt > Date.now()) return hit.data as T;
@@ -124,7 +135,7 @@ export async function cyaFetch<T>(
   await waitForRateSlot();
 
   const doFetch = () =>
-    fetch(`${baseUrl}${path}`, {
+    fetch(`${baseUrl}${normalizedPath}`, {
       method: init?.method,
       headers: {
         "X-API-Key": key,
@@ -510,7 +521,9 @@ export type LegacyMappingTrace = {
 };
 
 export async function traceLegacyIdMapping(legacyId: string): Promise<LegacyMappingTrace> {
-  const requestPath = `/api/v1/yachts/legacy/${encodeURIComponent(legacyId)}`;
+  // Relative to CYA_API_BASE (which already ends in /api/v1); joinCyaPath
+  // strips any duplicated prefix as a safety net.
+  const requestPath = joinCyaPath(`/api/v1/yachts/legacy/${encodeURIComponent(legacyId)}`);
   try {
     const payload = await cyaFetch<Record<string, unknown>>(requestPath, { revalidate: 86_400 });
     let extractedCurrentId: string | null = null;
@@ -554,7 +567,10 @@ export type BookingsTrace = {
 };
 
 export async function traceBookings(yachtId: string): Promise<BookingsTrace> {
-  const requestPath = `/api/v1/bookings?yacht_id=${encodeURIComponent(yachtId)}`;
+  // Corrected primary route (production evidence 2026-11-22): the configured
+  // base already ends in /api/v1, so the bookings path is /bookings. The old
+  // /api/v1/bookings spelling produced .../api/v1/api/v1/bookings (404).
+  const requestPath = joinCyaPath(`/api/v1/bookings?yacht_id=${encodeURIComponent(yachtId)}`);
   try {
     const payload = await cyaFetch<{ bookings?: unknown } | unknown[]>(requestPath, { revalidate: 300 });
     const list = Array.isArray(payload)
@@ -736,7 +752,7 @@ export function yachtSeasonAreaNames(yacht: Yacht): string[] {
 /* The documented detail endpoint is GET /yachts_get/{yacht_id}. Live
  * verification confirmed it works and returns the full field set, so the
  * include-parameter and legacy-path variants are no longer probed. */
-export async function getYachtDetail(id: string): Promise<Record<string, unknown>> {
+export function getYachtDetail(id: string): Promise<Record<string, unknown>> {
   return cyaFetch<Record<string, unknown>>(`/yachts_get/${encodeURIComponent(id)}`, {
     revalidate: 300,
   });
@@ -744,11 +760,11 @@ export async function getYachtDetail(id: string): Promise<Record<string, unknown
 
 // --- Bookings (authorized availability) -------------------------------------
 
-/* Documented in CYA's public OpenAPI spec (api.centralyachtagent.com/public/
- * documentation): GET /api/v1/bookings?yacht_id=... returns all ongoing and
- * future bookings from the yacht calendar collection. Note the spec's base
- * URL is /public/api/v1 while the legacy endpoints above are served at the
- * host root — the base comes from CYA_API_BASE, so the full path is used. */
+/* Verified in production (2026-11-22): GET {base}/bookings?yacht_id=...
+ * returns 200, while the previously built {base}/api/v1/bookings returned 404
+ * (duplicated version prefix). CYA_API_BASE already ends in /api/v1, so all
+ * paths are relative to it. Returns all ongoing and future bookings from the
+ * yacht calendar collection; 404 means "Yacht not found". */
 export type CyaBooking = {
   id: string;
   yachtId: string;
@@ -766,18 +782,20 @@ function isoDay(value: unknown): string | null {
   return value.slice(0, 10);
 }
 
-// Bookings live in CYA's current (post-migration) id space; catalogue ids
-// from /yachts_search and /yachts_get are legacy ids. The documented
-// GET /api/v1/yachts/legacy/{legacy_id} endpoint resolves them. Resolution is
-// cached for the process lifetime plus a long data-cache window: the mapping
-// is stable, and a wrong lookup must not be re-asked per page view.
+// Bookings live in CYA's current (post-migration) id space. Production
+// evidence (2026-11-22, ENDLESS HORIZON): the catalogue id from /yachts_search
+// answers 200 on /bookings, so the catalogue id is tried first and legacy
+// resolution is only attempted when CYA itself answers 404 ("Yacht not
+// found"). Resolution is cached for the process lifetime plus a long
+// data-cache window: the mapping is stable, and a wrong lookup must not be
+// re-asked per page view.
 const legacyResolutionCache = new Map<string, string | null>();
 
 export async function resolveLegacyYachtId(legacyId: string): Promise<string | null> {
   if (legacyResolutionCache.has(legacyId)) return legacyResolutionCache.get(legacyId) ?? null;
   try {
     const payload = await cyaFetch<Record<string, unknown>>(
-      `/api/v1/yachts/legacy/${encodeURIComponent(legacyId)}`,
+      `/yachts/legacy/${encodeURIComponent(legacyId)}`,
       { revalidate: 86_400 }
     );
     let resolvedId: string | null = null;
@@ -804,16 +822,7 @@ export async function resolveLegacyYachtId(legacyId: string): Promise<string | n
   }
 }
 
-export async function getYachtBookings(yachtId: string): Promise<CyaBooking[]> {
-  // Bookings live in CYA's current (post-migration) id space. Catalogue ids
-  // from /yachts_search and /yachts_get are legacy ids, so resolve first; if
-  // the id is already current (or no mapping exists) it is used as-is.
-  const resolved = await resolveLegacyYachtId(yachtId);
-  const targetId = resolved ?? yachtId;
-  const payload = await cyaFetch<{ bookings?: unknown } | unknown[]>(
-    `/api/v1/bookings?yacht_id=${encodeURIComponent(targetId)}`,
-    { revalidate: 300 }
-  );
+function parseCyaBookings(payload: { bookings?: unknown } | unknown[], fallbackYachtId: string): CyaBooking[] {
   const list = Array.isArray(payload)
     ? payload
     : payload && typeof payload === "object" && Array.isArray((payload as { bookings?: unknown }).bookings)
@@ -833,7 +842,7 @@ export async function getYachtBookings(yachtId: string): Promise<CyaBooking[]> {
     const holdExpire = isoDay(b.hold_expire_date);
     bookings.push({
       id,
-      yachtId: typeof b.yacht_id === "string" ? b.yacht_id : yachtId,
+      yachtId: typeof b.yacht_id === "string" ? b.yacht_id : fallbackYachtId,
       category,
       yachtName: typeof b.yacht_name === "string" ? b.yacht_name : null,
       startDate: start,
@@ -843,4 +852,26 @@ export async function getYachtBookings(yachtId: string): Promise<CyaBooking[]> {
     });
   }
   return bookings;
+}
+
+export async function getYachtBookings(yachtId: string): Promise<CyaBooking[]> {
+  // The catalogue id is valid in the bookings system (verified live), so it is
+  // used directly. Only when CYA answers 404 ("Yacht not found") is the
+  // legacy-id mapping attempted and the request retried with the resolved id.
+  try {
+    const payload = await cyaFetch<{ bookings?: unknown } | unknown[]>(
+      `/bookings?yacht_id=${encodeURIComponent(yachtId)}`,
+      { revalidate: 300 }
+    );
+    return parseCyaBookings(payload, yachtId);
+  } catch (err) {
+    if (!(err instanceof CyaApiError) || err.status !== 404) throw err;
+    const resolved = await resolveLegacyYachtId(yachtId);
+    if (!resolved || resolved === yachtId) throw err;
+    const payload = await cyaFetch<{ bookings?: unknown } | unknown[]>(
+      `/bookings?yacht_id=${encodeURIComponent(resolved)}`,
+      { revalidate: 300 }
+    );
+    return parseCyaBookings(payload, resolved);
+  }
 }
