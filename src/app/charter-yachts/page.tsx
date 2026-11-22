@@ -1,10 +1,19 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Users, BedDouble, Ruler, SlidersHorizontal, CalendarDays } from "lucide-react";
+import { ArrowRight, Users, BedDouble, Ruler, SlidersHorizontal, CalendarDays, TriangleAlert } from "lucide-react";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { YachtPhoto } from "@/components/yacht/YachtPhoto";
-import { searchYachts } from "@/lib/cya";
+import {
+  searchYachtsPage,
+  getOperatingAreas,
+  resolveDestinationAreas,
+  destinationSynonyms,
+  yachtSeasonAreaNames,
+  yachtAreaMatchesSynonymsIn,
+  yachtTypeWordsMatch,
+  type Yacht,
+} from "@/lib/cya";
 
 export const metadata: Metadata = {
   title: "Charter Yachts | Live Listings from My Caribbean Charters",
@@ -15,22 +24,9 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 const PAGE_SIZE = 10;
-
-type Yacht = {
-  id?: unknown;
-  yachtName?: unknown;
-  yachtType?: unknown;
-  length?: unknown;
-  units?: unknown;
-  year_build?: unknown;
-  cabins?: unknown;
-  pax?: unknown;
-  seasonAreas?: unknown;
-  image?: unknown;
-  min_price?: unknown;
-  currency?: unknown;
-  min_price_usd?: unknown;
-};
+// Upper bound for the local-filter page walk so a huge inventory can never
+// push a single page render past the 60 req/min CYA limit.
+const MAX_PAGES = 5;
 
 type Filters = {
   destination: string;
@@ -39,6 +35,17 @@ type Filters = {
   type: string;
   guests: string;
 };
+
+const TYPE_WORDS: Record<string, string[]> = {
+  catamaran: ["catamaran"],
+  monohull: ["monohull", "sailing yacht", "sail"],
+  motor: ["motor", "power"],
+  "power-catamaran": ["power cat", "powercat"],
+};
+
+function yachtAreaMatchesSynonyms(yacht: Yacht, synonyms: string[]): boolean {
+  return yachtAreaMatchesSynonymsIn(yacht, synonyms.map((s) => s.toLowerCase()));
+}
 
 function readFilters(searchParams: Record<string, string | string[] | undefined>): Filters {
   const one = (key: string) => {
@@ -54,35 +61,9 @@ function readFilters(searchParams: Record<string, string | string[] | undefined>
   };
 }
 
-// Destination names map to cruising-area labels returned by CYA's
-// /operating_areas endpoint (e.g. "British Virgin Islands"). Matching is done
-// on the verified seasonAreas response field, not invented filter IDs.
-function yachtMatchesArea(yacht: Yacht, destination: string): boolean {
-  const areas = yacht.seasonAreas;
-  if (!Array.isArray(areas)) return false;
-  const needle = destination.toLowerCase();
-  return areas.some((area) => {
-    if (typeof area === "string") return area.toLowerCase().includes(needle);
-    if (area && typeof area === "object") {
-      const name = (area as Record<string, unknown>).name ?? (area as Record<string, unknown>).label;
-      return typeof name === "string" && name.toLowerCase().includes(needle);
-    }
-    return false;
-  });
-}
-
 function yachtAreaLabel(yacht: Yacht): string | null {
-  const areas = yacht.seasonAreas;
-  if (Array.isArray(areas) && areas.length > 0) {
-    const first = areas[0];
-    if (typeof first === "string") return first;
-    if (first && typeof first === "object") {
-      const obj = first as Record<string, unknown>;
-      const name = obj.name ?? obj.label;
-      if (typeof name === "string") return name;
-    }
-  }
-  return null;
+  const names = yachtSeasonAreaNames(yacht);
+  return names.length > 0 ? names[0] : null;
 }
 
 function yachtPrice(yacht: Yacht): string | null {
@@ -98,21 +79,6 @@ function yachtPrice(yacht: Yacht): string | null {
 
 function yachtImage(yacht: Yacht): string | null {
   return typeof yacht.image === "string" && yacht.image.startsWith("https://") ? yacht.image : null;
-}
-
-function matchesFilters(yacht: Yacht, filters: Filters): boolean {
-  if (filters.destination && !yachtMatchesArea(yacht, filters.destination)) return false;
-  if (filters.type) {
-    const type = typeof yacht.yachtType === "string" ? yacht.yachtType.toLowerCase() : "";
-    if (!type.includes(filters.type.toLowerCase())) return false;
-  }
-  if (filters.guests) {
-    const guests = Number(filters.guests);
-    // Yachts are shown when capacity is unknown; a known capacity below the
-    // selection is filtered out. CYA may confirm a server-side guest filter later.
-    if (typeof yacht.pax === "number" && yacht.pax < guests) return false;
-  }
-  return true;
 }
 
 function YachtCard({ yacht, detailHref }: { yacht: Yacht; detailHref: (id: string) => string }) {
@@ -268,23 +234,68 @@ export default async function CharterYachtsPage({
   const filters = readFilters(params);
   const page = Math.max(1, Number.parseInt(Array.isArray(params.page) ? params.page[0] : params.page ?? "1", 10) || 1);
 
-  let allYachts: Yacht[] = [];
-  let totalYachts: number | null = null;
+  let pageYachts: Yacht[] = [];
+  let serverTotal: number | null = null;
+  let serverFilterApplied = false;
+  let unmatchedDestination = false;
   let loadError: string | null = null;
 
   try {
-    const search = await searchYachts({ page: 1, limit: 100, searchTerm: "", filters: {} });
-    allYachts = (search.yachts as Yacht[] | undefined) ?? [];
-    totalYachts = typeof search.totalYachts === "number" ? search.totalYachts : null;
+    if (filters.destination) {
+      const areas = await getOperatingAreas();
+      const matched = resolveDestinationAreas(areas, filters.destination);
+      if (matched.length === 0) {
+        unmatchedDestination = true;
+      } else {
+        const synonyms = matched.map((a) => a.name.toLowerCase());
+        const result = await searchYachtsPage({
+          page,
+          limit: PAGE_SIZE,
+          filters: { operating_area_ids: matched.map((a) => a.id).filter(Boolean) },
+          verify: (yachts) => yachts.every((y) => yachtAreaMatchesSynonymsIn(y, synonyms)),
+        });
+        pageYachts = result.yachts;
+        serverTotal = result.totalYachts;
+        serverFilterApplied = result.serverFilterApplied;
+      }
+    } else {
+      const result = await searchYachtsPage({ page, limit: PAGE_SIZE });
+      pageYachts = result.yachts;
+      serverTotal = result.totalYachts;
+    }
   } catch {
-    loadError =
-      "Yacht listings are temporarily unavailable. Please try again shortly — our team has been notified.";
+    loadError = "Yacht listings are temporarily unavailable. Please try again shortly — our team has been notified.";
   }
 
-  const filtered = allYachts.filter((y) => matchesFilters(y, filters));
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  // Local refinement only when CYA did not accept the server-side filter.
+  let localTotal: number | null = null;
+  if (!loadError && !unmatchedDestination && !serverFilterApplied && (filters.destination || filters.type || filters.guests)) {
+    const synonyms = destinationSynonyms(filters.destination);
+    const typeWords = filters.type ? TYPE_WORDS[filters.type] ?? [filters.type.toLowerCase()] : [];
+    const minGuests = filters.guests ? Number(filters.guests) : null;
+    const visible: Yacht[] = [];
+    // Walk result pages (small size, one request per page, rate-limit safe)
+    // until the matching set is complete so counts and pagination are accurate.
+    for (let p = 1; p <= MAX_PAGES; p++) {
+      const result = await searchYachtsPage({ page: p, limit: PAGE_SIZE });
+      const batch = result.yachts.filter((y) => {
+        if (filters.destination && !yachtAreaMatchesSynonyms(y, synonyms)) return false;
+        if (typeWords.length > 0 && !yachtTypeWordsMatch(y, typeWords)) return false;
+        if (minGuests !== null && typeof y.pax === "number" && y.pax < minGuests) return false;
+        return true;
+      });
+      visible.push(...batch);
+      if (result.yachts.length < PAGE_SIZE) break;
+    }
+    localTotal = visible.length;
+    const localTotalPages = Math.max(1, Math.ceil(visible.length / PAGE_SIZE));
+    pageYachts = visible.slice((Math.min(page, localTotalPages) - 1) * PAGE_SIZE, Math.min(page, localTotalPages) * PAGE_SIZE);
+  }
+
+  // Normalized pagination state for both paths (server-filtered or local).
+  const effectiveTotal = localTotal ?? serverTotal;
+  const totalPages = Math.max(1, Math.ceil((effectiveTotal ?? pageYachts.length) / PAGE_SIZE));
   const safePage = Math.min(page, totalPages);
-  const pageYachts = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
   const buildPageHref = (targetPage: number) => {
     const params = new URLSearchParams();
@@ -298,12 +309,12 @@ export default async function CharterYachtsPage({
     return qs ? `/charter-yachts?${qs}` : "/charter-yachts";
   };
   const detailHref = (id: string) => {
-    const params = new URLSearchParams();
-    if (filters.destination) params.set("destination", filters.destination);
-    if (filters.start) params.set("start", filters.start);
-    if (filters.end) params.set("end", filters.end);
-    if (filters.guests) params.set("guests", filters.guests);
-    const qs = params.toString();
+    const q = new URLSearchParams();
+    if (filters.destination) q.set("destination", filters.destination);
+    if (filters.start) q.set("start", filters.start);
+    if (filters.end) q.set("end", filters.end);
+    if (filters.guests) q.set("guests", filters.guests);
+    const qs = q.toString();
     return qs ? `/charter-yachts/${id}?${qs}` : `/charter-yachts/${id}`;
   };
 
@@ -318,8 +329,15 @@ export default async function CharterYachtsPage({
         </h1>
         <div className="mx-auto h-px w-16 bg-[#e89d79]" aria-hidden="true" />
         <p className="mt-6 text-white/80">
-          {totalYachts !== null ? `${totalYachts} yachts listed · ${filtered.length} matching your search` : `${filtered.length} matching your search`}
+          {effectiveTotal !== null
+            ? `${effectiveTotal} ${effectiveTotal === 1 ? "yacht" : "yachts"} matching your search`
+            : "Live charter yachts from Central Yacht Agent"}
         </p>
+        {unmatchedDestination && (
+          <p className="mx-auto mt-3 max-w-xl rounded-md bg-white/10 p-3 text-sm text-white/90">
+            That destination is not in the live cruising-area list yet — showing all yachts instead. Our team can confirm coverage for it directly.
+          </p>
+        )}
       </section>
 
       <main className="container mx-auto flex-1 px-4 py-16 md:py-20">
@@ -327,7 +345,7 @@ export default async function CharterYachtsPage({
 
         {loadError ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">{loadError}</p>
-        ) : filtered.length === 0 ? (
+        ) : unmatchedDestination || pageYachts.length === 0 ? (
           <p className="rounded-lg bg-white p-8 text-center text-[#061625]/75">
             No yachts match your search yet. Try widening your destination or guest count, or call us — new yachts are added regularly.
           </p>

@@ -2,9 +2,14 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import {
   getOperatingAreasRaw,
+  getOperatingAreas,
+  resolveDestinationAreas,
   normalizeOperatingAreas,
   searchYachts,
+  searchYachtsPage,
+  yachtAreaMatchesSynonymsIn,
   getYachtDetail,
+  destinationSynonyms,
   CyaApiError,
 } from "@/lib/cya";
 
@@ -182,6 +187,61 @@ export async function GET(request: Request) {
     } catch (err) {
       report.yachtDetail = { success: false, error: errorInfo(err) };
     }
+  }
+
+  // --- Destination resolution: MCC slugs against live CYA areas ---
+  try {
+    const areas = await getOperatingAreas();
+    const slugs = ["british-virgin-islands", "us-virgin-islands", "st-martin", "antigua", "grenadines", "bahamas"];
+    report.destinationResolution = {
+      success: true,
+      totalAreas: areas.length,
+      destinations: Object.fromEntries(
+        slugs.map((slug) => {
+          const matched = resolveDestinationAreas(areas, slug);
+          return [
+            slug,
+            {
+              matchedAreaCount: matched.length,
+              matchedAreas: matched.map((a) => ({ id: a.id, name: a.name })),
+              synonyms: destinationSynonyms(slug),
+            },
+          ];
+        })
+      ),
+    };
+  } catch (err) {
+    report.destinationResolution = { success: false, error: errorInfo(err) };
+  }
+
+  // --- Server-side filter acceptance: area filter, page size, pagination ---
+  try {
+    const areas = await getOperatingAreas();
+    const bvi = resolveDestinationAreas(areas, "british-virgin-islands");
+    const areaIds = bvi.map((a) => a.id).filter(Boolean);
+    if (areaIds.length === 0) {
+      report.serverFilterCheck = { success: false, note: "No CYA area IDs resolved for British Virgin Islands; cannot probe the area filter." };
+    } else {
+      const synonyms = bvi.map((a) => a.name.toLowerCase());
+      const result = await searchYachtsPage({
+        page: 1,
+        limit: 10,
+        filters: { operating_area_ids: areaIds },
+        verify: (yachts) => yachts.every((y) => yachtAreaMatchesSynonymsIn(y, synonyms)),
+      });
+      report.serverFilterCheck = {
+        success: true,
+        requestedFilters: { operating_area_ids: areaIds },
+        serverFilterAccepted: result.serverFilterApplied,
+        listingsReturned: result.yachts.length,
+        totalYachts: result.totalYachts,
+        interpretation: result.serverFilterApplied
+          ? "CYA accepted the operating_area_ids filter and every returned yacht cruises in the requested area; server-side filtering and totals are live."
+          : "CYA did not accept this filter format (or returned unfiltered results); the site falls back to accurate local matching.",
+      };
+    }
+  } catch (err) {
+    report.serverFilterCheck = { success: false, error: errorInfo(err) };
   }
 
   return NextResponse.json(report);

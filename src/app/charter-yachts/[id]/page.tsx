@@ -6,7 +6,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { YachtPhoto } from "@/components/yacht/YachtPhoto";
 import { YachtEnquiryForm } from "@/components/yacht/YachtEnquiryForm";
-import { getYachtDetail, searchYachts } from "@/lib/cya";
+import { getYachtDetail } from "@/lib/cya";
 
 export const dynamic = "force-dynamic";
 
@@ -76,18 +76,6 @@ export default async function YachtDetailPage({
     }
   } catch {
     yacht = null;
-  }
-
-  if (!yacht) {
-    // Fall back to search data so the page still renders if the detail
-    // endpoint is unavailable for this yacht.
-    try {
-      const search = await searchYachts({ page: 1, limit: 100, searchTerm: "", filters: {} });
-      const yachts = (search.yachts as Record<string, unknown>[] | undefined) ?? [];
-      yacht = yachts.find((y) => y.id === id) ?? null;
-    } catch {
-      yacht = null;
-    }
   }
 
   if (!yacht) notFound();

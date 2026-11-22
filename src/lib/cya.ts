@@ -142,6 +142,7 @@ export async function getOperatingAreasRaw(): Promise<unknown> {
 }
 
 export type YachtSearchResponse = Record<string, unknown>;
+export type Yacht = Record<string, unknown>;
 
 export function searchYachts(body: Record<string, unknown>): Promise<YachtSearchResponse> {
   return cyaFetch<YachtSearchResponse>("/yachts_search", {
@@ -152,6 +153,187 @@ export function searchYachts(body: Record<string, unknown>): Promise<YachtSearch
   });
 }
 
-export function getYachtDetail(id: string): Promise<Record<string, unknown>> {
-  return cyaFetch<Record<string, unknown>>(`/yachts/${encodeURIComponent(id)}`, { revalidate: 300 });
+function readYachts(response: YachtSearchResponse): Yacht[] {
+  return (response.yachts as Yacht[] | undefined) ?? [];
+}
+
+function readTotal(response: YachtSearchResponse): number | null {
+  return typeof response.totalYachts === "number" ? response.totalYachts : null;
+}
+
+export type YachtSearchPage = {
+  yachts: Yacht[];
+  totalYachts: number | null;
+  serverFilterApplied: boolean;
+};
+
+// Server-side filter decisions are remembered per instance for 10 minutes so
+// paginated requests do not re-probe (and double) the request count.
+const filterDecisionCache = new Map<string, { applied: boolean; expiresAt: number }>();
+const FILTER_DECISION_TTL_MS = 10 * 60 * 1000;
+
+/*
+ * Run one page of yacht search with CYA's documented filter object. CYA's
+ * accepted filter keys are not fully confirmed, so the result is verified with
+ * `verify` (every returned yacht must pass the caller's field checks):
+ * - verification passes -> the filter is treated as applied server-side.
+ * - verification fails, the page is empty, or CYA rejects the body with a
+ *   client error -> fall back to an unfiltered request and let the caller
+ *   filter locally, so results stay accurate either way.
+ */
+export async function searchYachtsPage(params: {
+  page: number;
+  limit: number;
+  searchTerm?: string;
+  filters?: Record<string, unknown>;
+  verify?: (yachts: Yacht[]) => boolean;
+}): Promise<YachtSearchPage> {
+  const { page, limit, searchTerm = "", filters = {}, verify } = params;
+
+  if (Object.keys(filters).length === 0) {
+    const response = await searchYachts({ page, limit, searchTerm, filters: {} });
+    return { yachts: readYachts(response), totalYachts: readTotal(response), serverFilterApplied: false };
+  }
+
+  const signature = `${JSON.stringify(filters)}`;
+  const cached = filterDecisionCache.get(signature);
+  if (cached && cached.expiresAt > Date.now()) {
+    if (cached.applied) {
+      const response = await searchYachts({ page, limit, searchTerm, filters });
+      return { yachts: readYachts(response), totalYachts: readTotal(response), serverFilterApplied: true };
+    }
+    const response = await searchYachts({ page, limit, searchTerm, filters: {} });
+    return { yachts: readYachts(response), totalYachts: readTotal(response), serverFilterApplied: false };
+  }
+
+  try {
+    const withFilters = await searchYachts({ page, limit, searchTerm, filters });
+    const yachts = readYachts(withFilters);
+    if (yachts.length > 0 && verify && verify(yachts)) {
+      filterDecisionCache.set(signature, { applied: true, expiresAt: Date.now() + FILTER_DECISION_TTL_MS });
+      return { yachts, totalYachts: readTotal(withFilters), serverFilterApplied: true };
+    }
+  } catch (err) {
+    if (!(err instanceof CyaApiError) || ![400, 404, 422].includes(err.status)) throw err;
+  }
+
+  filterDecisionCache.set(signature, { applied: false, expiresAt: Date.now() + FILTER_DECISION_TTL_MS });
+  const plain = await searchYachts({ page, limit, searchTerm, filters: {} });
+  return { yachts: readYachts(plain), totalYachts: readTotal(plain), serverFilterApplied: false };
+}
+
+export function yachtTypeWordsMatch(yacht: Yacht, words: string[]): boolean {
+  const type = typeof yacht.yachtType === "string" ? yacht.yachtType.toLowerCase() : "";
+  return words.some((w) => type.includes(w));
+}
+
+// --- Destinations: MCC slugs to CYA operating areas -------------------------
+
+export type CyaOperatingArea = { id: string; name: string };
+
+/* Synonyms cover the cruising-area labels CYA actually publishes (e.g.
+ * "St. Martin / St. Maarten"). Matching is against live area data fetched
+ * from /operating_areas — no invented area IDs. */
+const DESTINATION_AREA_SYNONYMS: Record<string, string[]> = {
+  "british-virgin-islands": ["british virgin islands", "bvi"],
+  "us-virgin-islands": ["us virgin islands", "u.s. virgin islands", "united states virgin islands", "usvi", "st thomas", "saint thomas", "st john"],
+  "st-martin": ["st martin", "st. martin", "saint martin", "st maarten", "st. maarten", "sint maarten"],
+  antigua: ["antigua", "barbuda"],
+  grenadines: ["grenadines", "st vincent", "st. vincent", "saint vincent", "bequia", "mustique", "canouan", "union island", "mayreau", "carriacou", "grenada"],
+  bahamas: ["bahamas", "exuma", "abaco", "eleuthera", "nassau", "harbour island", "andros", "berry islands", "bimini"],
+};
+
+export function destinationSynonyms(destination: string): string[] {
+  return DESTINATION_AREA_SYNONYMS[destination] ?? (destination ? [destination.replace(/-/g, " ")] : []);
+}
+
+function areaNameMatches(areaName: string, synonyms: string[]): boolean {
+  const name = areaName.toLowerCase();
+  return synonyms.some((s) => name.includes(s) || s.includes(name));
+}
+
+export async function getOperatingAreas(): Promise<CyaOperatingArea[]> {
+  const raw = await getOperatingAreasRaw();
+  const normalized = normalizeOperatingAreas(raw);
+  if (!normalized) return [];
+  const areas: CyaOperatingArea[] = [];
+  for (const a of normalized.areas) {
+    const rawName = a.name ?? a.label ?? a.title;
+    const rawId = a.id ?? a.area_id ?? a.uuid;
+    const name = typeof rawName === "string" ? rawName.trim() : "";
+    const id = typeof rawId === "string" || typeof rawId === "number" ? String(rawId) : "";
+    if (name) areas.push({ id, name });
+  }
+  return areas;
+}
+
+// Resolve an MCC destination slug against the live CYA operating-area list.
+// Returns [] when nothing matches; callers then match on area-name words.
+export function resolveDestinationAreas(areas: CyaOperatingArea[], destination: string): CyaOperatingArea[] {
+  const synonyms = destinationSynonyms(destination);
+  if (synonyms.length === 0) return [];
+  return areas.filter((a) => areaNameMatches(a.name, synonyms));
+}
+
+export function yachtSeasonAreaNames(yacht: Yacht): string[] {
+  const value = yacht.seasonAreas;
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((a) => {
+      if (typeof a === "string") return a;
+      if (a && typeof a === "object") {
+        const obj = a as Record<string, unknown>;
+        const name = obj.name ?? obj.label;
+        if (typeof name === "string") return name;
+      }
+      return "";
+    })
+    .filter(Boolean);
+}
+
+// True when any of the yacht's season-area names matches one of the given
+// (already-lowercased) area-name fragments.
+export function yachtAreaMatchesSynonymsIn(yacht: Yacht, loweredSynonyms: string[]): boolean {
+  return yachtSeasonAreaNames(yacht).some((n) => {
+    const name = n.toLowerCase();
+    return loweredSynonyms.some((s) => name.includes(s) || s.includes(name));
+  });
+}
+
+// Verifier for searchYachtsPage: every returned yacht must cruise in one of
+// the selected CYA areas.
+export function makeDestinationVerifier(areaNames: string[]): (yachts: Yacht[]) => boolean {
+  const lowered = areaNames.map((a) => a.toLowerCase());
+  return (yachts) => yachts.every((y) => yachtAreaMatchesSynonymsIn(y, lowered));
+}
+
+// --- Yacht detail -----------------------------------------------------------
+
+/* The documented detail endpoint is GET /yachts_get/{yacht_id}. The documented
+ * `include` parameter is tried first for full detail (photos, crew, amenities,
+ * rates); the legacy /yachts/{id} path is kept as a last resort. The first
+ * template that succeeds is remembered per instance. */
+const DETAIL_PATH_TEMPLATES = [
+  "/yachts_get/{id}?include=photos,images,crew,amenities,rates,description",
+  "/yachts_get/{id}",
+  "/yachts/{id}",
+];
+let workingDetailTemplate: string | null = null;
+
+export async function getYachtDetail(id: string): Promise<Record<string, unknown>> {
+  const templates = workingDetailTemplate ? [workingDetailTemplate] : DETAIL_PATH_TEMPLATES;
+  let lastError: unknown = null;
+  for (const template of templates) {
+    try {
+      const data = await cyaFetch<Record<string, unknown>>(template.replace("{id}", encodeURIComponent(id)), {
+        revalidate: 300,
+      });
+      workingDetailTemplate = template;
+      return data;
+    } catch (err) {
+      lastError = err;
+      if (err instanceof CyaApiError && [401, 403, 429].includes(err.status)) throw err;
+    }
+  }
+  throw lastError;
 }
