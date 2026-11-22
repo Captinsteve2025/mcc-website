@@ -62,7 +62,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const response = await fetch(`${parsedBase.origin}/operating_areas`, {
+    // Use the full configured URL including its path (e.g. /public/api/v1);
+    // .origin would drop it.
+    const baseUrl = parsedBase.toString().replace(/\/+$/, "");
+    const response = await fetch(`${baseUrl}/operating_areas`, {
       headers: { "X-API-Key": key, Accept: "application/json" },
       signal: AbortSignal.timeout(10_000),
       cache: "no-store",
