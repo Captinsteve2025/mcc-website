@@ -231,6 +231,7 @@ export default async function CharterYachtsPage({
   let resultsIncomplete = false;
   let checkedRecords = 0;
   let anyCriteria = false;
+  let localMatches: number | null = null;
 
   try {
     const areas = filters.destination ? await getOperatingAreas() : [];
@@ -258,6 +259,7 @@ export default async function CharterYachtsPage({
       } else {
         // Local fallback: only quote a complete, walked match count.
         effectiveTotal = session.localTotal;
+        localMatches = session.localTotal;
         resultsIncomplete = session.localResultsIncomplete;
       }
     }
@@ -302,7 +304,7 @@ export default async function CharterYachtsPage({
         <div className="mx-auto h-px w-16 bg-[#e89d79]" aria-hidden="true" />
         <p className="mt-6 text-white/80">
           {resultsIncomplete
-            ? `Showing the first ${checkedRecords} yachts of the live catalogue that match your search — the full inventory is larger.`
+            ? `Checked ${checkedRecords} catalogue records so far${localMatches !== null ? ` — ${localMatches} ${localMatches === 1 ? "yacht" : "yachts"} matched` : ""}; the full inventory is larger.`
             : effectiveTotal !== null
               ? `${effectiveTotal} ${effectiveTotal === 1 ? "yacht" : "yachts"} matching your search`
               : "Live charter yachts from Central Yacht Agent"}
@@ -316,7 +318,7 @@ export default async function CharterYachtsPage({
           <p className="mx-auto mt-3 flex max-w-xl items-start gap-2 rounded-md bg-[#e89d79]/20 p-3 text-left text-sm text-white">
             <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-[#e89d79]" aria-hidden="true" />
             <span>
-              These results cover the first part of the live catalogue only and may not list every matching yacht. Our team can check the full inventory for you — just ask.
+              These results come from the first {checkedRecords} records of the live catalogue and may not list every matching yacht. Our team can check the full inventory for you — just ask.
             </span>
           </p>
         )}

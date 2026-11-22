@@ -140,15 +140,21 @@ export async function cyaFetch<T>(
 
   let response = await doFetch();
 
-  // Safe 429 handling: honor Retry-After with one bounded retry (max ~5s) so a
-  // short burst does not fail a page; longer waits surface a friendly error
-  // rather than exceeding serverless execution limits.
+  // Safe 429 handling: honor CYA's Retry-After. Within the 5-second budget a
+  // single retry runs; a longer Retry-After is NOT retried early — the
+  // rate-limit error is returned with the true suggested wait so the caller
+  // (and the page) can surface the correct interval.
   if (response.status === 429) {
-    const retryAfter = Number(response.headers.get("retry-after") ?? "2");
-    const waitSeconds = Number.isFinite(retryAfter) && retryAfter > 0 ? Math.min(retryAfter, 5) : 2;
-    await new Promise((resolve) => setTimeout(resolve, waitSeconds * 1000 + 250));
-    await waitForRateSlot();
-    response = await doFetch();
+    const retryAfter = Number(response.headers.get("retry-after") ?? "NaN");
+    const suggestedSeconds = Number.isFinite(retryAfter) && retryAfter > 0 ? retryAfter : 2;
+    if (suggestedSeconds <= 5) {
+      await new Promise((resolve) => setTimeout(resolve, suggestedSeconds * 1000 + 250));
+      await waitForRateSlot();
+      response = await doFetch();
+      if (!response.ok) throw await parseErrorResponse(response);
+    } else {
+      throw await parseErrorResponse(response);
+    }
   }
 
   if (!response.ok) throw await parseErrorResponse(response);
@@ -215,8 +221,10 @@ export type YachtSearchSession = {
   serverTotal: number | null;
   /** True only when CYA's own totals prove the filters were applied. */
   serverFilterApplied: boolean;
-  /** Per-criterion acceptance, each proven the same way as the combined set. */
-  filterAcceptance: Record<string, boolean>;
+  /** Per-criterion acceptance: "confirmed" (CYA's total shrank and records
+   *  comply), "rejected" (records violate it), or "inconclusive" (records
+   *  comply but the total did not shrink, so application is unproven). */
+  filterAcceptance: Record<string, "confirmed" | "rejected" | "inconclusive">;
   /** True when the local fallback hit its page cap and counts are partial. */
   localResultsIncomplete: boolean;
   /** Matching total from the completed local walk; null when partial or n/a. */
@@ -278,7 +286,7 @@ export async function startYachtSearchSession(
   let localTotal: number | null = null;
   let localYachts: Yacht[] | null = null;
   let checkedRecordCount = 0;
-  const filterAcceptance: Record<string, boolean> = {};
+  const filterAcceptance: Record<string, "confirmed" | "rejected" | "inconclusive"> = {};
 
   if (hasFilters) {
     try {
@@ -326,13 +334,13 @@ export async function startYachtSearchSession(
             const recordsOk = !probe.yachts.some((y) => !s.check(y));
             const totalShrunk =
               probe.total !== null && unfilteredTotal !== null && probe.total < unfilteredTotal;
-            // A single-criterion probe on a small catalogue can legitimately
-            // match everything, so a total equal to the unfiltered one is not
-            // rejection — but without a smaller total we cannot PROVE the
-            // filter was applied, only that records are consistent with it.
-            filterAcceptance[s.name] = totalShrunk ? recordsOk : recordsOk && probe.total !== null ? true : false;
+            // Matching records alone do NOT prove CYA applied the filter — on
+            // a small catalogue an unfiltered response looks identical. Only
+            // a strictly smaller CYA total confirms; violating records
+            // reject; otherwise the result is inconclusive.
+            filterAcceptance[s.name] = !recordsOk ? "rejected" : totalShrunk ? "confirmed" : "inconclusive";
           } catch {
-            filterAcceptance[s.name] = false;
+            filterAcceptance[s.name] = "inconclusive";
           }
         }
       }
