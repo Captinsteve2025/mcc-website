@@ -1,24 +1,21 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getYachtDetail } from "@/lib/cya";
-import { parseCrew } from "@/lib/yacht-detail";
+import { parseCrewWithTrace, unusedCrewEntryKeys } from "@/lib/yacht-detail";
+import { getYachtCrew, mergeCrewProfiles } from "@/lib/yacht-content";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// One-request crew-field discovery against live CYA yacht details. Same
-// token gate as /api/cya-verify: the report never contains credentials, and
-// long biographies are truncated. Run as:
-//   curl -H "x-admin-token: $ADMIN_API_TOKEN" \
-//     "https://<deployment>/api/cya-crew-diagnostic?yacht_ids=<id1>,<id2>"
-// Yacht ids default to ENDLESS HORIZON, MISCHIEVOUS, OHANA, VIVA LA VIDA.
+// Yacht crew-profile diagnostic: fetches the full authenticated CYA detail
+// record for one yacht, reports every crew-shaped field with its type, the
+// exact field paths the parser used, the parsed profile count, and a
+// raw-vs-delivered comparison against what the public Meet Your Crew section
+// receives. The verdict distinguishes "CYA supplies no crew data" from "the
+// parser failed to recognize it". Credentials never appear in the output;
+// emails and phone numbers inside values are redacted before serialization.
 
-const DEFAULT_IDS = [
-  "69f33df0b5a1600bf785869e", // ENDLESS HORIZON
-  "69f33df2b5a1600bf78586a2", // MISCHIEVOUS
-  "6a023755ce6b8709506dfee5", // OHANA
-  "69f83a8e8ae166becdd09df5", // VIVA LA VIDA
-];
+const DEFAULT_YACHT_ID = "69f33df0b5a1600bf785869e"; // ENDLESS HORIZON
 
 function adminTokenMatches(provided: string | null, expected: string | undefined): boolean {
   if (!provided || !expected) return false;
@@ -28,28 +25,25 @@ function adminTokenMatches(provided: string | null, expected: string | undefined
   return timingSafeEqual(a, b);
 }
 
-function clip(value: unknown, max = 160): unknown {
-  if (typeof value === "string" && value.length > max) return `${value.slice(0, max)}…`;
-  if (Array.isArray(value)) return value.slice(0, 3).map((v) => clip(v, max));
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>)
-        .slice(0, 12)
-        .map(([k, v]) => [k, clip(v, max)])
-    );
-  }
-  return value;
+function redactText(text: string): string {
+  return text
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "[email removed]")
+    .replace(/\+?\d[\d\s().-]{7,}\d/g, "[phone removed]");
 }
 
-// Crew-shaped top-level fields with a value-type summary, so a mapping gap is
-// visible even when no known collection key matched.
-function crewShapedFields(detail: Record<string, unknown>): Record<string, unknown> {
-  const out: Record<string, unknown> = {};
-  for (const [key, value] of Object.entries(detail)) {
-    if (!/crew|captain|chef|steward|deckhand|pref_crew/i.test(key)) continue;
-    out[key] = clip(value);
-  }
-  return out;
+function preview(value: unknown, max = 160): string | null {
+  if (value === null || value === undefined) return null;
+  const text = typeof value === "string" ? value : JSON.stringify(value);
+  if (text === null) return null;
+  const clipped = text.length > max ? `${text.slice(0, max)}…` : text;
+  return redactText(clipped);
+}
+
+function describeValue(value: unknown): { type: string; preview: string | null } {
+  return {
+    type: Array.isArray(value) ? "array" : value === null ? "null" : typeof value,
+    preview: preview(value),
+  };
 }
 
 export async function GET(request: Request) {
@@ -68,42 +62,99 @@ export async function GET(request: Request) {
     .split(",")
     .map((s) => s.trim())
     .filter((s) => /^[a-f0-9]{8,32}$/i.test(s));
-  const ids = (requested.length > 0 ? requested : DEFAULT_IDS).slice(0, 6);
+  const ids = requested.length > 0 ? requested.slice(0, 6) : [DEFAULT_YACHT_ID];
 
   const yachts = await Promise.all(
     ids.map(async (yachtId) => {
       try {
         const detail = await getYachtDetail(yachtId);
-        const members = parseCrew(detail);
+        const trace = parseCrewWithTrace(detail);
+        const managedCrew = await getYachtCrew(yachtId);
+        const delivered = mergeCrewProfiles(managedCrew, trace.members);
+
+        const matchedKeys = new Set(trace.matchedCollectionKeys);
+        const crewShapedRawFields = trace.crewShapedTopLevelKeys.map((f) => {
+          const raw = (detail as Record<string, unknown>)[f.key];
+          return { key: f.key, matched: matchedKeys.has(f.key), ...describeValue(raw) };
+        });
+
+        // Everything crew-shaped that exists in CYA but never reaches the page:
+        // unrecognized top-level collections plus fields inside parsed entries
+        // that the component does not consume.
+        const omittedData = [
+          ...crewShapedRawFields.filter((f) => !f.matched).map((f) => ({ path: f.key, type: f.type, preview: f.preview })),
+          ...trace.rawEntries.flatMap(({ collection, index, entry }) =>
+            unusedCrewEntryKeys(entry).map((key) => ({
+              path: `${collection}[${index}].${key}`,
+              ...describeValue(entry[key]),
+            }))
+          ),
+        ];
+
+        const verdict = (() => {
+          if (trace.members.length > 0) {
+            return {
+              code: "crew_parsed",
+              headline: `${trace.members.length} crew profile(s) parsed from CYA and delivered to the public page.`,
+              explanation:
+                "The parser matched CYA's crew fields. Compare the parsed members below against the delivered table to confirm biographies and photographs survive intact.",
+            };
+          }
+          if (trace.crewShapedTopLevelKeys.length > 0) {
+            return {
+              code: "parser_gap",
+              headline: "Crew-shaped data exists in the CYA response but the parser does not recognize it.",
+              explanation:
+                "The Meet Your Crew section is hidden on the public page because of a mapping gap, not missing data. Add the unrecognized field names listed under omitted data to the parser's candidate keys.",
+            };
+          }
+          return {
+            code: "no_crew_data",
+            headline: "CYA's detail record for this yacht carries no crew fields at all.",
+            explanation:
+              "The Meet Your Crew section is hidden because CYA genuinely supplies no crew data here — this is not a parser failure. Crew profiles must come from MCC's admin-maintained records unless CYA confirms an alternative crew source.",
+          };
+        })();
+
         return {
           yachtId,
           yachtName: typeof detail.yachtName === "string" ? detail.yachtName : null,
-          resolved: members.length > 0,
-          members: members.map((m) => ({
+          verdict,
+          parsedCount: trace.members.length,
+          members: trace.members.map((m) => ({
             name: m.name,
             role: m.role,
-            populatedFields: {
-              bio: m.bio !== null,
-              photo: m.photoUrl !== null,
-              nationality: m.nationality !== null,
-              languages: m.languages !== null,
-              qualifications: m.qualifications !== null,
-              interests: m.interests !== null,
-              culinaryBackground: m.culinaryBackground !== null,
-            },
-            bioPreview: m.bio ? `${m.bio.slice(0, 200)}…` : null,
+            bioPresent: m.bio !== null,
+            bioPreview: m.bio ? preview(m.bio, 220) : null,
             photoUrl: m.photoUrl,
+            nationality: m.nationality,
+            languages: m.languages,
+            qualifications: m.qualifications,
+            interests: m.interests,
+            culinaryBackground: m.culinaryBackground,
+            paths: m.paths,
           })),
-          // Fields present in the raw record that look crew-related but did
-          // NOT resolve into members — the mapping-failure signal.
-          unresolvedCrewShapedFields: crewShapedFields(detail),
+          fieldPathsUsed: trace.members.flatMap((m) =>
+            Object.entries(m.paths)
+              .filter(([, path]) => path !== null)
+              .map(([field, path]) => `${field}: ${path}`)
+          ),
+          crewShapedRawFields,
+          omittedData,
+          delivered: delivered.map((m) => ({
+            name: m.name,
+            role: m.role,
+            source: m.source,
+            bioPresent: m.bio !== null,
+            bioCharacters: m.bio?.length ?? null,
+            photoPresent: m.photoUrl !== null,
+          })),
           allTopLevelFields: Object.keys(detail),
         };
       } catch (err) {
         return {
           yachtId,
           yachtName: null,
-          resolved: false,
           error: err instanceof Error ? err.message.slice(0, 200) : "Unknown error",
         };
       }
@@ -112,8 +163,7 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     executedServerSide: true,
-    note:
-      "resolved=true means parseCrew found crew under known collection keys. If a yacht shows unresolvedCrewShapedFields entries but resolved=false, the field names above are the new mapping to add to CREW_COLLECTION_KEYS.",
+    note: "Email addresses and phone numbers inside field values are redacted. No API credentials are included.",
     yachts,
   });
 }
