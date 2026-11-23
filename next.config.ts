@@ -1,6 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Build stamp consumed by the site-health deployment metadata card. Vercel
+  // injects the commit hash itself (VERCEL_GIT_COMMIT_SHA); the timestamp is
+  // set here at build time so the health page never shows a stale date.
+  env: {
+    NEXT_PUBLIC_BUILD_TIMESTAMP: new Date().toISOString(),
+  },
   images: {
     remotePatterns: [
       {

@@ -696,11 +696,15 @@ export type MenuSummary = {
   } | null;
 };
 
-const MENU_TITLE_KEYS = ["title", "meal", "meal_type", "course", "category", "menu_title", "name", "menu_category", "type"];
-const MENU_BODY_KEYS = ["description", "menu", "items", "details", "body", "text", "content", "menu_description", "menu_items", "dishes"];
-const MENU_PHOTO_KEYS = ["image", "image_src", "photo", "photo_url", "menu_image", "image_url", "picture", "photo_src", "src"];
+const MENU_TITLE_KEYS = ["menuTitle", "title", "meal", "meal_type", "course", "category", "menu_title", "name", "menu_category", "type"];
+const MENU_CATEGORY_KEYS = ["menuCategory", "menu_category", "category", "meal", "meal_type", "course", "type"];
+const MENU_BODY_KEYS = ["menuDescription", "menu_description", "description", "menu", "items", "details", "body", "text", "content", "menu_items", "dishes"];
+const MENU_PHOTO_KEYS = ["menuImage", "menu_image", "image", "image_src", "photo", "photo_url", "menu_image2", "image_url", "picture", "photo_src", "src"];
 const MENU_PHOTO_COLLECTION_KEYS = ["Images", "images", "photos", "menu_images", "gallery", "Photos"];
 const MENU_DESC_KEYS = ["description", "caption", "alt", "title", "name"];
+
+// CYA's form placeholder for an unset category — not a real menu category.
+const MENU_PLACEHOLDER_TITLES = new Set(["select category", "select", "n/a", "none"]);
 
 function menuPhotoFrom(obj: Record<string, unknown>, prefix: string): MenuPhoto | null {
   for (const key of MENU_PHOTO_KEYS) {
@@ -756,6 +760,19 @@ export function parseMenus(detail: Yacht): MenuSummary {
         break;
       }
     }
+    // CYA's form emits "Select Category" when no category was chosen — a
+    // placeholder, not a menu course. Prefer menuCategory when it holds a
+    // real value, and drop placeholder titles entirely.
+    if (title !== null && MENU_PLACEHOLDER_TITLES.has(title.toLowerCase())) title = null;
+    if (title === null) {
+      for (const key of MENU_CATEGORY_KEYS) {
+        const text = cleanText(obj[key]);
+        if (text !== null && !MENU_PLACEHOLDER_TITLES.has(text.toLowerCase())) {
+          title = text;
+          break;
+        }
+      }
+    }
     let bodyRaw: unknown;
     let bodyKey: string | null = null;
     for (const key of MENU_BODY_KEYS) {
@@ -789,7 +806,7 @@ export function parseMenus(detail: Yacht): MenuSummary {
   } else if (md && typeof md === "object") {
     const category = readCategory(md as Record<string, unknown>, "menuDetails");
     if (category) categories.push(category);
-  } else {
+  } else if (md !== undefined && md !== null) {
     const category = readCategory({ menu: md }, "menuDetails");
     if (category) categories.push(category);
   }
@@ -800,8 +817,8 @@ export function parseMenus(detail: Yacht): MenuSummary {
     const obj = mg as Record<string, unknown>;
     const photo = menuPhotoFrom(obj, "menuGeneral");
     collectPhotoCollection(obj, "menuGeneral");
-    const descriptionHtml = sanitizeCrewHtml(obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
-    const descriptionText = cleanText(obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
+    const descriptionHtml = sanitizeCrewHtml(obj.menuDescription ?? obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
+    const descriptionText = cleanText(obj.menuDescription ?? obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
     if (photo || descriptionHtml || descriptionText) {
       general = { photo, descriptionHtml, descriptionText };
     }
