@@ -22,6 +22,7 @@ import { YachtHeroGallery } from "@/components/yacht/YachtHeroGallery";
 import { YachtSectionNav, type SectionTab } from "@/components/yacht/YachtSectionNav";
 import { YachtAvailabilityCalendar } from "@/components/yacht/YachtAvailabilityCalendar";
 import { YachtCrewSection } from "@/components/yacht/YachtCrewSection";
+import { YachtDiningSection } from "@/components/yacht/YachtDiningSection";
 import { YachtCtaButtons, YachtMobileActionBar } from "@/components/yacht/YachtCtaButtons";
 import { getYachtDetail } from "@/lib/cya";
 import { getYachtCrew, getYachtAvailability, mergeCrewProfiles } from "@/lib/yacht-content";
@@ -36,6 +37,7 @@ import {
   parseAmenities,
   parseCrew,
   parseCrewGeneral,
+  parseMenus,
   parseSeasons,
   parseWatersports,
   str,
@@ -102,6 +104,7 @@ export default async function YachtDetailPage({
   // mapping failure (crew data present under unrecognized field names).
   const crew = mergeCrewProfiles(managedCrew, parseCrew(yacht));
   const crewGeneral = parseCrewGeneral(yacht);
+  const menus = parseMenus(yacht);
   if (crew.length === 0 && !crewGeneral) {
     const crewLikeFields = Object.keys(yacht).filter((key) => /crew|captain|chef|steward|deckhand/i.test(key));
     console.info("[crew] no crew profiles for yacht", {
@@ -177,6 +180,8 @@ export default async function YachtDetailPage({
   const tabs: SectionTab[] = [{ id: "overview", label: "Overview" }];
   tabs.push({ id: "availability", label: "Availability" });
   if (crew.length > 0 || crewGeneral) tabs.push({ id: "crew", label: "Crew" });
+  if (menus.categories.length > 0 || menus.photos.length > 0 || menus.general)
+    tabs.push({ id: "dining", label: "Dining" });
   if (accommodation.cabins !== null || accommodation.pax !== null || accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0)
     tabs.push({ id: "accommodation", label: "Accommodation" });
   if (gallery.length > 0) tabs.push({ id: "gallery", label: "Gallery" });
@@ -250,6 +255,7 @@ export default async function YachtDetailPage({
             the portrait-and-bio layout gets room on desktop. --- */}
         <div className="container mx-auto px-4">
           <YachtCrewSection crew={crew} yachtId={id} crewGeneral={crewGeneral} />
+          <YachtDiningSection menus={menus} />
         </div>
 
         <div className="container mx-auto grid gap-12 px-4 pb-24 lg:grid-cols-5">

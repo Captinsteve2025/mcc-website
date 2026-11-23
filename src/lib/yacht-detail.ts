@@ -672,3 +672,140 @@ export function parseCrewGeneral(detail: Yacht): CrewGeneral | null {
     },
   };
 }
+
+// --- Menus & food photography (menuDetails / menuGeneral) -------------------
+
+export type MenuPhoto = { url: string; description: string | null; path: string };
+
+export type MenuCategory = {
+  title: string;
+  /** Allowlist-sanitized HTML when CYA supplies markup. */
+  bodyHtml: string | null;
+  bodyText: string | null;
+  photo: MenuPhoto | null;
+  path: string;
+};
+
+export type MenuSummary = {
+  categories: MenuCategory[];
+  photos: MenuPhoto[];
+  general: {
+    photo: MenuPhoto | null;
+    descriptionHtml: string | null;
+    descriptionText: string | null;
+  } | null;
+};
+
+const MENU_TITLE_KEYS = ["title", "meal", "meal_type", "course", "category", "menu_title", "name", "menu_category", "type"];
+const MENU_BODY_KEYS = ["description", "menu", "items", "details", "body", "text", "content", "menu_description", "menu_items", "dishes"];
+const MENU_PHOTO_KEYS = ["image", "image_src", "photo", "photo_url", "menu_image", "image_url", "picture", "photo_src", "src"];
+const MENU_PHOTO_COLLECTION_KEYS = ["Images", "images", "photos", "menu_images", "gallery", "Photos"];
+const MENU_DESC_KEYS = ["description", "caption", "alt", "title", "name"];
+
+function menuPhotoFrom(obj: Record<string, unknown>, prefix: string): MenuPhoto | null {
+  for (const key of MENU_PHOTO_KEYS) {
+    const url = str(obj[key]);
+    if (url && /^https:\/\//.test(url)) {
+      let description: string | null = null;
+      for (const dKey of MENU_DESC_KEYS) {
+        const text = cleanText(obj[dKey]);
+        if (text !== null) {
+          description = text;
+          break;
+        }
+      }
+      return { url, description, path: `${prefix}.${key}` };
+    }
+  }
+  return null;
+}
+
+// Resolves the yacht's sample menus and food photography. Accepts arrays,
+// single objects or JSON-encoded text for menuDetails. Nothing is invented:
+// a category needs a body or a photo to render; empty labels are dropped.
+export function parseMenus(detail: Yacht): MenuSummary {
+  const categories: MenuCategory[] = [];
+  const photos: MenuPhoto[] = [];
+  const seenPhotos = new Set<string>();
+  const addPhoto = (photo: MenuPhoto | null) => {
+    if (photo && !seenPhotos.has(photo.url)) {
+      seenPhotos.add(photo.url);
+      photos.push(photo);
+    }
+  };
+  const collectPhotoCollection = (obj: Record<string, unknown>, prefix: string) => {
+    for (const key of MENU_PHOTO_COLLECTION_KEYS) {
+      const value = obj[key];
+      if (!Array.isArray(value)) continue;
+      value.forEach((item, index) => {
+        if (typeof item === "string" && /^https:\/\//.test(item)) {
+          addPhoto({ url: item, description: null, path: `${prefix}.${key}[${index}]` });
+        } else if (item && typeof item === "object" && !Array.isArray(item)) {
+          addPhoto(menuPhotoFrom(item as Record<string, unknown>, `${prefix}.${key}[${index}]`));
+        }
+      });
+    }
+  };
+
+  const readCategory = (obj: Record<string, unknown>, prefix: string): MenuCategory | null => {
+    let title: string | null = null;
+    for (const key of MENU_TITLE_KEYS) {
+      const text = cleanText(obj[key]);
+      if (text !== null) {
+        title = text;
+        break;
+      }
+    }
+    let bodyRaw: unknown;
+    let bodyKey: string | null = null;
+    for (const key of MENU_BODY_KEYS) {
+      if (obj[key] !== undefined && obj[key] !== null) {
+        bodyRaw = obj[key];
+        bodyKey = key;
+        break;
+      }
+    }
+    const photo = menuPhotoFrom(obj, prefix);
+    collectPhotoCollection(obj, prefix);
+    const bodyHtml = sanitizeCrewHtml(bodyRaw);
+    const bodyText = cleanText(bodyRaw);
+    if (title === null && bodyHtml === null && bodyText === null && photo === null) return null;
+    return {
+      title: title ?? "Sample menu",
+      bodyHtml,
+      bodyText,
+      photo,
+      path: bodyKey ? `${prefix}.${bodyKey}` : prefix,
+    };
+  };
+
+  const md = detail.menuDetails;
+  if (Array.isArray(md)) {
+    md.forEach((entry, index) => {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) return;
+      const category = readCategory(entry as Record<string, unknown>, `menuDetails[${index}]`);
+      if (category) categories.push(category);
+    });
+  } else if (md && typeof md === "object") {
+    const category = readCategory(md as Record<string, unknown>, "menuDetails");
+    if (category) categories.push(category);
+  } else {
+    const category = readCategory({ menu: md }, "menuDetails");
+    if (category) categories.push(category);
+  }
+
+  let general: MenuSummary["general"] = null;
+  const mg = detail.menuGeneral;
+  if (mg && typeof mg === "object" && !Array.isArray(mg)) {
+    const obj = mg as Record<string, unknown>;
+    const photo = menuPhotoFrom(obj, "menuGeneral");
+    collectPhotoCollection(obj, "menuGeneral");
+    const descriptionHtml = sanitizeCrewHtml(obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
+    const descriptionText = cleanText(obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
+    if (photo || descriptionHtml || descriptionText) {
+      general = { photo, descriptionHtml, descriptionText };
+    }
+  }
+
+  return { categories, photos, general };
+}

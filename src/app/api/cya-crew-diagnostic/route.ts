@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getYachtDetail } from "@/lib/cya";
-import { parseCrewWithTrace, parseCrewGeneral, unusedCrewEntryKeys } from "@/lib/yacht-detail";
+import {
+  parseCrewWithTrace,
+  parseCrewGeneral,
+  parseMenus,
+  unusedCrewEntryKeys,
+  type MenuCategory,
+} from "@/lib/yacht-detail";
 import { getYachtCrew, mergeCrewProfiles } from "@/lib/yacht-content";
 
 export const runtime = "nodejs";
@@ -46,6 +52,41 @@ function describeValue(value: unknown): { type: string; preview: string | null }
   };
 }
 
+const MENU_KNOWN_ENTRY_KEYS = new Set([
+  "title",
+  "meal",
+  "meal_type",
+  "course",
+  "category",
+  "menu_title",
+  "name",
+  "menu_category",
+  "type",
+  "description",
+  "menu",
+  "items",
+  "details",
+  "body",
+  "text",
+  "content",
+  "menu_description",
+  "menu_items",
+  "dishes",
+  "image",
+  "image_src",
+  "photo",
+  "photo_url",
+  "menu_image",
+  "image_url",
+  "picture",
+  "photo_src",
+  "src",
+  "caption",
+  "alt",
+]);
+
+const MENU_KNOWN_PHOTO_COLLECTIONS = new Set(["Images", "images", "photos", "menu_images", "gallery", "Photos"]);
+
 export async function GET(request: Request) {
   const adminToken = request.headers.get("x-admin-token");
   if (process.env.NODE_ENV !== "development" && !process.env.ADMIN_API_TOKEN) {
@@ -70,8 +111,51 @@ export async function GET(request: Request) {
         const detail = await getYachtDetail(yachtId);
         const trace = parseCrewWithTrace(detail);
         const general = parseCrewGeneral(detail);
+        const menus = parseMenus(detail);
         const managedCrew = await getYachtCrew(yachtId);
         const delivered = mergeCrewProfiles(managedCrew, trace.members);
+
+        // Menu field structure: raw shapes of menuDetails/menuGeneral, every
+        // recognized text field's exact path, photo URLs with descriptions,
+        // the meal categories CYA supplies, and fields the parser omits.
+        const menuOmitted = [
+          ...(Array.isArray(detail.menuDetails)
+            ? detail.menuDetails
+                .filter((e): e is Record<string, unknown> => Boolean(e) && typeof e === "object" && !Array.isArray(e))
+                .flatMap((entry, i) =>
+                  Object.keys(entry)
+                    .filter((k) => !MENU_KNOWN_ENTRY_KEYS.has(k) && !MENU_KNOWN_PHOTO_COLLECTIONS.has(k))
+                    .map((k) => ({ path: `menuDetails[${i}].${k}`, ...describeValue(entry[k]) }))
+                )
+            : []),
+          ...(detail.menuGeneral && typeof detail.menuGeneral === "object" && !Array.isArray(detail.menuGeneral)
+            ? Object.keys(detail.menuGeneral as Record<string, unknown>)
+                .filter((k) => !MENU_KNOWN_ENTRY_KEYS.has(k) && !MENU_KNOWN_PHOTO_COLLECTIONS.has(k))
+                .map((k) => ({ path: `menuGeneral.${k}`, ...describeValue((detail.menuGeneral as Record<string, unknown>)[k]) }))
+            : []),
+        ];
+
+        const menuReport = {
+          menuDetailsPresent: detail.menuDetails !== undefined && detail.menuDetails !== null,
+          menuDetailsType: Array.isArray(detail.menuDetails)
+            ? "array"
+            : detail.menuDetails === null
+              ? "null"
+              : typeof detail.menuDetails,
+          menuGeneralPresent: detail.menuGeneral !== undefined && detail.menuGeneral !== null,
+          categories: menus.categories.map((c: MenuCategory) => ({
+            title: c.title,
+            path: c.path,
+            bodyFormat: c.bodyHtml ? "html" : c.bodyText ? "text" : "none",
+            bodyPreview: preview(c.bodyText ?? c.bodyHtml, 200),
+            photo: c.photo,
+          })),
+          categoryCount: menus.categories.length,
+          photoCount: menus.photos.length,
+          photos: menus.photos,
+          general: menus.general,
+          omittedFields: menuOmitted,
+        };
 
         const matchedKeys = new Set(trace.matchedCollectionKeys);
         const crewShapedRawFields = trace.crewShapedTopLevelKeys.map((f) => {
@@ -159,6 +243,7 @@ export async function GET(request: Request) {
             bioCharacters: m.bio?.length ?? null,
             photoPresent: m.photoUrl !== null,
           })),
+          menus: menuReport,
           allTopLevelFields: Object.keys(detail),
         };
       } catch (err) {
