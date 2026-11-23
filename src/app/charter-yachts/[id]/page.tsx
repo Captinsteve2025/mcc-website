@@ -24,7 +24,7 @@ import { YachtAvailabilityCalendar } from "@/components/yacht/YachtAvailabilityC
 import { YachtCrewSection } from "@/components/yacht/YachtCrewSection";
 import { YachtCtaButtons, YachtMobileActionBar } from "@/components/yacht/YachtCtaButtons";
 import { getYachtDetail } from "@/lib/cya";
-import { getYachtCrew, getYachtAvailability } from "@/lib/yacht-content";
+import { getYachtCrew, getYachtAvailability, mergeCrewProfiles } from "@/lib/yacht-content";
 import {
   beamWithUnit,
   cleanText,
@@ -34,6 +34,7 @@ import {
   num,
   parseAccommodation,
   parseAmenities,
+  parseCrew,
   parseSeasons,
   parseWatersports,
   str,
@@ -93,7 +94,20 @@ export default async function YachtDetailPage({
 
   if (!yacht) notFound();
 
-  const [crew, availability] = await Promise.all([getYachtCrew(id), getYachtAvailability(id)]);
+  const [managedCrew, availability] = await Promise.all([getYachtCrew(id), getYachtAvailability(id)]);
+  // Crew: admin-approved profiles first, then crew CYA supplies in the detail
+  // record. When neither source has crew, the section is skipped — and the
+  // missing-fields note below distinguishes "no crew published" from a
+  // mapping failure (crew data present under unrecognized field names).
+  const crew = mergeCrewProfiles(managedCrew, parseCrew(yacht));
+  if (crew.length === 0) {
+    const crewLikeFields = Object.keys(yacht).filter((key) => /crew|captain|chef|steward|deckhand/i.test(key));
+    console.info("[crew] no crew profiles for yacht", {
+      yachtId: id,
+      crewLikeFieldsPresent: crewLikeFields,
+      note: crewLikeFields.length > 0 ? "Crew-like fields exist but matched no known mapping — check parseCrew keys." : "CYA detail carries no crew fields (normal for yachts without published crew).",
+    });
+  }
 
   const name = str(yacht.yachtName) ?? "Unnamed yacht";
   const gallery = collectGallery(yacht);
@@ -160,12 +174,12 @@ export default async function YachtDetailPage({
   // Only render tabs for sections that have real data for this yacht.
   const tabs: SectionTab[] = [{ id: "overview", label: "Overview" }];
   tabs.push({ id: "availability", label: "Availability" });
+  if (crew.length > 0) tabs.push({ id: "crew", label: "Crew" });
   if (accommodation.cabins !== null || accommodation.pax !== null || accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0)
     tabs.push({ id: "accommodation", label: "Accommodation" });
   if (gallery.length > 0) tabs.push({ id: "gallery", label: "Gallery" });
   if (watersports.length > 0) tabs.push({ id: "watersports", label: "Watersports" });
   if (amenities.length > 0) tabs.push({ id: "amenities", label: "Amenities" });
-  if (crew.length > 0) tabs.push({ id: "crew", label: "Crew" });
   if (seasons.length > 0) tabs.push({ id: "rates", label: "Rates" });
   tabs.push({ id: "enquire", label: "Enquire" });
 
@@ -228,6 +242,13 @@ export default async function YachtDetailPage({
         </section>
 
         <YachtSectionNav tabs={tabs} yachtId={id} />
+
+        {/* --- Meet Your Crew: immediately after the availability calendar and
+            before the detailed specifications/brochure content. Full-width so
+            the portrait-and-bio layout gets room on desktop. --- */}
+        <div className="container mx-auto px-4">
+          <YachtCrewSection crew={crew} yachtId={id} />
+        </div>
 
         <div className="container mx-auto grid gap-12 px-4 pb-24 lg:grid-cols-5">
           <div className="lg:col-span-3">
@@ -387,9 +408,6 @@ export default async function YachtDetailPage({
                 </ul>
               </section>
             )}
-
-            {/* --- Crew (only when approved profiles exist) --- */}
-            <YachtCrewSection crew={crew} yachtId={id} />
 
             {/* --- Charter rates --- */}
             {seasons.length > 0 && (

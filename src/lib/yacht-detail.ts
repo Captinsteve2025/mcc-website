@@ -330,3 +330,110 @@ export function parseWatersports(detail: Yacht): string[] {
   }
   return items;
 }
+
+export type CrewMember = {
+  sourceId: string;
+  name: string;
+  role: string;
+  bio: string | null;
+  photoUrl: string | null;
+  nationality: string | null;
+  languages: string | null;
+  qualifications: string | null;
+  interests: string | null;
+  culinaryBackground: string | null;
+  position: string | null;
+};
+
+// Candidate field names CYA may use for crew. The OpenAPI `yachts_get` example
+// carries no crew fields (its list is "a representative subset"), so these are
+// resolved against the live response only — a candidate that matches is the
+// mapping, one that never matches is reported by the crew diagnostics route.
+const CREW_COLLECTION_KEYS = [
+  "crew",
+  "crew_members",
+  "Crew",
+  "CrewedMembers",
+  "crewList",
+  "yacht_crew",
+  "crewed_members",
+] as const;
+
+const NAME_KEYS = ["crew_name", "name", "full_name", "fullname", "crewName", "member_name"] as const;
+const ROLE_KEYS = ["crew_position", "position", "role", "title", "job_title", "crewPosition"] as const;
+const BIO_KEYS = ["bio", "biography", "crew_bio", "about", "description", "comments", "text"] as const;
+const PHOTO_KEYS = ["crew_image", "image", "photo", "photo_url", "image_src", "picture", "crew_photo", "image_url"] as const;
+const NATIONALITY_KEYS = ["nationality", "crew_nationality", "citizenship"] as const;
+const LANGUAGE_KEYS = ["languages", "language", "languages_spoken", "crew_languages"] as const;
+const QUALIFICATION_KEYS = ["qualifications", "qualification", "licenses", "licences", "certificates", "credentials"] as const;
+const INTEREST_KEYS = ["interests", "hobbies", "pastimes"] as const;
+const CULINARY_KEYS = ["culinary_background", "culinary", "culinaryBackground", "chef_background", "cooking_style", "culinary_style", "food_style"] as const;
+const POSITION_KEYS = ["position", "crew_position", "position_title"] as const;
+
+function firstString(obj: Record<string, unknown>, keys: readonly string[]): string | null {
+  for (const key of keys) {
+    const text = cleanText(obj[key]);
+    if (text !== null) return text;
+  }
+  return null;
+}
+
+function firstPhoto(obj: Record<string, unknown>, keys: readonly string[]): string | null {
+  for (const key of keys) {
+    const value = obj[key];
+    const text = str(value);
+    if (text && /^https:\/\//.test(text)) return text;
+  }
+  return null;
+}
+
+// Resolves crew from the yacht detail record. Accepts an array, a single
+// object, or JSON-encoded text — CYA sub-collections have arrived in all three
+// shapes historically. Every member keeps its original biography verbatim.
+export function parseCrew(detail: Yacht): CrewMember[] {
+  const members: CrewMember[] = [];
+  const usedCollectionKeys = new Set<string>();
+  for (const key of CREW_COLLECTION_KEYS) {
+    const raw = detail[key];
+    if (raw === undefined || raw === null) continue;
+    usedCollectionKeys.add(key);
+    const entries: unknown[] = [];
+    if (Array.isArray(raw)) {
+      entries.push(...raw);
+    } else if (raw && typeof raw === "object") {
+      entries.push(raw);
+    } else if (typeof raw === "string" && raw.trim().startsWith("[")) {
+      try {
+        const parsed: unknown = JSON.parse(raw);
+        if (Array.isArray(parsed)) entries.push(...parsed);
+      } catch {
+        // Non-JSON text: reported by the diagnostics route, never guessed at.
+      }
+    }
+    for (const entry of entries) {
+      if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
+      const obj = entry as Record<string, unknown>;
+      const name = firstString(obj, NAME_KEYS);
+      if (name === null) continue;
+      const role = firstString(obj, ROLE_KEYS) ?? "Crew member";
+      members.push({
+        sourceId: str(obj._id) ?? str(obj.id) ?? `${key}:${members.length}`,
+        name,
+        role,
+        bio: firstString(obj, BIO_KEYS),
+        photoUrl: firstPhoto(obj, PHOTO_KEYS),
+        nationality: firstString(obj, NATIONALITY_KEYS),
+        languages: firstString(obj, LANGUAGE_KEYS),
+        qualifications: firstString(obj, QUALIFICATION_KEYS),
+        interests: firstString(obj, INTEREST_KEYS),
+        culinaryBackground: firstString(obj, CULINARY_KEYS),
+        position: firstString(obj, POSITION_KEYS),
+      });
+    }
+  }
+  // Documented for diagnostics: which top-level crew keys were present at all.
+  (detail as Yacht & { __crewCollectionKeysTried?: string[] }).__crewCollectionKeysTried = [
+    ...usedCollectionKeys,
+  ];
+  return members;
+}

@@ -1,9 +1,11 @@
 import { getSupabase } from "@/lib/supabase";
 import { CyaApiError, getYachtBookings, type CyaBooking } from "@/lib/cya";
+import type { CrewMember } from "@/lib/yacht-detail";
 
 // Server-side reads of MCC yacht content. Availability merges CYA's live,
 // documented bookings endpoint with MCC-maintained ranges in Supabase; crew
-// comes from admin-entered published profiles. Failures degrade to empty.
+// merges admin-entered published profiles with crew data CYA supplies in the
+// yacht detail record. Failures degrade to empty.
 
 export type CrewProfile = {
   id: string;
@@ -13,6 +15,12 @@ export type CrewProfile = {
   photoUrl: string | null;
   nationality: string | null;
   languages: string | null;
+  qualifications: string | null;
+  interests: string | null;
+  culinaryBackground: string | null;
+  position: string | null;
+  /** "mcc" = admin-approved Supabase profile; "cya" = CYA yacht detail record. */
+  source: "mcc" | "cya";
 };
 
 export type AvailabilityRange = {
@@ -49,10 +57,40 @@ export async function getYachtCrew(cyaYachtId: string): Promise<CrewProfile[]> {
       photoUrl: typeof row.photo_url === "string" && row.photo_url.startsWith("https://") ? row.photo_url : null,
       nationality: typeof row.nationality === "string" && row.nationality.trim() ? row.nationality.trim() : null,
       languages: typeof row.languages === "string" && row.languages.trim() ? row.languages.trim() : null,
+      qualifications: null,
+      interests: null,
+      culinaryBackground: null,
+      position: null,
+      source: "mcc" as const,
     }));
   } catch {
     return [];
   }
+}
+
+// Merges admin-approved profiles with crew CYA supplies. Curated MCC profiles
+// win on a name collision; the rest of the CYA crew follow. Biographies are
+// kept verbatim from their source — nothing is rewritten or invented.
+export function mergeCrewProfiles(managed: CrewProfile[], cya: CrewMember[]): CrewProfile[] {
+  const normalize = (name: string) => name.trim().toLowerCase().replace(/\s+/g, " ");
+  const seen = new Set(managed.map((m) => normalize(m.name)));
+  const fromCya: CrewProfile[] = cya
+    .filter((m) => !seen.has(normalize(m.name)))
+    .map((m) => ({
+      id: m.sourceId,
+      name: m.name,
+      role: m.role,
+      bio: m.bio,
+      photoUrl: m.photoUrl,
+      nationality: m.nationality,
+      languages: m.languages,
+      qualifications: m.qualifications,
+      interests: m.interests,
+      culinaryBackground: m.culinaryBackground,
+      position: m.position,
+      source: "cya" as const,
+    }));
+  return [...managed, ...fromCya];
 }
 
 /* CYA booking categories map to calendar statuses. Verified categories in
