@@ -331,6 +331,20 @@ export function parseWatersports(detail: Yacht): string[] {
   return items;
 }
 
+export type CrewMemberPaths = {
+  collection: string;
+  name: string | null;
+  role: string | null;
+  bio: string | null;
+  photo: string | null;
+  nationality: string | null;
+  languages: string | null;
+  qualifications: string | null;
+  interests: string | null;
+  culinaryBackground: string | null;
+  position: string | null;
+};
+
 export type CrewMember = {
   sourceId: string;
   name: string;
@@ -343,12 +357,14 @@ export type CrewMember = {
   interests: string | null;
   culinaryBackground: string | null;
   position: string | null;
+  /** Exact CYA field paths each value was read from (e.g. "crew[0].crew_name"). */
+  paths: CrewMemberPaths;
 };
 
 // Candidate field names CYA may use for crew. The OpenAPI `yachts_get` example
 // carries no crew fields (its list is "a representative subset"), so these are
 // resolved against the live response only — a candidate that matches is the
-// mapping, one that never matches is reported by the crew diagnostics route.
+// mapping, one that never matches is reported by the crew diagnostic.
 const CREW_COLLECTION_KEYS = [
   "crew",
   "crew_members",
@@ -370,70 +386,142 @@ const INTEREST_KEYS = ["interests", "hobbies", "pastimes"] as const;
 const CULINARY_KEYS = ["culinary_background", "culinary", "culinaryBackground", "chef_background", "cooking_style", "culinary_style", "food_style"] as const;
 const POSITION_KEYS = ["position", "crew_position", "position_title"] as const;
 
-function firstString(obj: Record<string, unknown>, keys: readonly string[]): string | null {
+type FieldHit = { value: string; path: string };
+
+function firstString(obj: Record<string, unknown>, keys: readonly string[]): FieldHit | null {
   for (const key of keys) {
     const text = cleanText(obj[key]);
-    if (text !== null) return text;
+    if (text !== null) return { value: text, path: key };
   }
   return null;
 }
 
-function firstPhoto(obj: Record<string, unknown>, keys: readonly string[]): string | null {
+function firstPhoto(obj: Record<string, unknown>, keys: readonly string[]): FieldHit | null {
   for (const key of keys) {
-    const value = obj[key];
-    const text = str(value);
-    if (text && /^https:\/\//.test(text)) return text;
+    const text = str(obj[key]);
+    if (text && /^https:\/\//.test(text)) return { value: text, path: key };
   }
   return null;
 }
 
-// Resolves crew from the yacht detail record. Accepts an array, a single
-// object, or JSON-encoded text — CYA sub-collections have arrived in all three
-// shapes historically. Every member keeps its original biography verbatim.
-export function parseCrew(detail: Yacht): CrewMember[] {
+export type CrewParseTrace = {
+  members: CrewMember[];
+  /** Top-level crew collections the parser matched and read. */
+  matchedCollectionKeys: string[];
+  /** Every top-level key whose name looks crew-related, matched or not. */
+  crewShapedTopLevelKeys: Array<{ key: string; type: string }>;
+  /** Raw entries the parser read, for the raw-vs-delivered comparison. */
+  rawEntries: Array<{ collection: string; index: number; entry: Record<string, unknown> }>;
+};
+
+// Resolves crew from the yacht detail record, recording exactly which field
+// paths were used. Accepts an array, a single object, or JSON-encoded text.
+// Every member keeps its original biography verbatim.
+export function parseCrewWithTrace(detail: Yacht): CrewParseTrace {
   const members: CrewMember[] = [];
-  const usedCollectionKeys = new Set<string>();
+  const matchedCollectionKeys: string[] = [];
+  const rawEntries: CrewParseTrace["rawEntries"] = [];
+  const crewShapedTopLevelKeys = Object.entries(detail)
+    .filter(([key]) => /crew|captain|chef|steward|deckhand/i.test(key))
+    .map(([key, value]) => ({
+      key,
+      type: Array.isArray(value) ? "array" : value === null ? "null" : typeof value,
+    }));
+
   for (const key of CREW_COLLECTION_KEYS) {
     const raw = detail[key];
     if (raw === undefined || raw === null) continue;
-    usedCollectionKeys.add(key);
-    const entries: unknown[] = [];
+    const entries: Array<{ entry: Record<string, unknown>; index: number }> = [];
     if (Array.isArray(raw)) {
-      entries.push(...raw);
+      raw.forEach((item, index) => {
+        if (item && typeof item === "object" && !Array.isArray(item)) {
+          entries.push({ entry: item as Record<string, unknown>, index });
+        }
+      });
     } else if (raw && typeof raw === "object") {
-      entries.push(raw);
+      entries.push({ entry: raw as Record<string, unknown>, index: 0 });
     } else if (typeof raw === "string" && raw.trim().startsWith("[")) {
       try {
         const parsed: unknown = JSON.parse(raw);
-        if (Array.isArray(parsed)) entries.push(...parsed);
+        if (Array.isArray(parsed)) {
+          parsed.forEach((item, index) => {
+            if (item && typeof item === "object" && !Array.isArray(item)) {
+              entries.push({ entry: item as Record<string, unknown>, index });
+            }
+          });
+        }
       } catch {
-        // Non-JSON text: reported by the diagnostics route, never guessed at.
+        // Non-JSON text: surfaced by the diagnostic, never guessed at.
       }
     }
-    for (const entry of entries) {
-      if (!entry || typeof entry !== "object" || Array.isArray(entry)) continue;
-      const obj = entry as Record<string, unknown>;
-      const name = firstString(obj, NAME_KEYS);
+    if (entries.length === 0) continue;
+    matchedCollectionKeys.push(key);
+
+    for (const { entry, index } of entries) {
+      const name = firstString(entry, NAME_KEYS);
       if (name === null) continue;
-      const role = firstString(obj, ROLE_KEYS) ?? "Crew member";
+      const prefix = `${key}[${index}]`;
+      const role = firstString(entry, ROLE_KEYS);
+      const bio = firstString(entry, BIO_KEYS);
+      const photo = firstPhoto(entry, PHOTO_KEYS);
+      const nationality = firstString(entry, NATIONALITY_KEYS);
+      const languages = firstString(entry, LANGUAGE_KEYS);
+      const qualifications = firstString(entry, QUALIFICATION_KEYS);
+      const interests = firstString(entry, INTEREST_KEYS);
+      const culinary = firstString(entry, CULINARY_KEYS);
+      const position = firstString(entry, POSITION_KEYS);
       members.push({
-        sourceId: str(obj._id) ?? str(obj.id) ?? `${key}:${members.length}`,
-        name,
-        role,
-        bio: firstString(obj, BIO_KEYS),
-        photoUrl: firstPhoto(obj, PHOTO_KEYS),
-        nationality: firstString(obj, NATIONALITY_KEYS),
-        languages: firstString(obj, LANGUAGE_KEYS),
-        qualifications: firstString(obj, QUALIFICATION_KEYS),
-        interests: firstString(obj, INTEREST_KEYS),
-        culinaryBackground: firstString(obj, CULINARY_KEYS),
-        position: firstString(obj, POSITION_KEYS),
+        sourceId: str(entry._id) ?? str(entry.id) ?? `${key}:${members.length}`,
+        name: name.value,
+        role: role?.value ?? "Crew member",
+        bio: bio?.value ?? null,
+        photoUrl: photo?.value ?? null,
+        nationality: nationality?.value ?? null,
+        languages: languages?.value ?? null,
+        qualifications: qualifications?.value ?? null,
+        interests: interests?.value ?? null,
+        culinaryBackground: culinary?.value ?? null,
+        position: position?.value ?? null,
+        paths: {
+          collection: key,
+          name: `${prefix}.${name.path}`,
+          role: role ? `${prefix}.${role.path}` : null,
+          bio: bio ? `${prefix}.${bio.path}` : null,
+          photo: photo ? `${prefix}.${photo.path}` : null,
+          nationality: nationality ? `${prefix}.${nationality.path}` : null,
+          languages: languages ? `${prefix}.${languages.path}` : null,
+          qualifications: qualifications ? `${prefix}.${qualifications.path}` : null,
+          interests: interests ? `${prefix}.${interests.path}` : null,
+          culinaryBackground: culinary ? `${prefix}.${culinary.path}` : null,
+          position: position ? `${prefix}.${position.path}` : null,
+        },
       });
+      rawEntries.push({ collection: key, index, entry });
     }
   }
-  // Documented for diagnostics: which top-level crew keys were present at all.
-  (detail as Yacht & { __crewCollectionKeysTried?: string[] }).__crewCollectionKeysTried = [
-    ...usedCollectionKeys,
-  ];
-  return members;
+  return { members, matchedCollectionKeys, crewShapedTopLevelKeys, rawEntries };
+}
+
+export function parseCrew(detail: Yacht): CrewMember[] {
+  return parseCrewWithTrace(detail).members;
+}
+
+// Raw crew-entry keys the parser never reads — the crew diagnostic reports
+// these as data CYA supplies that the website would omit.
+export function unusedCrewEntryKeys(entry: Record<string, unknown>): string[] {
+  const consumed = new Set<string>([
+    ...NAME_KEYS,
+    ...ROLE_KEYS,
+    ...BIO_KEYS,
+    ...PHOTO_KEYS,
+    ...NATIONALITY_KEYS,
+    ...LANGUAGE_KEYS,
+    ...QUALIFICATION_KEYS,
+    ...INTEREST_KEYS,
+    ...CULINARY_KEYS,
+    ...POSITION_KEYS,
+    "_id",
+    "id",
+  ]);
+  return Object.keys(entry).filter((k) => !consumed.has(k));
 }

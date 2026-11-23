@@ -15,6 +15,41 @@ type AvailabilityResult = {
   yachtId: string;
 };
 
+type CrewResult = {
+  status: number;
+  ok: boolean;
+  body: Record<string, unknown>;
+  yachtId: string;
+};
+
+type CrewMemberReport = {
+  name: string;
+  role: string;
+  bioPresent: boolean;
+  bioPreview: string | null;
+  photoUrl: string | null;
+  nationality: string | null;
+  languages: string | null;
+  qualifications: string | null;
+  interests: string | null;
+  culinaryBackground: string | null;
+  paths: Record<string, string | null>;
+};
+
+type CrewYachtReport = {
+  yachtId: string;
+  yachtName: string | null;
+  verdict?: { code: string; headline: string; explanation: string };
+  parsedCount?: number;
+  members?: CrewMemberReport[];
+  fieldPathsUsed?: string[];
+  crewShapedRawFields?: Array<{ key: string; type: string; matched: boolean; preview: string | null }>;
+  omittedData?: Array<{ path: string; type: string; preview: string | null }>;
+  delivered?: Array<{ name: string; role: string; source: string; bioPresent: boolean; bioCharacters: number | null; photoPresent: boolean }>;
+  allTopLevelFields?: string[];
+  error?: string;
+};
+
 const PRESET_YACHTS: Array<{ name: string; id: string }> = [
   { name: "ENDLESS HORIZON", id: "69f33df0b5a1600bf785869e" },
   { name: "MISCHIEVOUS", id: "69f33df2b5a1600bf78586a2" },
@@ -90,6 +125,8 @@ export default function AdminApiTestPage() {
   const [yachtIdInput, setYachtIdInput] = useState(PRESET_YACHTS[0].id);
   const [availabilityResult, setAvailabilityResult] = useState<AvailabilityResult | null>(null);
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
+  const [crewResult, setCrewResult] = useState<CrewResult | null>(null);
+  const [crewLoading, setCrewLoading] = useState(false);
 
   async function runTest(e: React.FormEvent) {
     e.preventDefault();
@@ -141,6 +178,23 @@ export default function AdminApiTestPage() {
       setError("The request to this website's server failed. Check your connection and try again.");
     } finally {
       setAvailabilityLoading(false);
+    }
+  }
+
+  async function runCrew(yachtId: string) {
+    setCrewLoading(true);
+    setError(null);
+    setCrewResult(null);
+    try {
+      const response = await fetch(`/api/cya-crew-diagnostic?yacht_ids=${encodeURIComponent(yachtId)}`, {
+        headers: { "x-admin-token": token },
+      });
+      const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      setCrewResult({ status: response.status, ok: response.ok, body, yachtId });
+    } catch {
+      setError("The request to this website's server failed. Check your connection and try again.");
+    } finally {
+      setCrewLoading(false);
     }
   }
 
@@ -245,6 +299,63 @@ export default function AdminApiTestPage() {
         )}
       </section>
 
+      <section className="mb-8 rounded-lg border border-[#061625]/10 bg-white p-6">
+        <h2 className="mb-1 font-display text-lg italic text-[#061625]">Yacht crew-profile tester</h2>
+        <p className="mb-4 text-sm leading-relaxed text-[#061625]/70">
+          Fetches the yacht&apos;s full CYA detail record and reports every crew field it carries, the exact
+          field paths the website reads, how many crew profiles were parsed, and whether anything in CYA is
+          being left off the public Meet Your Crew section. Contact details inside values are redacted.
+        </p>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {PRESET_YACHTS.map((y) => (
+            <button
+              key={y.id}
+              type="button"
+              onClick={() => setYachtIdInput(y.id)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                yachtIdInput === y.id
+                  ? "border-[#EE9739] bg-[#EE9739]/15 text-[#061625]"
+                  : "border-[#061625]/20 text-[#061625]/70 hover:bg-[#061625]/5"
+              }`}
+            >
+              {y.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            type="text"
+            value={yachtIdInput}
+            onChange={(e) => setYachtIdInput(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            className="w-full rounded-md border border-[#061625]/20 bg-white px-4 py-3 font-mono text-sm text-[#061625] focus:outline-none focus:ring-2 focus:ring-[#EE9739]"
+            placeholder="CYA yacht id"
+          />
+          <button
+            type="button"
+            disabled={crewLoading || !token || !yachtIdInput.trim()}
+            onClick={() => runCrew(yachtIdInput.trim())}
+            className="shrink-0 rounded-full bg-[#061625] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#061625]/85 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {crewLoading ? "Testing…" : "Test Crew Profiles"}
+          </button>
+        </div>
+
+        {crewResult && (
+          <div className="mt-5" aria-live="polite">
+            {!crewResult.ok ? (
+              <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+                Crew tester request failed (server response {crewResult.status}).
+                {typeof crewResult.body.error === "string" ? ` ${crewResult.body.error}` : ""}
+              </p>
+            ) : (
+              <CrewReport body={crewResult.body} />
+            )}
+          </div>
+        )}
+      </section>
+
       {verifyResult && (
         <div className="mb-8 rounded-lg border border-[#061625]/10 bg-white p-6" aria-live="polite">
           <h2 className="mb-4 text-sm font-semibold text-[#061625]">Live data verification</h2>
@@ -343,6 +454,153 @@ type BookingRow = {
   yachtId?: string | null;
   yachtName?: string | null;
 };
+
+const VERDICT_STYLES: Record<string, string> = {
+  crew_parsed: "bg-green-50 text-green-800",
+  parser_gap: "bg-[#EE9739]/15 text-[#061625]",
+  no_crew_data: "bg-[#061625]/5 text-[#061625]/80",
+};
+
+function CrewReport({ body }: { body: Record<string, unknown> }) {
+  const yachts = (body.yachts ?? []) as CrewYachtReport[];
+  if (yachts.length === 0) {
+    return <p className="text-sm text-[#061625]/70">No yacht reports returned.</p>;
+  }
+  return (
+    <div className="space-y-6">
+      {yachts.map((y) => (
+        <div key={y.yachtId} className="rounded-lg border border-[#061625]/10 p-4">
+          <p className="text-sm font-semibold text-[#061625]">
+            {y.yachtName ?? "Unknown yacht"} <span className="font-mono text-xs font-normal text-[#061625]/60">{y.yachtId}</span>
+          </p>
+          {y.error && <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">CYA request failed: {y.error}</p>}
+          {y.verdict && (
+            <div className={`mt-3 rounded-md px-4 py-3 ${VERDICT_STYLES[y.verdict.code] ?? "bg-[#061625]/5"}`}>
+              <p className="text-sm font-semibold">{y.verdict.headline}</p>
+              <p className="mt-1 text-sm leading-relaxed opacity-90">{y.verdict.explanation}</p>
+            </div>
+          )}
+
+          {y.members && y.members.length > 0 && (
+            <div className="mt-4 space-y-3">
+              <p className="text-sm font-semibold text-[#061625]">Parsed crew ({y.parsedCount})</p>
+              {y.members.map((m, i) => (
+                <div key={i} className="rounded-md border border-[#061625]/10 p-3 text-sm">
+                  <p className="font-medium text-[#061625]">
+                    {m.name} — {m.role}
+                  </p>
+                  <p className="mt-0.5 text-xs text-[#061625]/70">
+                    Biography: {m.bioPresent ? "present" : "none"} · Photo: {m.photoUrl ? "present" : "none"}
+                    {m.nationality ? ` · Nationality: ${m.nationality}` : ""}
+                    {m.languages ? ` · Languages: ${m.languages}` : ""}
+                    {m.qualifications ? ` · Qualifications: ${m.qualifications}` : ""}
+                    {m.culinaryBackground ? " · Culinary background: present" : ""}
+                    {m.interests ? ` · Interests: ${m.interests}` : ""}
+                  </p>
+                  {m.bioPreview && <p className="mt-1 text-xs italic text-[#061625]/60">{m.bioPreview}</p>}
+                  {m.photoUrl && (
+                    <p className="mt-1 break-all text-xs text-[#337891]">{m.photoUrl}</p>
+                  )}
+                  {m.paths && (
+                    <details className="mt-2">
+                      <summary className="cursor-pointer text-xs font-medium text-[#061625] underline underline-offset-4">
+                        Field paths used
+                      </summary>
+                      <ul className="mt-1 space-y-0.5 font-mono text-xs text-[#061625]/70">
+                        {Object.entries(m.paths)
+                          .filter(([, p]) => p !== null)
+                          .map(([field, p]) => (
+                            <li key={field}>{`${field}: ${p}`}</li>
+                          ))}
+                      </ul>
+                    </details>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {y.fieldPathsUsed && y.fieldPathsUsed.length > 0 && (
+            <details className="mt-3">
+              <summary className="cursor-pointer text-xs font-medium text-[#061625] underline underline-offset-4">
+                All field paths used by the parser
+              </summary>
+              <ul className="mt-1 space-y-0.5 font-mono text-xs text-[#061625]/70">
+                {y.fieldPathsUsed.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+            </details>
+          )}
+
+          {y.crewShapedRawFields && y.crewShapedRawFields.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-[#061625]">Crew-shaped fields in the raw CYA record</p>
+              <ul className="mt-1 space-y-1 text-xs text-[#061625]/75">
+                {y.crewShapedRawFields.map((f) => (
+                  <li key={f.key} className="break-words">
+                    <span className="font-mono">{f.key}</span> ({f.type}){" "}
+                    <span className={f.matched ? "text-green-700" : "text-[#EA6F33]"}>
+                      {f.matched ? "recognized by parser" : "NOT recognized by parser"}
+                    </span>
+                    {f.preview ? ` — ${f.preview}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {y.omittedData && y.omittedData.length > 0 && (
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-[#EA6F33]">Data CYA supplies that the website omits</p>
+              <ul className="mt-1 space-y-1 font-mono text-xs text-[#061625]/75">
+                {y.omittedData.map((f) => (
+                  <li key={f.path} className="break-words">
+                    {f.path} ({f.type}){f.preview ? ` — ${f.preview}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {y.delivered && (
+            <div className="mt-4">
+              <p className="text-sm font-semibold text-[#061625]">Delivered to the public Meet Your Crew section</p>
+              {y.delivered.length === 0 ? (
+                <p className="mt-1 text-sm text-[#061625]/70">Nothing — the section is hidden for this yacht.</p>
+              ) : (
+                <ul className="mt-1 space-y-1 text-xs text-[#061625]/75">
+                  {y.delivered.map((m, i) => (
+                    <li key={i}>
+                      {m.name} — {m.role} ({m.source}): biography{" "}
+                      {m.bioPresent ? `${m.bioCharacters ?? "?"} characters` : "none"}, photo{" "}
+                      {m.photoPresent ? "present" : "none"}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {y.allTopLevelFields && (
+            <details className="mt-4">
+              <summary className="cursor-pointer text-xs font-medium text-[#061625] underline underline-offset-4">
+                All top-level fields in the raw response ({y.allTopLevelFields.length})
+              </summary>
+              <p className="mt-1 break-words font-mono text-xs text-[#061625]/60">{y.allTopLevelFields.join(", ")}</p>
+            </details>
+          )}
+        </div>
+      ))}
+      <details>
+        <summary className="cursor-pointer text-sm font-semibold text-[#061625]">Full diagnostic payload</summary>
+        <pre className="mt-3 max-h-96 overflow-auto rounded bg-[#061625] p-3 text-xs leading-relaxed text-[#f5f0e8]">
+          {JSON.stringify(body, null, 2)}
+        </pre>
+      </details>
+    </div>
+  );
+}
 
 function AvailabilityReport({ body }: { body: Record<string, unknown> }) {
   const raw = (body.rawResponse ?? null) as Record<string, unknown> | null;
