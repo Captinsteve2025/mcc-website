@@ -77,19 +77,80 @@ export function collectGallery(detail: Yacht): GalleryImage[] {
   return gallery;
 }
 
-// Strip markup and entities from CYA text fields (other_toys may contain HTML).
+// One-pass HTML entity decoding: a named or numeric reference found in the
+// original text is decoded exactly once, so "&amp;bull;" becomes the literal
+// text "&bull;" and is never decoded a second time. Unknown named references
+// are left as-is; invalid numeric ones are dropped.
+const NAMED_ENTITIES: Record<string, string> = {
+  bull: "\u2022",
+  middot: "\u00b7",
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+  mdash: "\u2014",
+  ndash: "\u2013",
+  hellip: "\u2026",
+  lsquo: "\u2018",
+  rsquo: "\u2019",
+  ldquo: "\u201c",
+  rdquo: "\u201d",
+  deg: "\u00b0",
+  euro: "\u20ac",
+  pound: "\u00a3",
+  copy: "\u00a9",
+  reg: "\u00ae",
+  trade: "\u2122",
+  eacute: "\u00e9",
+  egrave: "\u00e8",
+  agrave: "\u00e0",
+  ccedil: "\u00e7",
+  ntilde: "\u00f1",
+  auml: "\u00e4",
+  ouml: "\u00f6",
+  uuml: "\u00fc",
+  szlig: "\u00df",
+};
+
+const ENTITY_PATTERN = /&([a-zA-Z][a-zA-Z0-9]{1,30}|#[0-9]{1,7}|#[xX][0-9a-fA-F]{1,6});/g;
+
+function decodeHtmlEntities(text: string): string {
+  return text.replace(ENTITY_PATTERN, (match, body: string) => {
+    if (body.startsWith("#")) {
+      const codePoint =
+        body[1] === "x" || body[1] === "X"
+          ? Number.parseInt(body.slice(2), 16)
+          : Number.parseInt(body.slice(1), 10);
+      if (
+        !Number.isInteger(codePoint) ||
+        codePoint < 32 ||
+        codePoint > 0x10ffff ||
+        (codePoint >= 0xd800 && codePoint <= 0xdfff)
+      ) {
+        return "";
+      }
+      return String.fromCodePoint(codePoint);
+    }
+    return NAMED_ENTITIES[body.toLowerCase()] ?? match;
+  });
+}
+
+// Strip markup and decode entities from CYA plain-text fields. Decoding runs
+// BEFORE tag stripping so numeric references like &#8226; become their real
+// character instead of vanishing; anything that decodes into a tag is stripped
+// with the rest, never rendered. Used for specs, amenities, watersports,
+// accommodation and season text — plain text only. Rich CYA HTML (the general
+// crew description) goes through the separate HTML sanitizer instead.
 export function cleanText(value: unknown): string | null {
   const text = str(value);
   if (text === null) return null;
-  const cleaned = text
+  const cleaned = decodeHtmlEntities(text)
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|li|h[1-6])>/gi, "\n")
     .replace(/<[^>]*>/g, "")
-    .replace(/&amp;/g, "&")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&#\d+;/g, "")
+    .replace(/[ \t]{2,}/g, " ")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   return cleaned.length > 0 ? cleaned : null;
@@ -286,21 +347,48 @@ export function parseAmenities(detail: Yacht): Amenity[] {
   return amenities;
 }
 
+export type WatersportsSummary = {
+  /** Tender shown prominently (make/model/engine/horsepower when supplied). */
+  tender: string | null;
+  /** Recreational equipment, leading bullets removed, quantities preserved. */
+  items: string[];
+};
+
+// Leading bullet/decoration characters: the card grid already shows an icon,
+// so a leading "&bull;", "•", "-" or "*" carries no information. Only stripped
+// when followed by content, and never touched mid-item.
+const LEADING_BULLET = /^(?:\u2022|\u00b7|[-*]|\u25cf|\u25aa|\u2013|\u2014)\s+/;
+
+function normalizeToyItem(text: string): string | null {
+  // Drop bare category labels like "Toys:" or "Tender:" that carry no equipment.
+  if (/^[a-z][a-z /]*:\s*$/i.test(text)) return null;
+  let item = text.replace(LEADING_BULLET, "").replace(/\s{2,}/g, " ").trim();
+  if (item.length === 0 || item.length > 80) return null;
+  item = item.charAt(0).toUpperCase() + item.slice(1);
+  return item;
+}
+
 // Watersports items from watersports/other_toys (arrays of strings/objects or
-// HTML text). Only equipment this yacht actually carries is listed.
-export function parseWatersports(detail: Yacht): string[] {
+// HTML text). Only equipment this yacht actually carries is listed. A tender
+// (dinghy) is separated out for prominent display; nothing is added or inferred.
+export function parseWatersports(detail: Yacht): WatersportsSummary {
   const items: string[] = [];
+  let tender: string | null = null;
   const seen = new Set<string>();
   const push = (value: unknown) => {
     const text = cleanText(value);
     if (text === null) return;
     for (const line of text.split(/\n|,(?=\s*[A-Z])/)) {
-      const item = line.trim();
-      if (item.length === 0 || item.length > 80) continue;
-      const key = item.toLowerCase();
+      const normalized = normalizeToyItem(line.trim());
+      if (normalized === null) continue;
+      const key = normalized.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);
-      items.push(item);
+      if (tender === null && /\b(tender|dinghy)\b/i.test(normalized)) {
+        tender = normalized;
+        continue;
+      }
+      items.push(normalized);
     }
   };
 
@@ -328,7 +416,7 @@ export function parseWatersports(detail: Yacht): string[] {
   } else if (detail.other_toys !== ws) {
     push(toys);
   }
-  return items;
+  return { tender, items };
 }
 
 export type CrewMemberPaths = {

@@ -180,7 +180,7 @@ export default async function YachtDetailPage({
   if (accommodation.cabins !== null || accommodation.pax !== null || accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0)
     tabs.push({ id: "accommodation", label: "Accommodation" });
   if (gallery.length > 0) tabs.push({ id: "gallery", label: "Gallery" });
-  if (watersports.length > 0) tabs.push({ id: "watersports", label: "Watersports" });
+  if (watersports.items.length > 0 || watersports.tender) tabs.push({ id: "watersports", label: "Watersports" });
   if (amenities.length > 0) tabs.push({ id: "amenities", label: "Amenities" });
   if (seasons.length > 0) tabs.push({ id: "rates", label: "Rates" });
   tabs.push({ id: "enquire", label: "Enquire" });
@@ -382,17 +382,28 @@ export default async function YachtDetailPage({
         {/* --- Full-width browsing sections --- */}
         <div className="container mx-auto px-4 pb-24">
             {/* --- Watersports --- */}
-            {watersports.length > 0 && (
+            {(watersports.tender || watersports.items.length > 0) && (
               <section className="mt-14">
                 <SectionHeading id="watersports" title="Watersports & Toys" />
-                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {watersports.map((item) => (
-                    <li key={item} className="flex items-center gap-2.5 rounded-lg bg-white p-4 text-sm text-[#061625] shadow-sm">
-                      <Waves className="h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
-                      {item}
-                    </li>
-                  ))}
-                </ul>
+                {watersports.tender && (
+                  <div className="mb-4 flex flex-col gap-4 rounded-xl bg-[#061625] p-6 text-white sm:flex-row sm:items-center">
+                    <Ship className="h-8 w-8 shrink-0 text-[#EE9739]" aria-hidden="true" />
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#EE9739]">Tender</p>
+                      <p className="mt-1 font-display text-xl italic">{watersports.tender}</p>
+                    </div>
+                  </div>
+                )}
+                {watersports.items.length > 0 && (
+                  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {watersports.items.map((item) => (
+                      <li key={item} className="flex items-center gap-2.5 rounded-lg bg-white p-4 text-sm text-[#061625] shadow-sm">
+                        <Waves className="h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </section>
             )}
 
