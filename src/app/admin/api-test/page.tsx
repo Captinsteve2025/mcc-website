@@ -22,6 +22,33 @@ type CrewResult = {
   yachtId: string;
 };
 
+type DiningResult = {
+  status: number;
+  ok: boolean;
+  body: Record<string, unknown>;
+  yachtId: string;
+};
+
+type MenuPhotoReport = { url: string; description: string | null; path: string };
+
+type MenuYachtReport = {
+  yachtId: string;
+  yachtName: string | null;
+  error?: string;
+  menus?: {
+    menuDetailsPresent: boolean;
+    menuDetailsType: string;
+    menuGeneralPresent: boolean;
+    categories: Array<{ title: string; path: string; bodyFormat: string; bodyPreview: string | null; photo: MenuPhotoReport | null }>;
+    categoryCount: number;
+    photoCount: number;
+    photos: MenuPhotoReport[];
+    general: { photo: MenuPhotoReport | null; descriptionHtml: string | null; descriptionText: string | null } | null;
+    omittedFields: Array<{ path: string; type: string; preview: string | null }>;
+    verdict: { code: string; headline: string; explanation?: string };
+  };
+};
+
 type CrewMemberReport = {
   name: string;
   role: string;
@@ -127,6 +154,9 @@ export default function AdminApiTestPage() {
   const [availabilityLoading, setAvailabilityLoading] = useState(false);
   const [crewResult, setCrewResult] = useState<CrewResult | null>(null);
   const [crewLoading, setCrewLoading] = useState(false);
+  const [diningYachtId, setDiningYachtId] = useState(PRESET_YACHTS[0].id);
+  const [diningResult, setDiningResult] = useState<DiningResult | null>(null);
+  const [diningLoading, setDiningLoading] = useState(false);
 
   async function runTest(e: React.FormEvent) {
     e.preventDefault();
@@ -195,6 +225,23 @@ export default function AdminApiTestPage() {
       setError("The request to this website's server failed. Check your connection and try again.");
     } finally {
       setCrewLoading(false);
+    }
+  }
+
+  async function runDining(yachtId: string) {
+    setDiningLoading(true);
+    setError(null);
+    setDiningResult(null);
+    try {
+      const response = await fetch(`/api/cya-crew-diagnostic?yacht_ids=${encodeURIComponent(yachtId)}`, {
+        headers: { "x-admin-token": token },
+      });
+      const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      setDiningResult({ status: response.status, ok: response.ok, body, yachtId });
+    } catch {
+      setError("The request to this website's server failed. Check your connection and try again.");
+    } finally {
+      setDiningLoading(false);
     }
   }
 
@@ -356,6 +403,63 @@ export default function AdminApiTestPage() {
         )}
       </section>
 
+      <section className="mb-8 rounded-lg border border-[#061625]/10 bg-white p-6">
+        <h2 className="mb-1 font-display text-lg italic text-[#061625]">Yacht Dining &amp; Menu Tester</h2>
+        <p className="mb-4 text-sm leading-relaxed text-[#061625]/70">
+          Fetches the yacht&apos;s full CYA detail record and reports the raw menuDetails and menuGeneral
+          fields, every recognized field path, the menu categories and food photographs parsed, what the
+          public Dining &amp; Cuisine section receives, and any CYA fields our parser omits.
+        </p>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {PRESET_YACHTS.map((y) => (
+            <button
+              key={y.id}
+              type="button"
+              onClick={() => setDiningYachtId(y.id)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                diningYachtId === y.id
+                  ? "border-[#EE9739] bg-[#EE9739]/15 text-[#061625]"
+                  : "border-[#061625]/20 text-[#061625]/70 hover:bg-[#061625]/5"
+              }`}
+            >
+              {y.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            type="text"
+            value={diningYachtId}
+            onChange={(e) => setDiningYachtId(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            className="w-full rounded-md border border-[#061625]/20 bg-white px-4 py-3 font-mono text-sm text-[#061625] focus:outline-none focus:ring-2 focus:ring-[#EE9739]"
+            placeholder="CYA yacht id"
+          />
+          <button
+            type="button"
+            disabled={diningLoading || !token || !diningYachtId.trim()}
+            onClick={() => runDining(diningYachtId.trim())}
+            className="shrink-0 rounded-full bg-[#EE9739] px-6 py-3 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {diningLoading ? "Testing…" : "Test Dining & Menus"}
+          </button>
+        </div>
+
+        {diningResult && (
+          <div className="mt-5" aria-live="polite">
+            {!diningResult.ok ? (
+              <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+                Dining tester request failed (server response {diningResult.status}).
+                {typeof diningResult.body.error === "string" ? ` ${diningResult.body.error}` : ""}
+              </p>
+            ) : (
+              <DiningReport body={diningResult.body} />
+            )}
+          </div>
+        )}
+      </section>
+
       {verifyResult && (
         <div className="mb-8 rounded-lg border border-[#061625]/10 bg-white p-6" aria-live="polite">
           <h2 className="mb-4 text-sm font-semibold text-[#061625]">Live data verification</h2>
@@ -454,6 +558,118 @@ type BookingRow = {
   yachtId?: string | null;
   yachtName?: string | null;
 };
+
+const MENU_VERDICT_STYLES: Record<string, string> = {
+  menu_delivered: "bg-green-50 text-green-800",
+  parser_gap: "bg-[#EE9739]/15 text-[#061625]",
+  no_source_data: "bg-[#061625]/5 text-[#061625]/80",
+};
+
+function DiningReport({ body }: { body: Record<string, unknown> }) {
+  const yachts = (body.yachts ?? []) as MenuYachtReport[];
+  if (yachts.length === 0) {
+    return <p className="text-sm text-[#061625]/70">No yacht reports returned.</p>;
+  }
+  return (
+    <div className="space-y-6">
+      {yachts.map((y) => (
+        <div key={y.yachtId} className="rounded-lg border border-[#061625]/10 p-4">
+          <p className="text-sm font-semibold text-[#061625]">
+            {y.yachtName ?? "Unknown yacht"} <span className="font-mono text-xs font-normal text-[#061625]/60">{y.yachtId}</span>
+          </p>
+          {y.error && <p className="mt-2 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">CYA request failed: {y.error}</p>}
+          {y.menus && (
+            <>
+              <div className={`mt-3 rounded-md px-4 py-3 ${MENU_VERDICT_STYLES[y.menus.verdict.code] ?? "bg-[#061625]/5"}`}>
+                <p className="text-sm font-semibold">{y.menus.verdict.headline}</p>
+                {y.menus.verdict.explanation && (
+                  <p className="mt-1 text-sm leading-relaxed opacity-90">{y.menus.verdict.explanation}</p>
+                )}
+              </div>
+
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-md bg-[#061625]/5 p-3 text-sm">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[#061625]/60">menuDetails</p>
+                  <p className="text-[#061625]">
+                    {y.menus.menuDetailsPresent ? `Present (${y.menus.menuDetailsType})` : "Absent"}
+                  </p>
+                </div>
+                <div className="rounded-md bg-[#061625]/5 p-3 text-sm">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[#061625]/60">menuGeneral</p>
+                  <p className="text-[#061625]">{y.menus.menuGeneralPresent ? "Present (object)" : "Absent"}</p>
+                </div>
+                <div className="rounded-md bg-[#061625]/5 p-3 text-sm">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[#061625]/60">Menu categories parsed</p>
+                  <p className="text-lg text-[#061625]">{y.menus.categoryCount}</p>
+                </div>
+                <div className="rounded-md bg-[#061625]/5 p-3 text-sm">
+                  <p className="text-xs font-medium uppercase tracking-wide text-[#061625]/60">Food photographs found</p>
+                  <p className="text-lg text-[#061625]">{y.menus.photoCount}</p>
+                </div>
+              </div>
+
+              {y.menus.categories.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-[#061625]">Menu categories delivered to the public page</p>
+                  <ul className="mt-1 space-y-1 text-xs text-[#061625]/75">
+                    {y.menus.categories.map((c, i) => (
+                      <li key={i} className="break-words">
+                        <span className="font-medium">{c.title}</span> — <span className="font-mono">{c.path}</span> ({c.bodyFormat})
+                        {c.bodyPreview ? ` — ${c.bodyPreview}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {y.menus.photos.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-[#061625]">Food photographs delivered</p>
+                  <ul className="mt-1 space-y-1 text-xs text-[#061625]/75">
+                    {y.menus.photos.map((p, i) => (
+                      <li key={i} className="break-all">
+                        <span className="font-mono">{p.path}</span>
+                        {p.description ? ` — ${p.description}` : ""} —{" "}
+                        <span className="text-[#337891]">{p.url}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {y.menus.general && (y.menus.general.descriptionText || y.menus.general.photo) && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-[#061625]">General dining description delivered</p>
+                  {y.menus.general.photo && (
+                    <p className="mt-1 break-all text-xs text-[#061625]/75">
+                      <span className="font-mono">{y.menus.general.photo.path}</span> — {y.menus.general.photo.url}
+                    </p>
+                  )}
+                  {y.menus.general.descriptionText && (
+                    <p className="mt-1 text-xs italic text-[#061625]/70">{y.menus.general.descriptionText.slice(0, 220)}…</p>
+                  )}
+                </div>
+              )}
+
+              {y.menus.omittedFields.length > 0 && (
+                <div className="mt-4">
+                  <p className="text-sm font-semibold text-[#EA6F33]">Fields present in CYA but omitted by the parser</p>
+                  <ul className="mt-1 space-y-1 font-mono text-xs text-[#061625]/75">
+                    {y.menus.omittedFields.map((f) => (
+                      <li key={f.path} className="break-words">
+                        {f.path} ({f.type}){f.preview ? ` — ${f.preview}` : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 const VERDICT_STYLES: Record<string, string> = {
   crew_parsed: "bg-green-50 text-green-800",

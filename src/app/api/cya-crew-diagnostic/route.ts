@@ -155,6 +155,28 @@ export async function GET(request: Request) {
           photos: menus.photos,
           general: menus.general,
           omittedFields: menuOmitted,
+          verdict: (() => {
+            if (menus.categories.length > 0 || menus.photos.length > 0 || menus.general) {
+              return {
+                code: "menu_delivered",
+                headline: `${menus.categories.length} menu category(ies) and ${menus.photos.length} food photograph(s) parsed and delivered to the public page.`,
+              };
+            }
+            if (detail.menuDetails !== undefined && detail.menuDetails !== null) {
+              return {
+                code: "parser_gap",
+                headline: "menuDetails exists in the CYA response but the parser recognized no menu content in it.",
+                explanation:
+                  "The Dining & Cuisine section is hidden because of a mapping gap, not missing data. Check the omitted-fields list for the unrecognized field names.",
+              };
+            }
+            return {
+              code: "no_source_data",
+              headline: "CYA supplies no menuDetails or menuGeneral for this yacht.",
+              explanation:
+                "The Dining & Cuisine section is hidden because CYA genuinely holds no menu data here. Nothing is fabricated.",
+            };
+          })(),
         };
 
         const matchedKeys = new Set(trace.matchedCollectionKeys);
