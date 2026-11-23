@@ -706,22 +706,56 @@ const MENU_DESC_KEYS = ["description", "caption", "alt", "title", "name"];
 // CYA's form placeholder for an unset category — not a real menu category.
 const MENU_PLACEHOLDER_TITLES = new Set(["select category", "select", "n/a", "none"]);
 
-function menuPhotoFrom(obj: Record<string, unknown>, prefix: string): MenuPhoto | null {
-  for (const key of MENU_PHOTO_KEYS) {
-    const url = str(obj[key]);
-    if (url && /^https:\/\//.test(url)) {
-      let description: string | null = null;
-      for (const dKey of MENU_DESC_KEYS) {
-        const text = cleanText(obj[dKey]);
-        if (text !== null) {
-          description = text;
-          break;
-        }
-      }
-      return { url, description, path: `${prefix}.${key}` };
-    }
+// Accepts every URL shape CYA has been observed to emit: https, http and
+// protocol-relative strings. http and protocol-relative are upgraded to https
+// because browsers block mixed-content images on an https page — the host is
+// the same, only the scheme changes.
+function photoUrlFromValue(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (/^https:\/\//i.test(trimmed)) return trimmed;
+  if (/^http:\/\//i.test(trimmed)) return `https://${trimmed.slice(7)}`;
+  if (/^\/\//.test(trimmed)) return `https:${trimmed}`;
+  return null;
+}
+
+function menuPhotoDescription(obj: Record<string, unknown>): string | null {
+  for (const dKey of MENU_DESC_KEYS) {
+    const text = cleanText(obj[dKey]);
+    if (text !== null) return text;
   }
   return null;
+}
+
+// Gathers every photograph under an entry's image-shaped fields. Handles plain
+// URL strings, arrays of URLs or of {image_src,...} objects, and nested photo
+// objects — previously a non-string menuImage was silently discarded.
+function menuPhotosFrom(obj: Record<string, unknown>, prefix: string): MenuPhoto[] {
+  const out: MenuPhoto[] = [];
+  for (const key of MENU_PHOTO_KEYS) {
+    const value = obj[key];
+    if (value === undefined || value === null) continue;
+    const url = photoUrlFromValue(value);
+    if (url) {
+      out.push({ url, description: menuPhotoDescription(obj), path: `${prefix}.${key}` });
+      continue;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item, index) => {
+        if (typeof item === "string") {
+            const itemUrl = photoUrlFromValue(item);
+            if (itemUrl) out.push({ url: itemUrl, description: null, path: `${prefix}.${key}[${index}]` });
+        } else if (item && typeof item === "object" && !Array.isArray(item)) {
+          out.push(...menuPhotosFrom(item as Record<string, unknown>, `${prefix}.${key}[${index}]`));
+        }
+      });
+      continue;
+    }
+    if (typeof value === "object") {
+      out.push(...menuPhotosFrom(value as Record<string, unknown>, `${prefix}.${key}`));
+    }
+  }
+  return out;
 }
 
 // Resolves the yacht's sample menus and food photography. Accepts arrays,
@@ -731,10 +765,12 @@ export function parseMenus(detail: Yacht): MenuSummary {
   const categories: MenuCategory[] = [];
   const photos: MenuPhoto[] = [];
   const seenPhotos = new Set<string>();
-  const addPhoto = (photo: MenuPhoto | null) => {
-    if (photo && !seenPhotos.has(photo.url)) {
-      seenPhotos.add(photo.url);
-      photos.push(photo);
+  const addPhoto = (...photos: MenuPhoto[]) => {
+    for (const photo of photos) {
+      if (photo && !seenPhotos.has(photo.url)) {
+        seenPhotos.add(photo.url);
+        photos.push(photo);
+      }
     }
   };
   const collectPhotoCollection = (obj: Record<string, unknown>, prefix: string) => {
@@ -745,7 +781,7 @@ export function parseMenus(detail: Yacht): MenuSummary {
         if (typeof item === "string" && /^https:\/\//.test(item)) {
           addPhoto({ url: item, description: null, path: `${prefix}.${key}[${index}]` });
         } else if (item && typeof item === "object" && !Array.isArray(item)) {
-          addPhoto(menuPhotoFrom(item as Record<string, unknown>, `${prefix}.${key}[${index}]`));
+          addPhoto(...menuPhotosFrom(item as Record<string, unknown>, `${prefix}.${key}[${index}]`));
         }
       });
     }
@@ -782,7 +818,9 @@ export function parseMenus(detail: Yacht): MenuSummary {
         break;
       }
     }
-    const photo = menuPhotoFrom(obj, prefix);
+    const entryPhotos = menuPhotosFrom(obj, prefix);
+    for (const p of entryPhotos) addPhoto(p);
+    const photo = entryPhotos[0] ?? null;
     collectPhotoCollection(obj, prefix);
     const bodyHtml = sanitizeCrewHtml(bodyRaw);
     const bodyText = cleanText(bodyRaw);
@@ -815,7 +853,9 @@ export function parseMenus(detail: Yacht): MenuSummary {
   const mg = detail.menuGeneral;
   if (mg && typeof mg === "object" && !Array.isArray(mg)) {
     const obj = mg as Record<string, unknown>;
-    const photo = menuPhotoFrom(obj, "menuGeneral");
+    const generalPhotos = menuPhotosFrom(obj, "menuGeneral");
+    for (const p of generalPhotos) addPhoto(p);
+    const photo = generalPhotos[0] ?? null;
     collectPhotoCollection(obj, "menuGeneral");
     const descriptionHtml = sanitizeCrewHtml(obj.menuDescription ?? obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
     const descriptionText = cleanText(obj.menuDescription ?? obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
@@ -825,4 +865,60 @@ export function parseMenus(detail: Yacht): MenuSummary {
   }
 
   return { categories, photos, general };
+}
+
+// --- Raw menu image references (health monitoring) ---------------------------
+
+export type RawMenuImageRef = {
+  path: string;
+  kind: "https-url" | "http-url" | "protocol-relative-url" | "non-url-string" | "array" | "object";
+  /** The URL exactly as CYA supplied it, when the value is URL-shaped. */
+  url: string | null;
+};
+
+const MENU_IMAGE_FIELD_PATTERN = /^(menu_?images?|images?|image_?src|image_?url|photos?|photo_?url|photo_?src|pictures?|src)$/i;
+
+// Reports every image-shaped field CYA supplies in the menu records, with the
+// value's shape, so the health monitor can distinguish "CYA supplies no food
+// photography" from "the parser discarded photography CYA supplies".
+export function collectRawMenuImageRefs(detail: Yacht): RawMenuImageRef[] {
+  const refs: RawMenuImageRef[] = [];
+  const classifyString = (path: string, value: string): RawMenuImageRef => {
+    const trimmed = value.trim();
+    if (/^https:\/\//i.test(trimmed)) return { path, kind: "https-url", url: trimmed };
+    if (/^http:\/\//i.test(trimmed)) return { path, kind: "http-url", url: trimmed };
+    if (/^\/\//.test(trimmed)) return { path, kind: "protocol-relative-url", url: trimmed };
+    return { path, kind: "non-url-string", url: null };
+  };
+  const scan = (obj: Record<string, unknown>, prefix: string) => {
+    for (const [key, value] of Object.entries(obj)) {
+      if (!MENU_IMAGE_FIELD_PATTERN.test(key)) continue;
+      const path = `${prefix}.${key}`;
+      if (typeof value === "string") {
+        if (value.trim().length > 0) refs.push(classifyString(path, value));
+      } else if (Array.isArray(value)) {
+        refs.push({ path, kind: "array", url: null });
+        value.forEach((item, index) => {
+          if (typeof item === "string" && item.trim().length > 0) {
+            refs.push(classifyString(`${path}[${index}]`, item));
+          } else if (item && typeof item === "object" && !Array.isArray(item)) {
+            scan(item as Record<string, unknown>, `${path}[${index}]`);
+          }
+        });
+      } else if (value && typeof value === "object") {
+        scan(value as Record<string, unknown>, path);
+      }
+    }
+  };
+  const md = detail.menuDetails;
+  if (Array.isArray(md)) {
+    md.forEach((entry, index) => {
+      if (entry && typeof entry === "object" && !Array.isArray(entry)) scan(entry as Record<string, unknown>, `menuDetails[${index}]`);
+    });
+  } else if (md && typeof md === "object") {
+    scan(md as Record<string, unknown>, "menuDetails");
+  }
+  const mg = detail.menuGeneral;
+  if (mg && typeof mg === "object" && !Array.isArray(mg)) scan(mg as Record<string, unknown>, "menuGeneral");
+  return refs;
 }

@@ -9,6 +9,7 @@ type YachtCheckItem = {
   yachtId: string;
   yachtName: string | null;
   status: HealthStatus;
+  verification: string;
   evidence: string[];
 };
 
@@ -16,6 +17,7 @@ type HealthCheck = {
   id: string;
   title: string;
   status: HealthStatus;
+  verification: string;
   summary: string;
   evidence: string[];
   yachts: YachtCheckItem[];
@@ -33,6 +35,7 @@ type StorageReport = {
   previousRunAt: string | null;
   regressions: string[];
   note: string | null;
+  missingConfiguration: string | null;
 };
 
 type SiteHealthReport = {
@@ -41,6 +44,13 @@ type SiteHealthReport = {
   checks: HealthCheck[];
   metadata: DeploymentMetadata;
   storage: StorageReport;
+};
+
+const VERIFICATION_LABELS: Record<string, string> = {
+  "source-missing": "Source data missing",
+  "parser-mapping-failure": "Parser mapping failure",
+  "delivered-not-browser-verified": "Delivered, not browser-verified",
+  "fully-verified": "Fully verified in production",
 };
 
 const STATUS_STYLES: Record<HealthStatus, { chip: string; label: string }> = {
@@ -53,6 +63,19 @@ const STATUS_STYLES: Record<HealthStatus, { chip: string; label: string }> = {
 function StatusChip({ status }: { status: HealthStatus }) {
   const style = STATUS_STYLES[status];
   return <span className={`rounded-full px-3 py-1 text-xs font-semibold ${style.chip}`}>{style.label}</span>;
+}
+
+function VerificationChip({ level }: { level: string }) {
+  const label = VERIFICATION_LABELS[level] ?? level;
+  const style =
+    level === "fully-verified"
+      ? "border-green-600/40 text-green-700"
+      : level === "delivered-not-browser-verified"
+        ? "border-[#337891]/40 text-[#337891]"
+        : level === "source-missing"
+          ? "border-[#061625]/25 text-[#061625]/70"
+          : "border-red-600/40 text-red-700";
+  return <span className={`rounded-full border px-2.5 py-0.5 text-[11px] font-medium ${style}`}>{label}</span>;
 }
 
 const PRESET_YACHTS: Array<{ name: string; id: string }> = [
@@ -236,13 +259,28 @@ export default function AdminSiteHealthPage() {
 
           {report.storage.note && <p className="text-xs italic text-[#061625]/60">{report.storage.note}</p>}
 
+          {report.storage.missingConfiguration && (
+            <div className="rounded-lg border border-[#EE9739]/40 bg-[#EE9739]/10 p-5">
+              <p className="text-sm font-semibold text-[#061625]">Health-run archiving is not active</p>
+              <p className="mt-1 text-sm leading-relaxed text-[#061625]/80">
+                The environment variable <span className="font-mono">{report.storage.missingConfiguration}</span> is not
+                available to this deployment. It is the server&apos;s private database key — it is separate from the
+                public website key and must be added to the Vercel project&apos;s environment variables (Production),
+                then redeployed. No new database is needed.
+              </p>
+            </div>
+          )}
+
           <DeploymentMetadataCard metadata={report.metadata} />
 
           {report.checks.map((check) => (
             <div key={check.id} className="rounded-lg border border-[#061625]/10 bg-white p-6">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <h2 className="font-display text-lg italic text-[#061625]">{check.title}</h2>
-                <StatusChip status={check.status} />
+                <div className="flex items-center gap-2">
+                  <VerificationChip level={check.verification} />
+                  <StatusChip status={check.status} />
+                </div>
               </div>
               <p className="mt-2 text-sm text-[#061625]/80">{check.summary}</p>
 
@@ -261,7 +299,10 @@ export default function AdminSiteHealthPage() {
                       {y.yachtName ?? "Unknown yacht"}{" "}
                       <span className="font-mono text-xs font-normal text-[#061625]/60">{y.yachtId}</span>
                     </p>
-                    <StatusChip status={y.status} />
+                    <div className="flex items-center gap-2">
+                      <VerificationChip level={y.verification} />
+                      <StatusChip status={y.status} />
+                    </div>
                   </div>
                   <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[#061625]/70">
                     {y.evidence.map((e, i) => (
