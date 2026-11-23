@@ -35,6 +35,7 @@ import {
   parseAccommodation,
   parseAmenities,
   parseCrew,
+  parseCrewGeneral,
   parseSeasons,
   parseWatersports,
   str,
@@ -100,7 +101,8 @@ export default async function YachtDetailPage({
   // missing-fields note below distinguishes "no crew published" from a
   // mapping failure (crew data present under unrecognized field names).
   const crew = mergeCrewProfiles(managedCrew, parseCrew(yacht));
-  if (crew.length === 0) {
+  const crewGeneral = parseCrewGeneral(yacht);
+  if (crew.length === 0 && !crewGeneral) {
     const crewLikeFields = Object.keys(yacht).filter((key) => /crew|captain|chef|steward|deckhand/i.test(key));
     console.info("[crew] no crew profiles for yacht", {
       yachtId: id,
@@ -174,7 +176,7 @@ export default async function YachtDetailPage({
   // Only render tabs for sections that have real data for this yacht.
   const tabs: SectionTab[] = [{ id: "overview", label: "Overview" }];
   tabs.push({ id: "availability", label: "Availability" });
-  if (crew.length > 0) tabs.push({ id: "crew", label: "Crew" });
+  if (crew.length > 0 || crewGeneral) tabs.push({ id: "crew", label: "Crew" });
   if (accommodation.cabins !== null || accommodation.pax !== null || accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0)
     tabs.push({ id: "accommodation", label: "Accommodation" });
   if (gallery.length > 0) tabs.push({ id: "gallery", label: "Gallery" });
@@ -247,7 +249,7 @@ export default async function YachtDetailPage({
             before the detailed specifications/brochure content. Full-width so
             the portrait-and-bio layout gets room on desktop. --- */}
         <div className="container mx-auto px-4">
-          <YachtCrewSection crew={crew} yachtId={id} />
+          <YachtCrewSection crew={crew} yachtId={id} crewGeneral={crewGeneral} />
         </div>
 
         <div className="container mx-auto grid gap-12 px-4 pb-24 lg:grid-cols-5">

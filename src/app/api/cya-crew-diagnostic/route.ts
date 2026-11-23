@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getYachtDetail } from "@/lib/cya";
-import { parseCrewWithTrace, unusedCrewEntryKeys } from "@/lib/yacht-detail";
+import { parseCrewWithTrace, parseCrewGeneral, unusedCrewEntryKeys } from "@/lib/yacht-detail";
 import { getYachtCrew, mergeCrewProfiles } from "@/lib/yacht-content";
 
 export const runtime = "nodejs";
@@ -69,6 +69,7 @@ export async function GET(request: Request) {
       try {
         const detail = await getYachtDetail(yachtId);
         const trace = parseCrewWithTrace(detail);
+        const general = parseCrewGeneral(detail);
         const managedCrew = await getYachtCrew(yachtId);
         const delivered = mergeCrewProfiles(managedCrew, trace.members);
 
@@ -121,6 +122,15 @@ export async function GET(request: Request) {
           yachtName: typeof detail.yachtName === "string" ? detail.yachtName : null,
           verdict,
           parsedCount: trace.members.length,
+          crewGeneral: general
+            ? {
+                photoPresent: general.photoUrl !== null,
+                photoUrl: general.photoUrl,
+                descriptionPresent: general.descriptionHtml !== null,
+                descriptionPreview: preview(general.descriptionText, 220),
+                paths: general.paths,
+              }
+            : null,
           members: trace.members.map((m) => ({
             name: m.name,
             role: m.role,

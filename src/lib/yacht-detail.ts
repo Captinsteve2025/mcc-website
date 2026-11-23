@@ -367,6 +367,7 @@ export type CrewMember = {
 // mapping, one that never matches is reported by the crew diagnostic.
 const CREW_COLLECTION_KEYS = [
   "crew",
+  "crewDetails",
   "crew_members",
   "Crew",
   "CrewedMembers",
@@ -375,16 +376,19 @@ const CREW_COLLECTION_KEYS = [
   "crewed_members",
 ] as const;
 
-const NAME_KEYS = ["crew_name", "name", "full_name", "fullname", "crewName", "member_name"] as const;
-const ROLE_KEYS = ["crew_position", "position", "role", "title", "job_title", "crewPosition"] as const;
-const BIO_KEYS = ["bio", "biography", "crew_bio", "about", "description", "comments", "text"] as const;
-const PHOTO_KEYS = ["crew_image", "image", "photo", "photo_url", "image_src", "picture", "crew_photo", "image_url"] as const;
-const NATIONALITY_KEYS = ["nationality", "crew_nationality", "citizenship"] as const;
+// Verified live production names (crewDetails[].crewName / crewImage) sit
+// first among their candidates; the remaining candidates cover CYA's other
+// observed formats.
+const NAME_KEYS = ["crew_name", "crewName", "name", "full_name", "fullname", "crewName2", "member_name"] as const;
+const ROLE_KEYS = ["crew_position", "position", "crewRole", "role", "title", "job_title"] as const;
+const BIO_KEYS = ["bio", "biography", "crew_bio", "crewBiography", "crewDescription", "about", "description", "comments", "text"] as const;
+const PHOTO_KEYS = ["crew_image", "crewImage", "image", "photo", "photo_url", "image_src", "picture", "crew_photo", "image_url"] as const;
+const NATIONALITY_KEYS = ["nationality", "crew_nationality", "crewNationality", "citizenship"] as const;
 const LANGUAGE_KEYS = ["languages", "language", "languages_spoken", "crew_languages"] as const;
-const QUALIFICATION_KEYS = ["qualifications", "qualification", "licenses", "licences", "certificates", "credentials"] as const;
-const INTEREST_KEYS = ["interests", "hobbies", "pastimes"] as const;
-const CULINARY_KEYS = ["culinary_background", "culinary", "culinaryBackground", "chef_background", "cooking_style", "culinary_style", "food_style"] as const;
-const POSITION_KEYS = ["position", "crew_position", "position_title"] as const;
+const QUALIFICATION_KEYS = ["qualifications", "qualification", "crewQualifications", "crewQualification", "crewLicenses", "crewLicences", "licenses", "licences", "certificates", "credentials"] as const;
+const INTEREST_KEYS = ["interests", "crewInterests", "hobbies", "pastimes"] as const;
+const CULINARY_KEYS = ["culinary_background", "culinary", "culinaryBackground", "chef_background", "cooking_style", "culinary_style", "food_style", "crewCulinaryBackground"] as const;
+const POSITION_KEYS = ["position", "crew_position", "position_title", "crewPosition"] as const;
 
 type FieldHit = { value: string; path: string };
 
@@ -524,4 +528,59 @@ export function unusedCrewEntryKeys(entry: Record<string, unknown>): string[] {
     "id",
   ]);
   return Object.keys(entry).filter((k) => !consumed.has(k));
+}
+
+// HTML sanitizing for CYA's general crew description. Only a small tag
+// allowlist survives; every attribute is stripped, so no link, style or event
+// handler can reach the page. Entities stay inert as text.
+const CREW_HTML_ALLOWED_TAGS = new Set(["p", "br", "b", "strong", "i", "em", "ul", "ol", "li"]);
+
+export function sanitizeCrewHtml(value: unknown): string | null {
+  const text = str(value);
+  if (text === null) return null;
+  const out = text
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<(\/?)\s*([a-zA-Z][a-zA-Z0-9]*)[^>]*>/g, (_match, slash: string, tag: string) => {
+      const lower = tag.toLowerCase();
+      if (!CREW_HTML_ALLOWED_TAGS.has(lower)) return "";
+      if (lower === "br") return "<br/>";
+      return `<${slash}${lower}>`;
+    })
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return out.length > 0 ? out : null;
+}
+
+export type CrewGeneral = {
+  photoUrl: string | null;
+  /** Allowlist-sanitized HTML (p, br, b, strong, i, em, ul, ol, li only). */
+  descriptionHtml: string | null;
+  descriptionText: string | null;
+  paths: { photo: string | null; description: string | null };
+};
+
+// General crew information: CYA supplies crewGeneral.crewImage and
+// crewGeneral.crewDescription (HTML). Rendered as introductory content above
+// the individual profiles — never duplicated as a member.
+export function parseCrewGeneral(detail: Yacht): CrewGeneral | null {
+  const raw = detail.crewGeneral;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const obj = raw as Record<string, unknown>;
+  const photo = firstPhoto(obj, ["crewImage", "image", "photo", "photo_url", "image_src"]);
+  const usedDescKey = obj.crewDescription !== undefined ? "crewDescription" : obj.description !== undefined ? "description" : "about";
+  const descRaw = obj[usedDescKey];
+  const descriptionHtml = sanitizeCrewHtml(descRaw);
+  const descriptionText = cleanText(descRaw);
+  if (!photo && !descriptionHtml && !descriptionText) return null;
+  return {
+    photoUrl: photo?.value ?? null,
+    descriptionHtml,
+    descriptionText,
+    paths: {
+      photo: photo ? `crewGeneral.${photo.path}` : null,
+      description: descRaw !== undefined && descRaw !== null ? `crewGeneral.${usedDescKey}` : null,
+    },
+  };
 }

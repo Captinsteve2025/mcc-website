@@ -1,5 +1,6 @@
 import { ShieldCheck, Ship, UtensilsCrossed, Users } from "lucide-react";
 import type { CrewProfile } from "@/lib/yacht-content";
+import type { CrewGeneral } from "@/lib/yacht-detail";
 
 // "Meet Your Crew" renders only genuine profiles supplied by MCC's admin
 // records or CYA's yacht detail. When neither supplies crew the section is not
@@ -105,8 +106,16 @@ function CrewMemberCard({ member }: { member: CrewProfile }) {
   );
 }
 
-export function YachtCrewSection({ crew, yachtId }: { crew: CrewProfile[]; yachtId: string }) {
-  if (crew.length === 0) return null;
+export function YachtCrewSection({
+  crew,
+  yachtId,
+  crewGeneral = null,
+}: {
+  crew: CrewProfile[];
+  yachtId: string;
+  crewGeneral?: CrewGeneral | null;
+}) {
+  if (crew.length === 0 && !crewGeneral) return null;
 
   // Captain first, then chef, then the rest — stable for identical ranks.
   const rank = (m: CrewProfile) => (/captain|skipper/i.test(m.role) ? 0 : /chef|culinary/i.test(m.role) ? 1 : 2);
@@ -121,11 +130,41 @@ export function YachtCrewSection({ crew, yachtId }: { crew: CrewProfile[]; yacht
         The professionals who turn a charter into a personal experience — introduced with the details they have
         confirmed for this yacht.
       </p>
-      <div className="space-y-8">
-        {ordered.map((member, index) => (
-          <CrewMemberCard key={`${member.id}-${index}`} member={member} />
-        ))}
-      </div>
+      {crewGeneral && (
+        <div className="mb-8 grid items-center gap-6 rounded-2xl bg-[#061625] p-6 text-white md:grid-cols-[minmax(0,220px)_1fr] md:p-8">
+          {crewGeneral.photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={crewGeneral.photoUrl}
+              alt="The crew of your charter yacht"
+              loading="lazy"
+              decoding="async"
+              className="h-56 w-full rounded-xl object-cover object-top md:h-64"
+            />
+          ) : (
+            <div className="flex h-56 items-center justify-center rounded-xl bg-white/10 md:h-64">
+              <Users className="h-14 w-14 text-[#EE9739]" aria-hidden="true" />
+            </div>
+          )}
+          {crewGeneral.descriptionHtml ? (
+            <div
+              className="space-y-3 text-sm leading-relaxed text-white/85 [&_b]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-3 [&_strong]:font-semibold"
+              dangerouslySetInnerHTML={{ __html: crewGeneral.descriptionHtml }}
+            />
+          ) : (
+            crewGeneral.descriptionText && (
+              <p className="whitespace-pre-line text-sm leading-relaxed text-white/85">{crewGeneral.descriptionText}</p>
+            )
+          )}
+        </div>
+      )}
+      {crew.length > 0 && (
+        <div className="space-y-8">
+          {ordered.map((member, index) => (
+            <CrewMemberCard key={`${member.id}-${index}`} member={member} />
+          ))}
+        </div>
+      )}
       <p className="mt-6 text-sm text-[#061625]/70">
         Questions about the crew, provisioning or your preferences on board?{" "}
         <a href="#enquire" className="font-medium text-[#061625] underline underline-offset-4">
