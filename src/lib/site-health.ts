@@ -374,10 +374,13 @@ async function checkDining(
       menus.general ? "General dining description present." : "No general dining description.",
     ];
     for (const ref of rawImageRefs) {
-      const delivered = ref.normalizedUrl !== null && deliveredUrls.has(ref.normalizedUrl);
-      evidence.push(
-        `${ref.path} (${ref.kind})${ref.url ? ` → ${ref.url}` : ""}: ${delivered ? "delivered" : `NOT delivered${ref.rejectionReason ? ` — ${ref.rejectionReason}` : ""}`}`
-      );
+      const outcomeLabel =
+        ref.outcome === "delivered"
+          ? "delivered"
+          : ref.outcome === "duplicate"
+            ? `NOT delivered — duplicate of ${ref.duplicateOf} (same image, deduplicated)`
+            : `NOT delivered${ref.rejectionReason ? ` — ${ref.rejectionReason}` : ""}`;
+      evidence.push(`${ref.path} (${ref.kind})${ref.url ? ` → ${ref.url}` : ""}: ${outcomeLabel}`);
     }
 
     if (deliveredSomething && urlRefs.length > 0 && menus.photos.length === 0) {

@@ -878,22 +878,42 @@ export type RawMenuImageRef = {
   normalizedUrl: string | null;
   /** Why this value can never become a photograph, when applicable. */
   rejectionReason: string | null;
+  /** Outcome in the delivered photo list: delivered, duplicate of an earlier
+   *  reference (deduplicated by URL), or not delivered. */
+  outcome: "delivered" | "duplicate" | "not-delivered";
+  /** Path of the earlier reference this duplicates, when outcome=duplicate. */
+  duplicateOf: string | null;
 };
 
 const MENU_IMAGE_FIELD_PATTERN = /^(menu_?images?|images?|image_?src|image_?url|photos?|photo_?url|photo_?src|pictures?|src)$/i;
 
 // Reports every image-shaped field CYA supplies in the menu records, with the
-// value's shape, so the health monitor can distinguish "CYA supplies no food
-// photography" from "the parser discarded photography CYA supplies".
+// value's shape and how the parser treated it — delivered, a duplicate caught
+// by deduplication, or not delivered with the reason — so nothing is silently
+// discarded without a stated cause.
 export function collectRawMenuImageRefs(detail: Yacht): RawMenuImageRef[] {
   const refs: RawMenuImageRef[] = [];
-  const classifyString = (path: string, value: string): RawMenuImageRef => {
-    const trimmed = value.trim();
-    if (/^https:\/\//i.test(trimmed)) return { path, kind: "https-url", url: trimmed, normalizedUrl: trimmed, rejectionReason: null };
-    if (/^http:\/\//i.test(trimmed)) return { path, kind: "http-url", url: trimmed, normalizedUrl: `https://${trimmed.slice(7)}`, rejectionReason: null };
-    if (/^\/\//.test(trimmed)) return { path, kind: "protocol-relative-url", url: trimmed, normalizedUrl: `https:${trimmed}`, rejectionReason: null };
-    return { path, kind: "non-url-string", url: null, normalizedUrl: null, rejectionReason: "Value is not a web address (no http/https/protocol-relative prefix)." };
+  const firstRefForUrl = new Map<string, string>();
+  const settle = (ref: Omit<RawMenuImageRef, "outcome" | "duplicateOf">): RawMenuImageRef => {
+    if (ref.normalizedUrl !== null) {
+      const existing = firstRefForUrl.get(ref.normalizedUrl);
+      if (existing !== undefined && existing !== ref.path) {
+        return { ...ref, outcome: "duplicate", duplicateOf: existing };
+      }
+      firstRefForUrl.set(ref.normalizedUrl, ref.path);
+    }
+    return { ...ref, outcome: "not-delivered", duplicateOf: null };
   };
+  const classifyString = (path: string, value: string): RawMenuImageRef =>
+    settle(
+      (() => {
+        const trimmed = value.trim();
+        if (/^https:\/\//i.test(trimmed)) return { path, kind: "https-url" as const, url: trimmed, normalizedUrl: trimmed, rejectionReason: null };
+        if (/^http:\/\//i.test(trimmed)) return { path, kind: "http-url" as const, url: trimmed, normalizedUrl: `https://${trimmed.slice(7)}`, rejectionReason: null };
+        if (/^\/\//.test(trimmed)) return { path, kind: "protocol-relative-url" as const, url: trimmed, normalizedUrl: `https:${trimmed}`, rejectionReason: null };
+        return { path, kind: "non-url-string" as const, url: null, normalizedUrl: null, rejectionReason: "Value is not a web address (no http/https/protocol-relative prefix)." };
+      })()
+    );
   const scan = (obj: Record<string, unknown>, prefix: string) => {
     for (const [key, value] of Object.entries(obj)) {
       if (!MENU_IMAGE_FIELD_PATTERN.test(key)) continue;
@@ -901,7 +921,7 @@ export function collectRawMenuImageRefs(detail: Yacht): RawMenuImageRef[] {
       if (typeof value === "string") {
         if (value.trim().length > 0) refs.push(classifyString(path, value));
       } else if (Array.isArray(value)) {
-        refs.push({ path, kind: "array", url: null, normalizedUrl: null, rejectionReason: null });
+        refs.push({ path, kind: "array", url: null, normalizedUrl: null, rejectionReason: null, outcome: "not-delivered", duplicateOf: null });
         value.forEach((item, index) => {
           if (typeof item === "string" && item.trim().length > 0) {
             refs.push(classifyString(`${path}[${index}]`, item));
@@ -924,5 +944,12 @@ export function collectRawMenuImageRefs(detail: Yacht): RawMenuImageRef[] {
   }
   const mg = detail.menuGeneral;
   if (mg && typeof mg === "object" && !Array.isArray(mg)) scan(mg as Record<string, unknown>, "menuGeneral");
-  return refs;
+  // Mark references whose normalized URL actually made it into the parsed
+  // menus as delivered, so the report reflects the real parser outcome.
+  const delivered = new Set(parseMenus(detail).photos.map((p) => p.url));
+  return refs.map((ref) =>
+    ref.normalizedUrl !== null && delivered.has(ref.normalizedUrl)
+      ? { ...ref, outcome: "delivered" as const, duplicateOf: null }
+      : ref
+  );
 }
