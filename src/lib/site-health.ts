@@ -72,6 +72,7 @@ export type SiteHealthReport = {
   checks: HealthCheck[];
   metadata: DeploymentMetadata;
   storage: StorageReport;
+  configuration: Array<{ variable: string; present: boolean; usedBy: string }>;
 };
 
 export const PRIMARY_YACHT_ID = "69f33df0b5a1600bf785869e"; // ENDLESS HORIZON
@@ -309,10 +310,11 @@ function checkCrew(
   };
 }
 
-function checkDining(
+async function checkDining(
   results: Array<{ yachtId: string; detail: Record<string, unknown> | null; error: string | null; name: string | null }>
-): HealthCheck {
-  const yachts: YachtCheckItem[] = results.map((r) => {
+): Promise<HealthCheck> {
+  const yachts: YachtCheckItem[] = await Promise.all(
+    results.map(async (r) => {
     if (r.error || !r.detail) {
       return {
         yachtId: r.yachtId,
@@ -328,6 +330,23 @@ function checkDining(
     const hasMenuField = r.detail.menuDetails !== undefined && r.detail.menuDetails !== null;
     const deliveredSomething = menus.categories.length > 0 || menus.photos.length > 0 || menus.general !== null;
 
+    // Verify each delivered photograph is actually reachable: a HEAD request
+    // with a short timeout reports loadability without downloading the image.
+    const loadStatuses = await Promise.all(
+      menus.photos.slice(0, 12).map(async (photo) => {
+        try {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 5000);
+          const response = await fetch(photo.url, { method: "HEAD", signal: controller.signal });
+          clearTimeout(timer);
+          return response.ok ? null : `HTTP ${response.status}`;
+        } catch {
+          return "unreachable";
+        }
+      })
+    );
+    const failedLoads = menus.photos.slice(0, 12).map((p, i) => ({ url: p.url, reason: loadStatuses[i] })).filter((s) => s.reason !== null);
+
     if (!hasMenuField && menus.general === null && rawImageRefs.length === 0) {
       return {
         yachtId: r.yachtId,
@@ -338,17 +357,26 @@ function checkDining(
       };
     }
 
+    // Match delivered photos against the normalized raw references so the
+    // report can show exactly which supplied images reach the public page.
+    const deliveredUrls = new Set(menus.photos.map((p) => p.url));
+    const deliveredFromRefs = urlRefs.filter((ref) => ref.normalizedUrl !== null && deliveredUrls.has(ref.normalizedUrl));
+    const deliveredElsewhere = menus.photos.filter((p) => !urlRefs.some((ref) => ref.normalizedUrl === p.url));
     const evidence = [
       `${menus.categories.length} menu category(ies) parsed.`,
-      `${menus.photos.length} food photograph(s) parsed.`,
+      `${menus.photos.length} food photograph(s) delivered to the public Dining & Cuisine section (${deliveredFromRefs.length} from the image fields CYA supplies, ${deliveredElsewhere.length} from other menu sources).`,
+      `Distinct photographs: ${new Set(menus.photos.map((p) => p.url)).size} of ${menus.photos.length}.`,
+      menus.photos.length > 0
+        ? failedLoads.length === 0
+          ? `All delivered photograph URLs responded successfully (${Math.min(menus.photos.length, 12)} checked).`
+          : `${failedLoads.length} delivered photograph URL(s) failed to load: ${failedLoads.map((f) => `${f.reason} (${f.url.slice(0, 60)}…)`).join("; ")}.`
+        : "No photographs delivered.",
       menus.general ? "General dining description present." : "No general dining description.",
     ];
-    if (rawImageRefs.length > 0) {
+    for (const ref of rawImageRefs) {
+      const delivered = ref.normalizedUrl !== null && deliveredUrls.has(ref.normalizedUrl);
       evidence.push(
-        `CYA supplies ${rawImageRefs.length} image-shaped menu field(s), ${urlRefs.length} containing URL-shaped values (${urlRefs
-          .slice(0, 3)
-          .map((ref) => ref.path)
-          .join(", ")}${urlRefs.length > 3 ? ", …" : ""}).`
+        `${ref.path} (${ref.kind})${ref.url ? ` → ${ref.url}` : ""}: ${delivered ? "delivered" : `NOT delivered${ref.rejectionReason ? ` — ${ref.rejectionReason}` : ""}`}`
       );
     }
 
@@ -369,8 +397,8 @@ function checkDining(
       return {
         yachtId: r.yachtId,
         yachtName: r.name,
-        status: "healthy",
-        verification: "delivered-not-browser-verified",
+        status: failedLoads.length > 0 ? "warning" : "healthy",
+        verification: failedLoads.length > 0 ? "parser-mapping-failure" : "delivered-not-browser-verified",
         evidence: [
           ...evidence,
           "Content is delivered to the public Dining & Cuisine section; rendering in a browser has not been observed by this automated check.",
@@ -395,7 +423,8 @@ function checkDining(
       verification: "parser-mapping-failure",
       evidence: [...evidence, "menuDetails exists in the CYA record but the parser recognized no menu content in it — a parser defect, not missing data."],
     };
-  });
+    })
+  );
   return {
     id: "dining",
     title: "Dining & menus",
@@ -561,6 +590,24 @@ async function checkEnquiries(): Promise<HealthCheck> {
   }
 }
 
+/* Audits which environment variables the website's real database connection
+ * needs and which are present. Names only — values are never read into the
+ * report. The enquiry form and the health monitor use the same public
+ * connection (NEXT_PUBLIC_SUPABASE_URL + NEXT_PUBLIC_SUPABASE_ANON_KEY);
+ * archiving additionally needs the server's private SUPABASE_SERVICE_ROLE_KEY. */
+function configurationAudit(): Array<{ variable: string; present: boolean; usedBy: string }> {
+  const audit = (name: string, usedBy: string) => ({
+    variable: name,
+    present: Boolean(process.env[name]),
+    usedBy,
+  });
+  return [
+    audit("NEXT_PUBLIC_SUPABASE_URL", "Public site database connection (enquiry form and health monitor)"),
+    audit("NEXT_PUBLIC_SUPABASE_ANON_KEY", "Public site database connection (enquiry form and health monitor)"),
+    audit("SUPABASE_SERVICE_ROLE_KEY", "Health-run archiving and the enquiry probe's server-side reads"),
+  ];
+}
+
 function deploymentMetadata(): DeploymentMetadata {
   const commitSha = process.env.VERCEL_GIT_COMMIT_SHA ?? process.env.NEXT_PUBLIC_BUILD_COMMIT_SHA ?? "";
   const buildTimestamp = process.env.NEXT_PUBLIC_BUILD_TIMESTAMP ?? "";
@@ -650,7 +697,7 @@ export async function runSiteHealth(yachtIds: string[], trigger: string): Promis
 
   const catalogue = checkCatalogue(sampled);
   const crew = checkCrew(sampled);
-  const dining = checkDining(sampled);
+  const dining = await checkDining(sampled);
   const availability = await checkAvailability(sampled.map((s) => ({ yachtId: s.yachtId, name: s.name })));
   const enquiries = await checkEnquiries();
 
@@ -659,5 +706,5 @@ export async function runSiteHealth(yachtIds: string[], trigger: string): Promis
   const metadata = deploymentMetadata();
   const storage = await storeRun(checks, overall, metadata, trigger);
 
-  return { ranAt, overall, checks, metadata, storage };
+  return { ranAt, overall, checks, metadata, storage, configuration: configurationAudit() };
 }

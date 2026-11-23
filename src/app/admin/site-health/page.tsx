@@ -44,6 +44,7 @@ type SiteHealthReport = {
   checks: HealthCheck[];
   metadata: DeploymentMetadata;
   storage: StorageReport;
+  configuration: Array<{ variable: string; present: boolean; usedBy: string }>;
 };
 
 const VERIFICATION_LABELS: Record<string, string> = {
@@ -272,6 +273,25 @@ export default function AdminSiteHealthPage() {
           )}
 
           <DeploymentMetadataCard metadata={report.metadata} />
+
+          <div className="rounded-lg border border-[#061625]/10 bg-white p-6">
+            <h2 className="mb-1 font-display text-lg italic text-[#061625]">Database configuration</h2>
+            <p className="mb-4 text-sm leading-relaxed text-[#061625]/70">
+              The environment variables the website&apos;s database connection uses, whether each is present in this
+              deployment, and what it is used for. Only names are shown — never values.
+            </p>
+            <ul className="space-y-2 text-sm">
+              {report.configuration.map((c) => (
+                <li key={c.variable} className="flex flex-wrap items-center gap-2">
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-semibold ${c.present ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                    {c.present ? "Present" : "Missing"}
+                  </span>
+                  <span className="font-mono text-[#061625]">{c.variable}</span>
+                  <span className="text-[#061625]/70">— {c.usedBy}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
           {report.checks.map((check) => (
             <div key={check.id} className="rounded-lg border border-[#061625]/10 bg-white p-6">

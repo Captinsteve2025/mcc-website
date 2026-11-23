@@ -765,8 +765,8 @@ export function parseMenus(detail: Yacht): MenuSummary {
   const categories: MenuCategory[] = [];
   const photos: MenuPhoto[] = [];
   const seenPhotos = new Set<string>();
-  const addPhoto = (...photos: MenuPhoto[]) => {
-    for (const photo of photos) {
+  const addPhoto = (...incoming: MenuPhoto[]) => {
+    for (const photo of incoming) {
       if (photo && !seenPhotos.has(photo.url)) {
         seenPhotos.add(photo.url);
         photos.push(photo);
@@ -874,6 +874,10 @@ export type RawMenuImageRef = {
   kind: "https-url" | "http-url" | "protocol-relative-url" | "non-url-string" | "array" | "object";
   /** The URL exactly as CYA supplied it, when the value is URL-shaped. */
   url: string | null;
+  /** The https URL the parser derives from this value, when URL-shaped. */
+  normalizedUrl: string | null;
+  /** Why this value can never become a photograph, when applicable. */
+  rejectionReason: string | null;
 };
 
 const MENU_IMAGE_FIELD_PATTERN = /^(menu_?images?|images?|image_?src|image_?url|photos?|photo_?url|photo_?src|pictures?|src)$/i;
@@ -885,10 +889,10 @@ export function collectRawMenuImageRefs(detail: Yacht): RawMenuImageRef[] {
   const refs: RawMenuImageRef[] = [];
   const classifyString = (path: string, value: string): RawMenuImageRef => {
     const trimmed = value.trim();
-    if (/^https:\/\//i.test(trimmed)) return { path, kind: "https-url", url: trimmed };
-    if (/^http:\/\//i.test(trimmed)) return { path, kind: "http-url", url: trimmed };
-    if (/^\/\//.test(trimmed)) return { path, kind: "protocol-relative-url", url: trimmed };
-    return { path, kind: "non-url-string", url: null };
+    if (/^https:\/\//i.test(trimmed)) return { path, kind: "https-url", url: trimmed, normalizedUrl: trimmed, rejectionReason: null };
+    if (/^http:\/\//i.test(trimmed)) return { path, kind: "http-url", url: trimmed, normalizedUrl: `https://${trimmed.slice(7)}`, rejectionReason: null };
+    if (/^\/\//.test(trimmed)) return { path, kind: "protocol-relative-url", url: trimmed, normalizedUrl: `https:${trimmed}`, rejectionReason: null };
+    return { path, kind: "non-url-string", url: null, normalizedUrl: null, rejectionReason: "Value is not a web address (no http/https/protocol-relative prefix)." };
   };
   const scan = (obj: Record<string, unknown>, prefix: string) => {
     for (const [key, value] of Object.entries(obj)) {
@@ -897,7 +901,7 @@ export function collectRawMenuImageRefs(detail: Yacht): RawMenuImageRef[] {
       if (typeof value === "string") {
         if (value.trim().length > 0) refs.push(classifyString(path, value));
       } else if (Array.isArray(value)) {
-        refs.push({ path, kind: "array", url: null });
+        refs.push({ path, kind: "array", url: null, normalizedUrl: null, rejectionReason: null });
         value.forEach((item, index) => {
           if (typeof item === "string" && item.trim().length > 0) {
             refs.push(classifyString(`${path}[${index}]`, item));
