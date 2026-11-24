@@ -45,6 +45,10 @@ Two-stage replacement, separate milestone from M5:
 
 Node 22, the npm lockfile, and the validation workflow define the development baseline. Fixture-based Playwright coverage checks the catalogue-to-detail flow on desktop and mobile, including iPhone WebKit. Live-data verification and production acceptance are pending.
 
+### Mobile text overflow (In progress)
+
+Reproduced horizontal overflow on the live ENDLESS HORIZON, MISCHIEVOUS, and OHANA pages and on the training page at 320 px. The yacht brochure now has a bounded mobile column and permits long source text to wrap. The training link can wrap within its card. Production verification is pending.
+
 ---
 
 ## Standing constraints

@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 
 const port = 3170;
 const baseURL = `http://127.0.0.1:${port}`;
@@ -16,7 +17,8 @@ export default defineConfig({
     url: baseURL,
     reuseExistingServer: false,
     env: {
-      CYA_API_BASE: "https://cya-fixture.invalid",
+      // Next can retain fetch responses between runs of the same build.
+      CYA_API_BASE: `https://cya-fixture-${randomUUID()}.invalid`,
       CYA_API_KEY: "fixture",
       CYA_ALLOWED_ORIGIN: baseURL,
       NEXT_PUBLIC_SUPABASE_URL: "",

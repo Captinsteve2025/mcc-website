@@ -8,10 +8,10 @@ const image = Buffer.from(
 test.beforeEach(async ({ page, baseURL }) => {
   await page.route("**/*", (route) => {
     const url = new URL(route.request().url());
-    if (url.origin === baseURL) return route.continue();
-    if (url.hostname === "fixture-images.invalid") {
+    if (url.hostname === "fixture-images.invalid" || (url.origin === baseURL && url.pathname === "/_next/image")) {
       return route.fulfill({ contentType: "image/png", body: image });
     }
+    if (url.origin === baseURL) return route.continue();
     return route.abort();
   });
 });
@@ -39,4 +39,25 @@ test("browses the fixture catalogue and opens a yacht", async ({ page }) => {
 test("returns 404 for a yacht outside the fixture catalogue", async ({ page }) => {
   const response = await page.goto("/charter-yachts/bbbbbbbbbbbbbbbbbbbbbbbb");
   expect(response?.status()).toBe(404);
+});
+
+test("fits yacht brochure text and the training link at 320 pixels", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
+  const crewReference = page.getByText("UnbrokenCrewProfileReferenceForNarrowScreenTesting", { exact: true });
+  await expect(crewReference).toBeVisible();
+  expect(await crewReference.evaluate((element) => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const bounds = element.getBoundingClientRect();
+    return Array.from(range.getClientRects()).every((line) => line.right <= bounds.right + 1);
+  })).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
+
+  await page.goto("/training");
+  const licenseLink = page.getByRole("link", { name: "Learn About the SLC License" });
+  await expect(licenseLink).toBeVisible();
+  const linkRight = await licenseLink.evaluate((element) => element.getBoundingClientRect().right);
+  expect(linkRight).toBeLessThanOrEqual(321);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
 });

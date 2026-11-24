@@ -181,7 +181,7 @@ export default function TrainingPage() {
           </div>
 
           <div className="mx-auto max-w-6xl">
-            <div className="grid gap-8 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
               <Card className="border-2 border-[#061625]/10">
                 <CardContent className="p-8">
                   <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full" style={{ backgroundColor: `${coral}1a` }}>
@@ -226,7 +226,7 @@ export default function TrainingPage() {
                     </li>
                   </ul>
                   <div className="mt-6">
-                    <Button variant="gold" asChild>
+                    <Button variant="gold" className="h-auto min-h-11 max-w-full whitespace-normal text-center" asChild>
                       <Link href="/training/nauticed/slc-license">
                         Learn About the SLC License
                         <ArrowRight className="ml-2 h-4 w-4" />

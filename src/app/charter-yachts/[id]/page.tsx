@@ -275,7 +275,7 @@ export default async function YachtDetailPage({
         {/* --- Overview, accommodation and specifications beside the sticky
             enquiry panel; per the brief: overview → rates+availability (above)
             → accommodation → crew → dining → experiences --- */}
-        <div className="container mx-auto grid gap-12 px-4 pb-24 lg:grid-cols-5">
+        <div className="container mx-auto grid grid-cols-1 gap-12 px-4 pb-24 [overflow-wrap:anywhere] lg:grid-cols-5">
           <div className="lg:col-span-3">
             {/* --- Overview --- */}
             <SectionHeading id="overview" title="Overview" />
@@ -350,7 +350,7 @@ export default async function YachtDetailPage({
             {specGroups.length > 0 && (
               <section className="mt-14">
                 <SectionHeading id="specifications" title="Specifications" />
-                <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                   {specGroups.map((group) => (
                     <div key={group.title} className="rounded-xl bg-white p-6 shadow-sm">
                       <h3 className="mb-4 font-display text-xl italic text-[#061625]">{group.title}</h3>
@@ -358,7 +358,7 @@ export default async function YachtDetailPage({
                         {group.rows.map(([label, value]) => (
                           <div key={label} className="flex items-baseline justify-between gap-4 border-b border-[#061625]/5 pb-2.5 last:border-0 last:pb-0">
                             <dt className="text-sm text-[#061625]/60">{label}</dt>
-                            <dd className="text-right text-sm font-medium text-[#061625]">{value}</dd>
+                            <dd className="min-w-0 text-right text-sm font-medium text-[#061625]">{value}</dd>
                           </div>
                         ))}
                       </dl>
