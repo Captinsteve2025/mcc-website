@@ -719,8 +719,21 @@ export type MenuSummary = {
     introText: string | null;
     /** Written menu sections detected inside the general description. */
     sections: MenuSection[];
+    /** Chef name explicitly attributed inside the CYA menu content, if any. */
+    chefName: string | null;
   } | null;
 };
+
+// Chef attribution written into the menu content itself (e.g. "Handcrafted by
+// Chef Heather Arndt"). Requires the literal word "Chef" followed by 1–3
+// capitalised name words on the same line; all-caps words (menu headings such
+// as "MENUS TAILORED...") are never treated as name words. Nothing is guessed
+// beyond that pattern.
+function extractChefAttribution(text: string): string | null {
+  const nameWord = "[A-Z][\\p{L}'’.\\-]*[\\p{Ll}][\\p{L}'’.\\-]*";
+  const match = text.match(new RegExp(`\\bChef[ \\t]+(${nameWord}(?:[ \\t]+${nameWord}){0,2})`, "u"));
+  return match ? match[1].trim() : null;
+}
 
 // Course vocabulary used only to LOCATE section boundaries inside a free-text
 // menu description. The heading text itself is always rendered exactly as CYA
@@ -937,7 +950,8 @@ export function parseMenus(detail: Yacht): MenuSummary {
     const descriptionText = cleanText(obj.menuDescription ?? obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
     if (photo || descriptionHtml || descriptionText) {
       const split = descriptionText ? splitMenuDescription(descriptionText) : { introText: null, sections: [] };
-      general = { photo, descriptionHtml, descriptionText, introText: split.introText, sections: split.sections };
+      const chefName = split.introText ? extractChefAttribution(split.introText) : null;
+      general = { photo, descriptionHtml, descriptionText, introText: split.introText, sections: split.sections, chefName };
     }
   }
 

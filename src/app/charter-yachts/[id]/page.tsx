@@ -257,7 +257,11 @@ export default async function YachtDetailPage({
           <YachtCrewSection crew={crew} yachtId={id} crewGeneral={crewGeneral} />
           <YachtDiningSection
             menus={menus}
-            chefName={crew.find((member) => /chef/i.test(member.role))?.name ?? null}
+            chefName={
+              crew.find((member) => /chef/i.test(member.role))?.name ??
+              menus.general?.chefName ??
+              null
+            }
           />
         </div>
 

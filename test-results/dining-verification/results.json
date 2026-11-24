@@ -1,0 +1,116 @@
+[
+  {
+    "yacht": "ENDLESS HORIZON",
+    "viewport": "desktop",
+    "consoleErrors": [],
+    "failures": [],
+    "collapsedHeight": 1669,
+    "accordionCount": 9,
+    "emptyPanels": 0,
+    "fabricatedFallback": false,
+    "horizontalOverflowPx": 0,
+    "galleryImages": 5,
+    "expandedHeight": 2435,
+    "status": "PASS"
+  },
+  {
+    "yacht": "MISCHIEVOUS",
+    "viewport": "desktop",
+    "consoleErrors": [],
+    "failures": [],
+    "collapsedHeight": 1558,
+    "accordionCount": 9,
+    "emptyPanels": 0,
+    "fabricatedFallback": false,
+    "horizontalOverflowPx": 0,
+    "galleryImages": 6,
+    "status": "PASS"
+  },
+  {
+    "yacht": "OHANA",
+    "viewport": "desktop",
+    "consoleErrors": [],
+    "failures": [],
+    "collapsedHeight": 1558,
+    "accordionCount": 9,
+    "emptyPanels": 0,
+    "fabricatedFallback": false,
+    "horizontalOverflowPx": 0,
+    "galleryImages": 6,
+    "status": "PASS"
+  },
+  {
+    "yacht": "VIVA LA VIDA",
+    "viewport": "desktop",
+    "consoleErrors": [],
+    "failures": [],
+    "collapsedHeight": 688,
+    "accordionCount": 0,
+    "emptyPanels": 0,
+    "fabricatedFallback": false,
+    "horizontalOverflowPx": 0,
+    "galleryImages": 1,
+    "status": "PASS"
+  },
+  {
+    "yacht": "ENDLESS HORIZON",
+    "viewport": "mobile",
+    "consoleErrors": [
+      "pageerror: Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    ],
+    "failures": [],
+    "collapsedHeight": 2724,
+    "accordionCount": 9,
+    "emptyPanels": 0,
+    "fabricatedFallback": false,
+    "horizontalOverflowPx": 0,
+    "galleryImages": 5,
+    "expandedHeight": 4023,
+    "status": "PASS"
+  },
+  {
+    "yacht": "MISCHIEVOUS",
+    "viewport": "mobile",
+    "consoleErrors": [
+      "pageerror: Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    ],
+    "failures": [],
+    "collapsedHeight": 2936,
+    "accordionCount": 9,
+    "emptyPanels": 0,
+    "fabricatedFallback": false,
+    "horizontalOverflowPx": 0,
+    "galleryImages": 6,
+    "status": "PASS"
+  },
+  {
+    "yacht": "OHANA",
+    "viewport": "mobile",
+    "consoleErrors": [
+      "pageerror: Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    ],
+    "failures": [],
+    "collapsedHeight": 2936,
+    "accordionCount": 9,
+    "emptyPanels": 0,
+    "fabricatedFallback": false,
+    "horizontalOverflowPx": 0,
+    "galleryImages": 6,
+    "status": "PASS"
+  },
+  {
+    "yacht": "VIVA LA VIDA",
+    "viewport": "mobile",
+    "consoleErrors": [
+      "pageerror: Error: Minified React error #418; visit https://react.dev/errors/418?args[]=HTML&args[]= for the full message or use the non-minified dev environment for full errors and additional helpful warnings."
+    ],
+    "failures": [],
+    "collapsedHeight": 489,
+    "accordionCount": 0,
+    "emptyPanels": 0,
+    "fabricatedFallback": false,
+    "horizontalOverflowPx": 0,
+    "galleryImages": 1,
+    "status": "PASS"
+  }
+]
