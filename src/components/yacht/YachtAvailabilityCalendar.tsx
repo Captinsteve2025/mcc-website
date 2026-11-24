@@ -65,11 +65,14 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Always three months are rendered; CSS hides the second and third on
+  // mobile. Deciding the count from window.innerWidth during the first client
+  // render was the source of React hydration error #418: the server rendered
+  // three, a mobile browser re-rendered with one, and the trees disagreed.
   const visibleMonths = useMemo(() => {
     const months: Date[] = [];
     const base = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + monthOffset, 1, 12));
-    const count = typeof window !== "undefined" && window.innerWidth < 768 ? 1 : 3;
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < 3; i++) {
       months.push(new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth() + i, 1, 12)));
     }
     return months;
@@ -165,7 +168,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
       </div>
 
       <div className={`grid gap-4 md:gap-6 ${"md:grid-cols-3"}`}>
-        {visibleMonths.map((month) => {
+        {visibleMonths.map((month, i) => {
           const year = month.getUTCFullYear();
           const monthIndex = month.getUTCMonth();
           const firstWeekday = new Date(Date.UTC(year, monthIndex, 1, 12)).getUTCDay();
@@ -175,7 +178,12 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
             ...Array.from({ length: daysInMonth }, (_, i) => i + 1),
           ];
           return (
-            <div key={isoOf(month)}>
+            <div
+              key={isoOf(month)}
+              // Months 2 and 3 are server-rendered too, so the mobile markup
+              // matches the server exactly; they are simply hidden by CSS.
+              className={i > 0 ? "hidden md:block" : undefined}
+            >
               <p className="mb-2 text-center text-sm font-semibold text-[#061625]">
                 {MONTHS[monthIndex]} {year}
               </p>

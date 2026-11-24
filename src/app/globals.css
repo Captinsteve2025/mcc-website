@@ -170,3 +170,14 @@
     100% { background-position: -200% 0; }
   }
 }
+
+/* Restaurant-menu typography for expanded dining panels: slightly condensed
+   line length and a serif display face, echoing a printed menu card. */
+.menu-typography {
+  max-width: 62ch;
+  letter-spacing: 0.01em;
+}
+.menu-typography p:first-child::first-letter {
+  font-family: "Playfair Display", serif;
+}
+

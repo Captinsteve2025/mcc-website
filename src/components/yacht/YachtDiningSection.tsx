@@ -22,21 +22,19 @@ function PhotoGallery({
   setLightbox: (value: { url: string; description: string | null } | null) => void;
 }) {
   const [showAll, setShowAll] = useState(false);
-  const single = photos.length === 1;
   const visible = showAll || photos.length <= INITIAL_PHOTOS ? photos : photos.slice(0, INITIAL_PHOTOS);
   const hidden = photos.length - INITIAL_PHOTOS;
 
   return (
     <div>
-      <div
-        className={
-          single
-            ? "mx-auto max-w-2xl"
-            : "grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3"
-        }
-      >
+      {/* Mobile: horizontal swipeable carousel with partial next-photo preview.
+          Desktop: the verified grid. Captions render in both. */}
+      <div className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-2 md:overflow-visible md:px-0 md:pb-0 lg:grid-cols-3 [&::-webkit-scrollbar]:hidden">
         {visible.map((photo) => (
-          <figure key={photo.url} className="overflow-hidden rounded-xl bg-white shadow-sm">
+          <figure
+            key={photo.url}
+            className="w-[85%] shrink-0 snap-start overflow-hidden rounded-xl bg-white shadow-sm md:w-auto md:shrink"
+          >
             <button
               type="button"
               onClick={() => setLightbox({ url: photo.url, description: captionFor(photo) })}
@@ -52,7 +50,7 @@ function PhotoGallery({
                 className="aspect-[4/3] w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
               />
             </button>
-            <figcaption className="px-4 py-3 font-display text-base italic text-[#061625]/80">
+            <figcaption className="px-4 py-2.5 font-display text-base italic text-[#061625]/80">
               {captionFor(photo)}
             </figcaption>
           </figure>
@@ -80,7 +78,7 @@ function PhotoGallery({
         </div>
       )}
       {hidden > 0 && !showAll && (
-        <div className="mt-6 text-center">
+        <div className="mt-4 text-center">
           <button
             type="button"
             onClick={() => setShowAll(true)}
@@ -88,7 +86,7 @@ function PhotoGallery({
           >
             View All Food Photos ({photos.length})
           </button>
-          <p className="mt-2 text-xs text-[#061625]/50">{hidden} more photograph{hidden === 1 ? "" : "s"} from this yacht&apos;s kitchen</p>
+          <p className="mt-1.5 text-xs text-[#061625]/50">{hidden} more photograph{hidden === 1 ? "" : "s"} from this yacht&apos;s kitchen</p>
         </div>
       )}
     </div>
@@ -129,11 +127,11 @@ function MenuAccordion({ categories }: { categories: MenuCategory[] }) {
             >
               {category.bodyHtml ? (
                 <div
-                  className="space-y-3 text-base leading-[1.6] text-[#061625]/85 [&_b]:font-semibold [&_i]:italic [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-3 [&_strong]:font-semibold"
+                  className="menu-typography space-y-3 text-[15px] leading-[1.6] text-[#061625]/85 md:text-base [&_b]:font-semibold [&_i]:italic [&_li]:ml-5 [&_li]:list-disc [&_p]:mb-3 [&_strong]:font-semibold"
                   dangerouslySetInnerHTML={{ __html: category.bodyHtml }}
                 />
               ) : (
-                <p className="whitespace-pre-line text-base leading-[1.6] text-[#061625]/85">{category.bodyText}</p>
+                <p className="menu-typography whitespace-pre-line text-[15px] leading-[1.6] text-[#061625]/85 md:text-base">{category.bodyText}</p>
               )}
             </div>
           </div>
@@ -188,7 +186,7 @@ export function YachtDiningSection({ menus, chefName }: { menus: MenuSummary; ch
       )}
 
       {hasPhotos && (
-        <div className="mb-10">
+        <div className="mb-8 md:mb-10">
           <PhotoGallery photos={menus.photos} captionFor={captionFor} lightbox={lightbox} setLightbox={setLightbox} />
         </div>
       )}
@@ -200,7 +198,7 @@ export function YachtDiningSection({ menus, chefName }: { menus: MenuSummary; ch
         </div>
       )}
 
-      <p className="mt-8 text-base text-[#061625]/70">
+      <p className="mt-6 text-base text-[#061625]/70 md:mt-8">
         Preferences, allergies and celebrations are planned personally —{" "}
         <a href="#enquire" className="font-medium text-[#061625] underline underline-offset-4">
           tell us when you enquire

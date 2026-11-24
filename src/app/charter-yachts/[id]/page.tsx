@@ -20,11 +20,13 @@ import { Footer } from "@/components/Footer";
 import { YachtEnquiryForm } from "@/components/yacht/YachtEnquiryForm";
 import { YachtHeroGallery } from "@/components/yacht/YachtHeroGallery";
 import { YachtSectionNav, type SectionTab } from "@/components/yacht/YachtSectionNav";
-import { YachtAvailabilityCalendar } from "@/components/yacht/YachtAvailabilityCalendar";
+import { YachtPricingPanel } from "@/components/yacht/YachtPricingPanel";
+import { YachtPersistentBar } from "@/components/yacht/YachtPersistentBar";
 import { YachtCrewSection } from "@/components/yacht/YachtCrewSection";
 import { YachtDiningSection } from "@/components/yacht/YachtDiningSection";
-import { YachtCtaButtons, YachtMobileActionBar } from "@/components/yacht/YachtCtaButtons";
-import { getYachtDetail } from "@/lib/cya";
+import { YachtCtaButtons } from "@/components/yacht/YachtCtaButtons";
+import { YachtRecommendations } from "@/components/yacht/YachtRecommendations";
+import { getYachtDetail, searchYachts, yachtSeasonAreaNames, type Yacht as CyaCatalogueYacht } from "@/lib/cya";
 import { getYachtCrew, getYachtAvailability, mergeCrewProfiles } from "@/lib/yacht-content";
 import {
   beamWithUnit,
@@ -42,6 +44,7 @@ import {
   parseWatersports,
   str,
 } from "@/lib/yacht-detail";
+import { summarizePricing } from "@/lib/yacht-pricing";
 
 export const dynamic = "force-dynamic";
 
@@ -98,6 +101,17 @@ export default async function YachtDetailPage({
   if (!yacht) notFound();
 
   const [managedCrew, availability] = await Promise.all([getYachtCrew(id), getYachtAvailability(id)]);
+
+  // Recommendations source: one page of the live catalogue, served from the
+  // shared Next fetch cache — no extra CYA request is attributable to the
+  // recommendations section itself. A failure degrades to no section.
+  let catalogue: CyaCatalogueYacht[] = [];
+  try {
+    const response = await searchYachts({ page: 1, limit: 100, searchTerm: "", filters: {} });
+    catalogue = (response.yachts as CyaCatalogueYacht[] | undefined) ?? [];
+  } catch {
+    catalogue = [];
+  }
   // Crew: admin-approved profiles first, then crew CYA supplies in the detail
   // record. When neither source has crew, the section is skipped — and the
   // missing-fields note below distinguishes "no crew published" from a
@@ -133,12 +147,9 @@ export default async function YachtDetailPage({
   const engines = cleanText(yacht.yachtEngines);
 
   const minUsd = num(yacht.min_price_usd);
-  const heroPrice =
-    seasons.length > 0 && seasons[0].price
-      ? `${seasons[0].price}, subject to confirmation`
-      : minUsd !== null
-        ? `From $${Math.round(minUsd).toLocaleString("en-US")} per week, subject to confirmation`
-        : "Charter rates on request";
+  const pricing = summarizePricing(yacht, seasons);
+  const heroPrice = pricing.headline;
+  void minUsd;
 
   // Quick spec strip — only fields this yacht actually provides.
   const quickSpecs: Array<{ icon: typeof Ruler; label: string; value: string }> = [];
@@ -178,16 +189,16 @@ export default async function YachtDetailPage({
 
   // Only render tabs for sections that have real data for this yacht.
   const tabs: SectionTab[] = [{ id: "overview", label: "Overview" }];
-  tabs.push({ id: "availability", label: "Availability" });
+  tabs.push({ id: "rates", label: "Rates & Availability" });
+  if (accommodation.cabins !== null || accommodation.pax !== null || accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0)
+    tabs.push({ id: "accommodation", label: "Accommodation" });
   if (crew.length > 0 || crewGeneral) tabs.push({ id: "crew", label: "Crew" });
   if (menus.categories.length > 0 || menus.photos.length > 0 || menus.general)
     tabs.push({ id: "dining", label: "Dining" });
-  if (accommodation.cabins !== null || accommodation.pax !== null || accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0)
-    tabs.push({ id: "accommodation", label: "Accommodation" });
+  if (watersports.items.length > 0 || watersports.tender) tabs.push({ id: "watersports", label: "Experiences" });
+  if (specGroups.length > 0) tabs.push({ id: "specifications", label: "Specifications" });
   if (gallery.length > 0) tabs.push({ id: "gallery", label: "Gallery" });
-  if (watersports.items.length > 0 || watersports.tender) tabs.push({ id: "watersports", label: "Watersports" });
   if (amenities.length > 0) tabs.push({ id: "amenities", label: "Amenities" });
-  if (seasons.length > 0) tabs.push({ id: "rates", label: "Rates" });
   tabs.push({ id: "enquire", label: "Enquire" });
 
   const slug = `cya-${id.slice(0, 12)}`;
@@ -200,7 +211,7 @@ export default async function YachtDetailPage({
         {/* --- Yacht identity --- */}
         {/* Mobile: compact identity band so photography enters the first
             viewport; desktop keeps the taller composition. */}
-        <section className="bg-[#061625] px-4 pb-6 pt-24 text-white md:pb-12 md:pt-40">
+        <section id="yacht-hero" className="bg-[#061625] px-4 pb-6 pt-24 text-white md:pb-12 md:pt-40">
           <div className="container mx-auto px-4">
             <Link
               href={destination ? `/charter-yachts?destination=${encodeURIComponent(destination)}` : "/charter-yachts"}
@@ -213,11 +224,13 @@ export default async function YachtDetailPage({
               {[builder, year !== null ? `Built ${year}` : null].filter(Boolean).join(" | ") || (yachtType ?? "Charter yacht")}
             </p>
             <p className="mt-3 font-display text-2xl italic text-[#EE9739]">{heroPrice}</p>
+            <p className="mt-1 text-xs text-white/60">Indicative weekly rate — subject to confirmation</p>
             <YachtCtaButtons yachtId={id} hasLiveData={availability.hasLiveData} />
           </div>
         </section>
 
-        {/* --- Hero gallery mosaic --- */}
+        {/* --- Plan Your Charter: rates & availability panel directly under
+            the hero gallery, before all brochure content --- */}
         <section className="container mx-auto px-4 pb-10 pt-6 md:py-10">
           <div id="gallery" className="scroll-mt-32">
             <YachtHeroGallery yachtId={id} yachtName={name} images={gallery} />
@@ -235,36 +248,22 @@ export default async function YachtDetailPage({
               ))}
             </dl>
           )}
-
-          {/* Inline availability calendar — visible on page load, right after
-              the spec strip, before the long brochure content. */}
-          <div id="availability" className="mt-8 scroll-mt-32">
-            <YachtAvailabilityCalendar
-              yachtId={id}
-              ranges={availability.ranges}
-              lastUpdated={availability.lastUpdated}
-              hasLiveData={availability.hasLiveData}
-            />
-          </div>
         </section>
 
         <YachtSectionNav tabs={tabs} yachtId={id} />
 
-        {/* --- Meet Your Crew: immediately after the availability calendar and
-            before the detailed specifications/brochure content. Full-width so
-            the portrait-and-bio layout gets room on desktop. --- */}
         <div className="container mx-auto px-4">
-          <YachtCrewSection crew={crew} yachtId={id} crewGeneral={crewGeneral} />
-          <YachtDiningSection
-            menus={menus}
-            chefName={
-              crew.find((member) => /chef/i.test(member.role))?.name ??
-              menus.general?.chefName ??
-              null
-            }
+          <YachtPricingPanel
+            yachtId={id}
+            name={name}
+            pricing={pricing}
+            availability={availability}
           />
         </div>
 
+        {/* --- Overview, accommodation and specifications beside the sticky
+            enquiry panel; per the brief: overview → rates+availability (above)
+            → accommodation → crew → dining → experiences --- */}
         <div className="container mx-auto grid gap-12 px-4 pb-24 lg:grid-cols-5">
           <div className="lg:col-span-3">
             {/* --- Overview --- */}
@@ -359,8 +358,48 @@ export default async function YachtDetailPage({
             )}
           </div>
 
+          {/* --- Crew, dining and watersports: beneath the enquiry panel's
+              sticky column on desktop, stacked in the brief's order --- */}
+          <div className="lg:col-span-5">
+            {/* --- Watersports & Experiences --- */}
+            {(watersports.tender || watersports.items.length > 0) && (
+              <section className="mt-14">
+                <SectionHeading id="watersports" title="Experiences On Board & On The Water" />
+                {watersports.tender && (
+                  <div className="mb-4 flex flex-col gap-4 rounded-xl bg-[#061625] p-6 text-white sm:flex-row sm:items-center">
+                    <Ship className="h-8 w-8 shrink-0 text-[#EE9739]" aria-hidden="true" />
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#EE9739]">Tender</p>
+                      <p className="mt-1 font-display text-xl italic">{watersports.tender}</p>
+                    </div>
+                  </div>
+                )}
+                {watersports.items.length > 0 && (
+                  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {watersports.items.map((item) => (
+                      <li key={item} className="flex items-center gap-2.5 rounded-lg bg-white p-4 text-sm text-[#061625] shadow-sm">
+                        <Waves className="h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            )}
+
+            <YachtCrewSection crew={crew} yachtId={id} crewGeneral={crewGeneral} />
+            <YachtDiningSection
+              menus={menus}
+              chefName={
+                crew.find((member) => /chef/i.test(member.role))?.name ??
+                menus.general?.chefName ??
+                null
+              }
+            />
+          </div>
+
           {/* --- Enquiry panel (sticky beside the introductory content) --- */}
-          <div className="lg:col-span-2">
+          <div className="lg:col-span-2 -mt-12 lg:row-start-1 lg:col-start-4">
             <div id="enquire" className="scroll-mt-32 lg:sticky lg:top-28">
               <div className="rounded-2xl bg-[#061625] p-6 text-white md:p-8">
                 <h2 className="mb-2 font-display text-3xl font-normal italic">Request Your Personal Charter Proposal</h2>
@@ -392,34 +431,8 @@ export default async function YachtDetailPage({
           </div>
         </div>
 
-        {/* --- Full-width browsing sections --- */}
+        {/* --- Amenities, booking conditions and footer notes --- */}
         <div className="container mx-auto px-4 pb-24">
-            {/* --- Watersports --- */}
-            {(watersports.tender || watersports.items.length > 0) && (
-              <section className="mt-14">
-                <SectionHeading id="watersports" title="Watersports & Toys" />
-                {watersports.tender && (
-                  <div className="mb-4 flex flex-col gap-4 rounded-xl bg-[#061625] p-6 text-white sm:flex-row sm:items-center">
-                    <Ship className="h-8 w-8 shrink-0 text-[#EE9739]" aria-hidden="true" />
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#EE9739]">Tender</p>
-                      <p className="mt-1 font-display text-xl italic">{watersports.tender}</p>
-                    </div>
-                  </div>
-                )}
-                {watersports.items.length > 0 && (
-                  <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {watersports.items.map((item) => (
-                      <li key={item} className="flex items-center gap-2.5 rounded-lg bg-white p-4 text-sm text-[#061625] shadow-sm">
-                        <Waves className="h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-            )}
-
             {/* --- Amenities --- */}
             {amenities.length > 0 && (
               <section className="mt-14">
@@ -435,69 +448,7 @@ export default async function YachtDetailPage({
               </section>
             )}
 
-            {/* --- Charter rates --- */}
-            {seasons.length > 0 && (
-              <section className="mt-14">
-                <SectionHeading id="rates" title="Charter Rates" />
-                <div className="space-y-4">
-                  {seasons.map((season, i) => (
-                    <details key={i} open={i === 0} className="group rounded-xl bg-white p-5 shadow-sm">
-                      <summary className="flex cursor-pointer items-center justify-between gap-4">
-                        <span>
-                          <span className="font-display text-xl italic text-[#061625]">{season.title}</span>
-                          {season.dates && <span className="mt-0.5 block text-xs text-[#061625]/60">{season.dates}</span>}
-                        </span>
-                        {season.price && <span className="shrink-0 font-medium text-[#061625]">{season.price}</span>}
-                      </summary>
-                      <dl className="mt-4 space-y-2 border-t border-[#061625]/10 pt-4 text-sm">
-                        {season.category && (
-                          <div className="flex justify-between gap-4">
-                            <dt className="text-[#061625]/60">Season type</dt>
-                            <dd className="text-right text-[#061625]">{season.category}</dd>
-                          </div>
-                        )}
-                        {season.area && (
-                          <div className="flex justify-between gap-4">
-                            <dt className="text-[#061625]/60">Cruising region</dt>
-                            <dd className="text-right text-[#061625]">{season.area}</dd>
-                          </div>
-                        )}
-                        {season.basePort && (
-                          <div className="flex justify-between gap-4">
-                            <dt className="text-[#061625]/60">Base port</dt>
-                            <dd className="text-right text-[#061625]">{season.basePort}</dd>
-                          </div>
-                        )}
-                        {season.pickup && (
-                          <div className="flex justify-between gap-4">
-                            <dt className="text-[#061625]/60">Preferred pickup</dt>
-                            <dd className="text-right text-[#061625]">{season.pickup}</dd>
-                          </div>
-                        )}
-                        {season.charterType && (
-                          <div className="flex justify-between gap-4">
-                            <dt className="text-[#061625]/60">Charter type</dt>
-                            <dd className="text-right text-[#061625]">{season.charterType}</dd>
-                          </div>
-                        )}
-                        {season.terms && (
-                          <div className="pt-2">
-                            <dt className="text-[#061625]/60">Terms</dt>
-                            <dd className="mt-1 whitespace-pre-line text-[#061625]">{season.terms}</dd>
-                          </div>
-                        )}
-                      </dl>
-                    </details>
-                  ))}
-                </div>
-                <p className="mt-3 text-xs text-[#061625]/50">
-                  Rates are indicative and subject to confirmation. Final quotation depends on guest count, dates and
-                  charter terms.
-                </p>
-              </section>
-            )}
-
-            {/* --- Availability (calendar lives above; this is the terms note) --- */}
+            {/* --- Booking conditions (rates panel above carries the seasons) --- */}
             <section className="mt-14 rounded-xl bg-white p-6 shadow-sm">
               <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                 <CalendarDays className="h-8 w-8 shrink-0 text-[#EE9739]" aria-hidden="true" />
@@ -524,7 +475,28 @@ export default async function YachtDetailPage({
             </p>
         </div>
 
-        <YachtMobileActionBar yachtId={id} hasLiveData={availability.hasLiveData} />
+        <YachtPersistentBar yachtId={id} headline={pricing.headline} hasRate={pricing.hasRate} />
+
+        {/* --- Discover More: deterministic similar-yacht recommendations,
+            after the enquiry section, before the footer --- */}
+        <div className="container mx-auto px-4 pb-24">
+          <YachtRecommendations
+            subject={{
+              id,
+              type: yachtType,
+              length: length ? length.value : null,
+              guests: accommodation.pax,
+              minPrice: pricing.minPrice,
+              currency: pricing.currency,
+              minPriceUsd: minUsd,
+              areas: seasons
+                .map((s) => s.area)
+                .filter((a): a is string => Boolean(a))
+                .flatMap((a) => a.split(", ")),
+            }}
+            catalogue={catalogue}
+          />
+        </div>
       </main>
 
       <Footer />
