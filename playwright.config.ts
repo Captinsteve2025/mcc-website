@@ -2,7 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
-  timeout: 60_000,
+  // These pages are very long (hero video streams continuously; 20k+ px of
+  // content), so each test needs more than the default budget.
+  timeout: 120_000,
   retries: 1,
   fullyParallel: false,
   reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],

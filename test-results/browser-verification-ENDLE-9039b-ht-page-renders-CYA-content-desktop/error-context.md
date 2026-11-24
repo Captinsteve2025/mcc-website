@@ -12,24 +12,16 @@
 # Error details
 
 ```
-Error: dining image 0 loads
+Test timeout of 120000ms exceeded.
+```
 
-expect(received).toBe(expected) // Object.is equality
-
-Expected: true
-Received: false
+```
+Error: locator.count: Target page, context or browser has been closed
 ```
 
 # Test source
 
 ```ts
-  7   | 
-  8   | import { test, expect, type Page } from "@playwright/test";
-  9   | 
-  10  | const BASE_URL = process.env.PLAYWRIGHT_BASE_URL ?? "https://mcc-website-one.vercel.app";
-  11  | const IMPORT_URL = process.env.BROWSER_TESTS_IMPORT_URL ?? "";
-  12  | const IMPORT_TOKEN = process.env.BROWSER_TESTS_TOKEN ?? "";
-  13  | 
   14  | const YACHTS: Array<{ name: string; id: string }> = [
   15  |   { name: "ENDLESS HORIZON", id: "69f33df0b5a1600bf785869e" },
   16  |   { name: "MISCHIEVOUS", id: "69f33df2b5a1600bf78586a2" },
@@ -117,112 +109,119 @@ Received: false
   98  |         });
   99  |         await record("all dining photographs load", async () => {
   100 |           const dining = page.locator("section:has(#dining)");
-  101 |           const imgs = dining.locator("img");
-  102 |           const n = await imgs.count();
-  103 |           expect(n, "dining image count").toBeGreaterThan(0);
-  104 |           for (let i = 0; i < Math.min(n, 20); i++) {
-  105 |             const img = imgs.nth(i);
-  106 |             const ok = await img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0);
-> 107 |             expect(ok, `dining image ${i} loads`).toBe(true);
-      |                                                   ^ Error: dining image 0 loads
-  108 |           }
-  109 |         });
-  110 |         await record("no literal HTML entities in dining text", async () => {
-  111 |           const text = await page.locator("section:has(#dining)").innerText();
-  112 |           expect(text).not.toMatch(/&bull;|&amp;bull;|&lt;p&gt;|&lt;br/);
-  113 |         });
-  114 |         await record("lightbox opens and closes", async () => {
-  115 |           const trigger = page.locator("section:has(#dining) figure button").first();
-  116 |           if (await trigger.isVisible()) {
-  117 |             await trigger.click();
-  118 |             const dialog = page.locator('[role="dialog"]');
-  119 |             await expect(dialog).toBeVisible();
-  120 |             await dialog.click({ position: { x: 10, y: 10 } });
-  121 |             await expect(dialog).toBeHidden();
-  122 |           }
-  123 |         });
-  124 |         await record("no empty menu-description cards", async () => {
-  125 |           const empty = await page.evaluate(() => {
-  126 |             const cards = document.querySelectorAll("section article");
-  127 |             let bad = 0;
-  128 |             cards.forEach((c) => {
-  129 |               const t = (c.textContent ?? "").trim();
-  130 |               const hasImg = c.querySelector("img") !== null;
-  131 |               if (!hasImg && t.length === 0) bad += 1;
-  132 |             });
-  133 |             return bad;
-  134 |           });
-  135 |           expect(empty, "empty cards").toBe(0);
-  136 |         });
-  137 |       } else {
-  138 |         currentChecks.push({ name: "dining section (CYA supplies none — hidden is correct)", passed: true });
-  139 |       }
-  140 | 
-  141 |       await record("no browser page errors", async () => {
-  142 |         expect(errors, `browser errors: ${errors.join(" | ").slice(0, 400)}`).toHaveLength(0);
-  143 |       });
-  144 |       currentErrors.push(...errors);
-  145 | 
-  146 |       await record("no horizontal overflow", async () => {
-  147 |         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-  148 |         expect(overflow, "horizontal overflow px").toBeLessThanOrEqual(1);
-  149 |       });
-  150 |     });
-  151 |   });
-  152 | }
-  153 | 
-  154 | // ENDLESS HORIZON-specific dining requirements (chef intro, five photos).
-  155 | test.describe("ENDLESS HORIZON dining specifics", () => {
-  156 |   test("chef introduction and five distinct photographs", async ({ page }) => {
-  157 |     const checks: Check[] = [];
-  158 |     const errors: string[] = [];
-  159 |     page.on("pageerror", (e) => errors.push(`pageerror: ${e.message.slice(0, 200)}`));
-  160 |     page.on("console", (m) => {
-  161 |       if (m.type() === "error") errors.push(`console.error: ${m.text().slice(0, 200)}`);
+  101 |           await dining.scrollIntoViewIfNeeded();
+  102 |           // Lazy images only start after the scroll; give them a bounded window.
+  103 |           await page
+  104 |             .waitForFunction(
+  105 |               () => {
+  106 |                 const imgs = document.querySelector("#dining")?.closest("section")?.querySelectorAll("img");
+  107 |                 if (!imgs || imgs.length === 0) return false;
+  108 |                 return Array.from(imgs).every((img) => (img as HTMLImageElement).complete);
+  109 |               },
+  110 |               { timeout: 10_000 }
+  111 |             )
+  112 |             .catch(() => {});
+  113 |           const imgs = dining.locator("img");
+> 114 |           const n = await imgs.count();
+      |                                ^ Error: locator.count: Target page, context or browser has been closed
+  115 |           expect(n, "dining image count").toBeGreaterThan(0);
+  116 |           for (let i = 0; i < Math.min(n, 20); i++) {
+  117 |             const img = imgs.nth(i);
+  118 |             const ok = await img.evaluate((el: HTMLImageElement) => el.complete && el.naturalWidth > 0);
+  119 |             expect(ok, `dining image ${i} loads`).toBe(true);
+  120 |           }
+  121 |         });
+  122 |         await record("no literal HTML entities in dining text", async () => {
+  123 |           const text = await page.locator("section:has(#dining)").innerText();
+  124 |           expect(text).not.toMatch(/&bull;|&amp;bull;|&lt;p&gt;|&lt;br/);
+  125 |         });
+  126 |         await record("lightbox opens and closes", async () => {
+  127 |           const trigger = page.locator("section:has(#dining) figure button").first();
+  128 |           if (await trigger.isVisible()) {
+  129 |             await trigger.click();
+  130 |             const dialog = page.locator('[role="dialog"]');
+  131 |             await expect(dialog).toBeVisible();
+  132 |             await dialog.click({ position: { x: 10, y: 10 } });
+  133 |             await expect(dialog).toBeHidden();
+  134 |           }
+  135 |         });
+  136 |         await record("no empty menu-description cards", async () => {
+  137 |           const empty = await page.evaluate(() => {
+  138 |             const cards = document.querySelectorAll("section article");
+  139 |             let bad = 0;
+  140 |             cards.forEach((c) => {
+  141 |               const t = (c.textContent ?? "").trim();
+  142 |               const hasImg = c.querySelector("img") !== null;
+  143 |               if (!hasImg && t.length === 0) bad += 1;
+  144 |             });
+  145 |             return bad;
+  146 |           });
+  147 |           expect(empty, "empty cards").toBe(0);
+  148 |         });
+  149 |       } else {
+  150 |         currentChecks.push({ name: "dining section (CYA supplies none — hidden is correct)", passed: true });
+  151 |       }
+  152 | 
+  153 |       await record("no browser page errors", async () => {
+  154 |         expect(errors, `browser errors: ${errors.join(" | ").slice(0, 400)}`).toHaveLength(0);
+  155 |       });
+  156 |       currentErrors.push(...errors);
+  157 | 
+  158 |       await record("no horizontal overflow", async () => {
+  159 |         const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  160 |         expect(overflow, "horizontal overflow px").toBeLessThanOrEqual(1);
+  161 |       });
   162 |     });
-  163 |     const rec = async (name: string, fn: () => Promise<void>) => {
-  164 |       try {
-  165 |         await fn();
-  166 |         checks.push({ name, passed: true });
-  167 |       } catch (err) {
-  168 |         checks.push({ name, passed: false, detail: err instanceof Error ? err.message.slice(0, 300) : "failed" });
-  169 |         throw err;
-  170 |       }
-  171 |     };
-  172 |     await page.goto(`${BASE_URL}/charter-yachts/69f33df0b5a1600bf785869e`, { waitUntil: "domcontentloaded", timeout: 30_000 });
-  173 |     await page.locator("#dining").scrollIntoViewIfNeeded();
-  174 |     // Lazy-loaded images only start after the scroll; the hero video streams
-  175 |     // continuously so networkidle never fires — wait on image completion.
-  176 |     await page
-  177 |       .waitForFunction(
-  178 |         () => {
-  179 |           const imgs = document.querySelector("#dining")?.closest("section")?.querySelectorAll("img");
-  180 |           if (!imgs || imgs.length === 0) return false;
-  181 |           return Array.from(imgs).every((img) => (img as HTMLImageElement).complete);
-  182 |         },
-  183 |         { timeout: 15_000 }
-  184 |       )
-  185 |       .catch(() => {});
-  186 |     await rec("dining section present", async () => {
-  187 |       await page.locator("#dining").scrollIntoViewIfNeeded();
-  188 |       const box = await page.locator("#dining").boundingBox();
-  189 |       expect(box, "dining heading renders with a real box after scrolling").not.toBeNull();
-  190 |     });
-  191 |     await rec("chef introduction displayed", async () => {
-  192 |       await page.getByText(/Heather Arndt/i).first().scrollIntoViewIfNeeded();
-  193 |       const text = await page.locator("section:has(#dining)").innerText();
-  194 |       expect(text).toMatch(/Heather Arndt/i);
-  195 |     });
-  196 |     await rec("all dining photographs load", async () => {
-  197 |       const urls = await page.evaluate(() => {
-  198 |         const dining = document.querySelector("#dining")?.closest("section");
-  199 |         const out = new Set<string>();
-  200 |         dining?.querySelectorAll("img").forEach((img) => {
-  201 |           const el = img as HTMLImageElement;
-  202 |           if (el.complete && el.naturalWidth > 0 && el.src) out.add(el.src);
-  203 |         });
-  204 |         return Array.from(out);
-  205 |       });
-  206 |       expect(urls.length, "distinct loaded dining image URLs").toBeGreaterThanOrEqual(5);
+  163 |   });
+  164 | }
+  165 | 
+  166 | // ENDLESS HORIZON-specific dining requirements (chef intro, five photos).
+  167 | test.describe("ENDLESS HORIZON dining specifics", () => {
+  168 |   test("chef introduction and five distinct photographs", async ({ page }) => {
+  169 |     const checks: Check[] = [];
+  170 |     const errors: string[] = [];
+  171 |     page.on("pageerror", (e) => errors.push(`pageerror: ${e.message.slice(0, 200)}`));
+  172 |     page.on("console", (m) => {
+  173 |       if (m.type() === "error") errors.push(`console.error: ${m.text().slice(0, 200)}`);
+  174 |     });
+  175 |     const rec = async (name: string, fn: () => Promise<void>) => {
+  176 |       try {
+  177 |         await fn();
+  178 |         checks.push({ name, passed: true });
+  179 |       } catch (err) {
+  180 |         checks.push({ name, passed: false, detail: err instanceof Error ? err.message.slice(0, 300) : "failed" });
+  181 |         throw err;
+  182 |       }
+  183 |     };
+  184 |     await page.goto(`${BASE_URL}/charter-yachts/69f33df0b5a1600bf785869e`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+  185 |     await page.locator("#dining").scrollIntoViewIfNeeded();
+  186 |     // Lazy-loaded images only start after the scroll; the hero video streams
+  187 |     // continuously so networkidle never fires — wait on image completion.
+  188 |     await page
+  189 |       .waitForFunction(
+  190 |         () => {
+  191 |           const imgs = document.querySelector("#dining")?.closest("section")?.querySelectorAll("img");
+  192 |           if (!imgs || imgs.length === 0) return false;
+  193 |           return Array.from(imgs).every((img) => (img as HTMLImageElement).complete);
+  194 |         },
+  195 |         { timeout: 15_000 }
+  196 |       )
+  197 |       .catch(() => {});
+  198 |     await rec("dining section present", async () => {
+  199 |       await page.locator("#dining").scrollIntoViewIfNeeded();
+  200 |       const box = await page.locator("#dining").boundingBox();
+  201 |       expect(box, "dining heading renders with a real box after scrolling").not.toBeNull();
+  202 |     });
+  203 |     await rec("chef introduction displayed", async () => {
+  204 |       await page.getByText(/Heather Arndt/i).first().scrollIntoViewIfNeeded();
+  205 |       const text = await page.locator("section:has(#dining)").innerText();
+  206 |       expect(text).toMatch(/Heather Arndt/i);
   207 |     });
+  208 |     await rec("all dining photographs load", async () => {
+  209 |       const urls = await page.evaluate(() => {
+  210 |         const dining = document.querySelector("#dining")?.closest("section");
+  211 |         const out = new Set<string>();
+  212 |         dining?.querySelectorAll("img").forEach((img) => {
+  213 |           const el = img as HTMLImageElement;
+  214 |           if (el.complete && el.naturalWidth > 0 && el.src) out.add(el.src);
 ```

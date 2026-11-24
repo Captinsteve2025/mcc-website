@@ -98,6 +98,18 @@ for (const yacht of SAMPLE) {
         });
         await record("all dining photographs load", async () => {
           const dining = page.locator("section:has(#dining)");
+          await dining.scrollIntoViewIfNeeded();
+          // Lazy images only start after the scroll; give them a bounded window.
+          await page
+            .waitForFunction(
+              () => {
+                const imgs = document.querySelector("#dining")?.closest("section")?.querySelectorAll("img");
+                if (!imgs || imgs.length === 0) return false;
+                return Array.from(imgs).every((img) => (img as HTMLImageElement).complete);
+              },
+              { timeout: 10_000 }
+            )
+            .catch(() => {});
           const imgs = dining.locator("img");
           const n = await imgs.count();
           expect(n, "dining image count").toBeGreaterThan(0);
