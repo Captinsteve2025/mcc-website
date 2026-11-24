@@ -38,6 +38,13 @@ export const RECOMMENDATION_CONFIG = {
     guestsCabins: 0.15,
     length: 0.1,
   },
+  // The catalogue snapshot is shared per server instance: all yacht pages and
+  // the diagnostic reuse one walk of the CYA catalogue for this long, then the
+  // next request refreshes it. Individual pages inside the walk are also
+  // cached by the CYA client (next.revalidate 300).
+  catalogueTtlMs: 300_000,
+  cataloguePageSize: 200,
+  catalogueMaxPages: 20,
 } as const;
 
 const M_PER_FT = 3.28084;
@@ -212,9 +219,18 @@ export type SubjectProfile = {
   lengthFt: number | null;
   guests: number | null;
   cabins: number | null;
+  /** Seasonal weekly rates in the currency CYA publishes for each season. */
   minPrice: number | null;
   maxPrice: number | null;
   currency: string | null;
+  /** USD floor price CYA publishes on the detail record, when present. */
+  usdMinPrice: number | null;
+  /**
+   * Published pricing arrangement, when CYA states one (e.g. charter_type on
+   * a season). CYA catalogue records carry no basis field, so a basis gate
+   * can only be applied where both sides publish it — never inferred.
+   */
+  pricingBasis: string | null;
   regions: string[];
 };
 
@@ -235,6 +251,12 @@ export function subjectFromDetail(detail: Record<string, unknown>): SubjectProfi
 
   const regions = rawSeasons.flatMap((s) => extractAreaNames(s.location_areas));
 
+  const basisValues = [...new Set(
+    rawSeasons
+      .map((s) => (typeof s.charter_type === "string" ? s.charter_type.trim() : ""))
+      .filter(Boolean)
+  )];
+
   const rawType = typeof detail.yachtType === "string" ? detail.yachtType : null;
   return {
     id: typeof detail.id === "string" ? detail.id : "",
@@ -247,6 +269,8 @@ export function subjectFromDetail(detail: Record<string, unknown>): SubjectProfi
     minPrice: prices.length > 0 ? Math.min(...prices) : null,
     maxPrice: prices.length > 0 ? Math.max(...prices) : null,
     currency: currencies.length === 1 ? currencies[0] : null,
+    usdMinPrice: toNumber(detail.min_price_usd),
+    pricingBasis: basisValues.length === 1 ? basisValues[0] : basisValues.length > 1 ? basisValues.join(", ") : null,
     regions: [...new Set(regions)],
   };
 }
@@ -279,30 +303,44 @@ export type ScoredCandidate = {
   total: number;
 };
 
+
+// Pricing comparability. Like is compared with like, never converted:
+//   1. USD floor price vs USD floor price, when CYA publishes both.
+//   2. Otherwise the listing's own weekly rate, but only when the reference
+//      publishes the same currency.
+// A candidate with no published rate never qualifies ("price-missing"), and a
+// reference with no published rate at all fails every candidate — missing
+// pricing cannot pass as comparable. Seasonal pricing is respected: the
+// candidate's floor rate must fall inside the reference's seasonal
+// min–max range widened by the tolerance, not against a single figure.
+// CYA rates are whole-yacht weekly rates (no per-guest arrangement exists in
+// the catalogue), and APA/expenses terms are not published per catalogue
+// record, so no basis conversion is invented.
 function comparePrice(
   subject: SubjectProfile,
   candidate: YachtCandidate,
   tolerance: number
 ): { ok: boolean; rule?: ExclusionRule } {
-  // Compare like with like: USD floor price when CYA supplies it, otherwise
-  // the listing currency only when the reference uses the same one. No
-  // invented conversions.
-  if (candidate.minPriceUsd !== null) {
-    const refUsd = subject.minPrice ?? subject.maxPrice;
-    if (refUsd === null) return { ok: false, rule: "price-missing" };
-    const low = refUsd * (1 - tolerance);
-    const high = refUsd * (1 + tolerance);
+  const sameCurrency = Boolean(
+    subject.currency && candidate.currency && subject.currency.toUpperCase() === candidate.currency.toUpperCase()
+  );
+
+  if (candidate.minPriceUsd !== null && subject.usdMinPrice !== null) {
+    const low = subject.usdMinPrice * (1 - tolerance);
+    const high = subject.usdMinPrice * (1 + tolerance);
     if (candidate.minPriceUsd < low || candidate.minPriceUsd > high) return { ok: false, rule: "price-out-of-band" };
     return { ok: true };
   }
+
   if (candidate.minPrice === null) return { ok: false, rule: "price-missing" };
-  if (!subject.currency || !candidate.currency || subject.currency.toUpperCase() !== candidate.currency.toUpperCase()) {
-    return { ok: false, rule: "price-missing" };
-  }
-  const ref = subject.minPrice ?? subject.maxPrice;
-  if (ref === null) return { ok: false, rule: "price-missing" };
-  const low = ref * (1 - tolerance);
-  const high = ref * (1 + tolerance);
+  if (!sameCurrency) return { ok: false, rule: "price-missing" };
+
+  const refLow = subject.minPrice ?? subject.maxPrice;
+  const refHigh = subject.maxPrice ?? subject.minPrice;
+  if (refLow === null || refHigh === null) return { ok: false, rule: "price-missing" };
+
+  const low = refLow * (1 - tolerance);
+  const high = refHigh * (1 + tolerance);
   if (candidate.minPrice < low || candidate.minPrice > high) return { ok: false, rule: "price-out-of-band" };
   return { ok: true };
 }
@@ -317,6 +355,7 @@ function compareLength(subject: SubjectProfile, candidate: YachtCandidate, toler
 function eligibilityCheck(
   subject: SubjectProfile,
   candidate: YachtCandidate,
+  referenceRegions: string[],
   priceTolerance: number,
   lengthTolerance: number
 ): { ok: true } | { ok: false; rule: ExclusionRule; detail: string } {
@@ -344,7 +383,7 @@ function eligibilityCheck(
       detail: `The reference's own type ("${subject.rawType ?? "not published"}") is unclassified, so class eligibility cannot be established.`,
     };
   }
-  if (subject.regions.length > 0 && regionsOverlap(subject.regions, candidate.regions).length === 0) {
+  if (referenceRegions.length > 0 && regionsOverlap(referenceRegions, candidate.regions).length === 0) {
     return {
       ok: false,
       rule: "no-region-overlap",
@@ -395,20 +434,24 @@ function clamp01(n: number): number {
 }
 
 function pricingScore(subject: SubjectProfile, candidate: YachtCandidate): number {
-  const ref = subject.minPrice ?? subject.maxPrice;
   const cand = candidate.minPriceUsd ?? candidate.minPrice;
-  if (ref === null || cand === null) return NEUTRAL;
-  // Score against the nearer end of the reference's seasonal range.
-  const target = subject.maxPrice !== null && cand > ref ? subject.maxPrice : ref;
+  if (cand === null) return NEUTRAL;
+  // Score against the nearest comparable reference figure (seasonal low or
+  // high, USD floor when the comparison is in USD).
+  const target =
+    candidate.minPriceUsd !== null && subject.usdMinPrice !== null
+      ? subject.usdMinPrice
+      : (cand > (subject.minPrice ?? 0) && subject.maxPrice !== null ? subject.maxPrice : subject.minPrice);
+  if (target === null) return NEUTRAL;
   const delta = Math.abs(cand - target) / target;
   return clamp01(1 - delta);
 }
 
-function regionSeasonScore(subject: SubjectProfile, candidate: YachtCandidate): number {
-  if (subject.regions.length === 0 || candidate.regions.length === 0) return NEUTRAL;
-  const matches = regionsOverlap(subject.regions, candidate.regions);
+function regionSeasonScore(referenceRegions: string[], candidate: YachtCandidate): number {
+  if (referenceRegions.length === 0 || candidate.regions.length === 0) return NEUTRAL;
+  const matches = regionsOverlap(referenceRegions, candidate.regions);
   if (matches.length === 0) return 0;
-  return clamp01(matches.length / Math.min(subject.regions.length, candidate.regions.length));
+  return clamp01(matches.length / Math.min(referenceRegions.length, candidate.regions.length));
 }
 
 function classModelScore(subject: SubjectProfile, candidate: YachtCandidate): number {
@@ -433,12 +476,16 @@ function lengthScore(subject: SubjectProfile, candidate: YachtCandidate): number
   return clamp01(1 - delta * 2);
 }
 
-function rankCandidates(subject: SubjectProfile, eligible: YachtCandidate[]): ScoredCandidate[] {
+function rankCandidates(
+  subject: SubjectProfile,
+  eligible: YachtCandidate[],
+  referenceRegions: string[]
+): ScoredCandidate[] {
   const w = RECOMMENDATION_CONFIG.weights;
   const ranked = eligible.map((candidate) => {
     const scores = {
       pricing: pricingScore(subject, candidate),
-      regionSeason: regionSeasonScore(subject, candidate),
+      regionSeason: regionSeasonScore(referenceRegions, candidate),
       classModel: classModelScore(subject, candidate),
       guestsCabins: guestsCabinsScore(subject, candidate),
       length: lengthScore(subject, candidate),
@@ -453,7 +500,7 @@ function rankCandidates(subject: SubjectProfile, eligible: YachtCandidate[]): Sc
     return {
       candidate,
       scores,
-      regionMatches: regionsOverlap(subject.regions, candidate.regions),
+      regionMatches: regionsOverlap(referenceRegions, candidate.regions),
       total,
     };
   });
@@ -463,6 +510,16 @@ function rankCandidates(subject: SubjectProfile, eligible: YachtCandidate[]): Sc
 
 // ── Public entry point ──────────────────────────────────────────────────────
 
+export type VisitorHints = {
+  /**
+   * Destination the visitor selected on the catalogue. When present it
+   * narrows the regional gate and ranking: a Bahamas-bound visitor is never
+   * shown Mediterranean yachts even if the reference itself also cruises
+   * there. Derived from real user input only — never guessed.
+   */
+  destination?: string | null;
+};
+
 export type RecommendationResult = {
   subject: SubjectProfile;
   considered: number;
@@ -470,28 +527,39 @@ export type RecommendationResult = {
   excluded: ExcludedRecord[];
   strictMatches: ScoredCandidate[];
   broaderMatches: ScoredCandidate[];
+  hintsApplied: VisitorHints | null;
+  /**
+   * Regional relevance is assessed from the seasonal cruising areas CYA
+   * publishes. Confirmed availability of a recommended yacht is NOT implied —
+   * cards and copy state that dates are re-confirmed personally.
+   */
+  availabilityNote: string;
 };
 
 // Applies Stage-1 eligibility over the full candidate list, then Stage-2
 // ranking. Strict matches below the minimum similarity score are dropped; a
-// controlled fallback widens ONLY price and length tolerance — class,
-// region and guest gates are never relaxed — and broader matches are returned
-// in a separate tier so they can be labelled differently on the page. Fewer
-// than three results is an acceptable outcome; none is an acceptable outcome.
+// controlled fallback widens ONLY price and length tolerance — class, region
+// and guest gates are never relaxed — and broader matches are returned in a
+// separate tier so they can be labelled differently on the page. Fewer than
+// three results is an acceptable outcome; none is an acceptable outcome.
 export function recommendSimilarYachts(
   subject: SubjectProfile,
-  catalogue: YachtCandidate[]
+  catalogue: YachtCandidate[],
+  hints?: VisitorHints | null
 ): RecommendationResult {
+  const hintsApplied = hints && (hints.destination ?? null) ? { destination: hints.destination! } : null;
+  const referenceRegions = hintsApplied?.destination ? [hintsApplied.destination] : subject.regions;
+
   const excluded: ExcludedRecord[] = [];
   const eligible: YachtCandidate[] = [];
 
   for (const rec of catalogue) {
-    const check = eligibilityCheck(subject, rec, RECOMMENDATION_CONFIG.strict.priceTolerance, RECOMMENDATION_CONFIG.strict.lengthTolerance);
+    const check = eligibilityCheck(subject, rec, referenceRegions, RECOMMENDATION_CONFIG.strict.priceTolerance, RECOMMENDATION_CONFIG.strict.lengthTolerance);
     if (check.ok) eligible.push(rec);
     else excluded.push({ id: rec.id, name: rec.name, rule: check.rule, detail: check.detail });
   }
 
-  const ranked = rankCandidates(subject, eligible);
+  const ranked = rankCandidates(subject, eligible, referenceRegions);
   const strictMatches = ranked.filter((r) => r.total >= RECOMMENDATION_CONFIG.minScore);
 
   let broaderMatches: ScoredCandidate[] = [];
@@ -500,37 +568,78 @@ export function recommendSimilarYachts(
     const relaxed: YachtCandidate[] = [];
     for (const rec of catalogue) {
       if (taken.has(rec.id)) continue;
-      const check = eligibilityCheck(subject, rec, RECOMMENDATION_CONFIG.fallback.priceTolerance, RECOMMENDATION_CONFIG.fallback.lengthTolerance);
+      const check = eligibilityCheck(subject, rec, referenceRegions, RECOMMENDATION_CONFIG.fallback.priceTolerance, RECOMMENDATION_CONFIG.fallback.lengthTolerance);
       if (check.ok) relaxed.push(rec);
     }
-    broaderMatches = rankCandidates(subject, relaxed)
+    broaderMatches = rankCandidates(subject, relaxed, referenceRegions)
       .filter((r) => r.total >= RECOMMENDATION_CONFIG.minScore)
       .slice(0, RECOMMENDATION_CONFIG.maxResults - strictMatches.length);
   }
 
-  return { subject, considered: catalogue.length, eligible: ranked, excluded, strictMatches, broaderMatches };
+  return {
+    subject,
+    considered: catalogue.length,
+    eligible: ranked,
+    excluded,
+    strictMatches,
+    broaderMatches,
+    hintsApplied,
+    availabilityNote:
+      "Cruising regions reflect the seasonal areas each yacht publishes. Recommended yachts' calendars are not checked against your dates — every date is re-confirmed personally before booking.",
+  };
 }
 
-// ── Full-catalogue walk ─────────────────────────────────────────────────────
+// ── Full-catalogue snapshot ─────────────────────────────────────────────────
 
-// Walks every page of the live catalogue (never a single 100-record subset)
-// through the shared cached searchYachts client, so the per-instance rate
-// guard and Next fetch cache still apply.
-export async function fetchFullCatalogue(): Promise<CyaYacht[]> {
-  const all: CyaYacht[] = [];
-  const seen = new Set<string>();
-  const pageSize = 200;
-  const maxPages = 20; // safety cap; ~1,920 records ≈ 10 pages
-  for (let page = 1; page <= maxPages; page++) {
-    const response = await searchYachts({ page, limit: pageSize, searchTerm: "", filters: {} });
-    const rows = (response.yachts as CyaYacht[] | undefined) ?? [];
-    for (const row of rows) {
-      const recId = typeof row.id === "string" ? row.id : null;
-      if (!recId || seen.has(recId)) continue;
-      seen.add(recId);
-      all.push(row);
+export type CatalogueSnapshot = {
+  yachts: CyaYacht[];
+  pages: number;
+  fetchedAt: number;
+  fromCache: boolean;
+};
+
+type CatalogueCache = { snapshot: Promise<CatalogueSnapshot>; expiresAt: number };
+
+// One shared catalogue snapshot per server instance. Every yacht detail page
+// and the admin diagnostic await the same promise, so a burst of concurrent
+// visitors triggers ONE catalogue walk (10 cached search pages), not one per
+// visitor or per page. After catalogueTtlMs the next request refreshes it;
+// a failed walk clears the cache so the next request retries.
+let catalogueCache: CatalogueCache | null = null;
+
+export function getCatalogueSnapshot(): Promise<CatalogueSnapshot> {
+  if (catalogueCache && catalogueCache.expiresAt > Date.now()) return catalogueCache.snapshot;
+
+  const snapshot = (async (): Promise<CatalogueSnapshot> => {
+    const all: CyaYacht[] = [];
+    const seen = new Set<string>();
+    const pageSize = RECOMMENDATION_CONFIG.cataloguePageSize;
+    let pages = 0;
+    for (let page = 1; page <= RECOMMENDATION_CONFIG.catalogueMaxPages; page++) {
+      // Each page goes through the shared CYA client: Next fetch Data Cache
+      // (revalidate 300) plus the in-instance memory cache, so concurrent
+      // and repeat requests do not multiply CYA traffic.
+      const response = await searchYachts({ page, limit: pageSize, searchTerm: "", filters: {} });
+      pages += 1;
+      const rows = (response.yachts as CyaYacht[] | undefined) ?? [];
+      for (const row of rows) {
+        const recId = typeof row.id === "string" ? row.id : null;
+        if (!recId || seen.has(recId)) continue;
+        seen.add(recId);
+        all.push(row);
+      }
+      if (rows.length < pageSize) break;
     }
-    if (rows.length < pageSize) break;
-  }
-  return all;
+    return { yachts: all, pages, fetchedAt: Date.now(), fromCache: false };
+  })().catch((err) => {
+    catalogueCache = null; // retryable on the next request
+    throw err;
+  });
+
+  catalogueCache = { snapshot, expiresAt: Date.now() + RECOMMENDATION_CONFIG.catalogueTtlMs };
+  return snapshot;
+}
+
+export async function fetchFullCatalogue(): Promise<CyaYacht[]> {
+  return (await getCatalogueSnapshot()).yachts;
 }

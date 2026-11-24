@@ -29,7 +29,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-xl bg-white p-6 shadow-sm md:p-8">
+        <div className="min-w-0 rounded-xl bg-white p-6 shadow-sm md:p-8">
           <div className="mb-6 flex items-start gap-3">
             <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
             <div>
@@ -42,13 +42,13 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
             <dl className="mb-6 space-y-3">
               {priced.map((s) => (
                 <div key={s.title + (s.dates ?? "")} className="rounded-lg bg-[#061625]/5 p-4">
-                  <dt className="text-sm font-medium text-[#061625]">
+                  <dt className="break-words text-sm font-medium text-[#061625]">
                     {s.title}
                     {s.category && <span className="ml-2 text-xs font-normal text-[#061625]/60">{s.category}</span>}
                   </dt>
                   {s.dates && <dd className="mt-0.5 text-xs text-[#061625]/60">{s.dates}</dd>}
                   <dd className="mt-1 text-sm font-medium text-[#061625]">{s.price}</dd>
-                  {s.area && <dd className="mt-1 text-xs text-[#061625]/60">{s.area}</dd>}
+                  {s.area && <dd className="mt-1 break-words text-xs text-[#061625]/60">{s.area}</dd>}
                 </div>
               ))}
             </dl>
@@ -60,7 +60,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
               <dl className="space-y-3">
                 {unpriced.map((s) => (
                   <div key={s.title + (s.dates ?? "")} className="rounded-lg bg-[#061625]/5 p-4">
-                    <dt className="text-sm font-medium text-[#061625]">{s.title}</dt>
+                    <dt className="break-words text-sm font-medium text-[#061625]">{s.title}</dt>
                     {s.dates && <dd className="mt-0.5 text-xs text-[#061625]/60">{s.dates}</dd>}
                     <dd className="mt-1 text-sm italic text-[#061625]/70">Rates on request</dd>
                   </div>
@@ -93,7 +93,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
                     .map((s) => (
                       <div key={s.title + "-terms"}>
                         <p className="text-sm font-medium text-[#061625]">{s.title}</p>
-                        <p className="mt-1 whitespace-pre-line text-xs leading-relaxed text-[#061625]/70">{s.terms}</p>
+                        <p className="mt-1 whitespace-pre-line break-words text-xs leading-relaxed text-[#061625]/70">{s.terms}</p>
                       </div>
                     ))}
                 </div>
@@ -109,7 +109,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
           </a>
         </div>
 
-        <div className="rounded-xl bg-white p-6 shadow-sm md:p-8">
+        <div className="min-w-0 rounded-xl bg-white p-6 shadow-sm md:p-8">
           <div className="mb-6 flex items-start gap-3">
             <CalendarDays className="mt-1 h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
             <div>

@@ -6,7 +6,6 @@
 - Site has a live yacht catalogue; navigation distinguishes charter yachts from managed yachts.
 - Catalogue reachable from every page via main navigation (desktop + mobile).
 - Public availability calendar on vessel pages shows booking status from CYA (Central Yacht Agent) API.
-- Vessel pages include a "Dining & Cuisine" / "The Culinary Experience" section showcasing chef, food photography, and sample menus from CYA data.
 
 ## Brand personality & voice
 
@@ -20,29 +19,45 @@
 - Desktop navigation: "All Charter Yachts" link to live catalogue (replaced old "Browse Yachts" which lacked live inventory).
 - Mobile menu: "All Charter Yachts" appears above "Managed Yachts".
 - Availability calendar: confirmed bookings → Booked, active holds → Hold (expired holds dropped), transit → Transit, other → Unavailable, no record → unmarked/unknown. Empty bookings array never displayed as "available".
-- Dining section: ivory background, navy text, serif headings, 16px body text. Photography leads the section before sample menus. Lightbox for food photos. Menu accordions initially collapsed, one open at a time. ARIA attributes on accordion buttons.
 
 ## Decisions, constraints & rationale
 
 - Framework: Next.js.
-- Deployment: Vercel at `https://mcc-website-one.vercel.app/`; sync to `collaborate` branch and redeploy.
-- CYA API base URL `https://api.centralyachtagent.com/public/api/v1` already includes `/api/v1`; centralized URL-builder strips accidental duplicate prefixes.
-- Catalogue yacht IDs (e.g. ENDLESS HORIZON `69f33df0b5a1600bf785869e`) are valid for CYA bookings API; legacy-ID mapping is only a fallback on 404.
-- API key lives only in Vercel environment; live API calls cannot be run from dev/build — must test via deployed diagnostic.
+- Menu link changed from "Browse Yachts" (dead/static page) to "All Charter Yachts" (live catalogue) in both desktop and mobile menus per user request.
 - ffmpeg not installed; video compression unavailable; original-size assets used as-is.
-- Transient build errors (EAGAIN) on file-system ops recur; unrelated to code, resolve on retry.
-- QA harness lessons: lightbox overlay can block accordion interaction; heading `id="dining"` means selectors must target the containing section, not the heading.
-- Production build passes after retrying transient filesystem errors; only lint warnings (unused imports/variables) and one image optimization notice remain.
+- Reused Aquanimity site's existing hero video as page background per user request; rights to reuse not yet confirmed.
+- Transient build errors (EAGAIN) on file-system ops recur; resolve on retry (sleep 30-40s then rebuild).
+- Deployment workflow: sync to `collaborate` branch and redeploy.
+- CYA API base URL `https://api.centralyachtagent.com/public/api/v1` already includes `/api/v1`; code was incorrectly appending `/api/v1` again, causing 404s. Fixed via centralized URL-builder function that strips accidental duplicate prefixes.
+- Catalogue yacht IDs (e.g. ENDLESS HORIZON `69f33df0b5a1600bf785869e`) are valid for the CYA bookings API and used directly; legacy-ID mapping is only a fallback on 404.
+- Production diagnostic updated to use corrected endpoints, report full request URLs, and label old broken route as alternate.
+- API key lives only in Vercel environment; live API calls cannot be run from dev/build — must test via deployed diagnostic.
+- XANDROS yacht CYA id not yet confirmed; supplied via PLAYWRIGHT_XANDROS_ID (Playwright) / NEXT_PUBLIC_XANDROS_CYA_ID (admin presets) when known.
+
+## Correct similar-yacht recommendation engine (M6, corrected)
+
+- Old engine failed commercial acceptance (motor yachts and a 161 ft sail yacht recommended for an 80 ft sailing catamaran). Root causes: single 100-record catalogue page, no eligibility gates, missing-data score inflation, coarse type buckets, no unit conversion, no price band, forced top-3. See MCC_PRODUCT_IMPROVEMENT_REGISTER.md M5.
+- Corrected engine (src/lib/similar-yachts.ts): Stage-1 hard eligibility (same class, ≥1 seasonal region overlap, ±25% price with currency comparability, ±25% length after m→ft, guests ≥ reference, uncertain types excluded) then Stage-2 ranking (pricing 30% / region+season 25% / class+model 20% / guests+cabins 15% / length 10%, neutral floor for unknowns, min score 0.35). Config in RECOMMENDATION_CONFIG.
+- Fallback widens ONLY price/length tolerance (0.6/0.5); class, region, guests never relaxed; broader tier labelled distinctly; empty state gets premium CTA; fewer than 3 is honest.
+- Full catalogue via shared per-instance snapshot (getCatalogueSnapshot): one walk of ~10 cached search pages (200/page) per 5-minute TTL, shared across all yacht pages, diagnostic and concurrent visitors; failed walk clears cache and the section degrades to nothing (page still renders).
+- Pricing comparability: USD floor vs USD floor (min_price_usd both sides), else same-currency only; missing rates never qualify; seasonal min-max range respected; basis (APA/all-inclusive) never invented — CYA has no per-record basis field.
+- Visitor destination from catalogue query narrows the regional gate when present.
+- Recommendations never imply calendar availability; copy states dates are re-confirmed personally.
+- Admin diagnostic: /api/recommendation-diagnostic?yacht_id= (x-admin-token; tester card in /admin/api-test) reports reference profile, catalogue pages/records, exclusions per rule, eligible count, ranked scores, calculationMs, strict vs broader.
+- Production verification pending deploy: EH, MISCHIEVOUS, OHANA, VIVA LA VIDA, XANDROS + edge cases. Not commercially approved until owner reviews.
+
+## Mobile responsive defect (M7)
+
+- XANDROS iPhone screenshot showed calendar/section background at ~69% viewport with text overflowing containers.
+- Root cause: CSS grid columns default to min-width:auto — long unbroken CYA words forced content columns wider than viewport, squeezing the calendar column.
+- Fix: min-w-0 on all three content-grid columns + break-words on CYA description/accommodation text; min-w-0 on rates panel and recommendation cards. No overflow hidden.
+- Playwright now has a real WebKit project (mobile-webkit, iPhone 14) alongside Chromium; XANDROS responsive checks at 390/430 px verify no horizontal overflow, sections within viewport, calendar full width, persistent bar within viewport; screenshots uploaded as CI artifacts.
 
 ## Open questions & assumptions
 
-- Hull type discrepancy: Dufour 48 listed as "catamaran" by source — needs user confirmation.
+- XANDROS CYA id unknown — needed to run the responsive checks in production and to add XANDROS to admin presets.
+- Hull type discrepancy: Dufour 48 is generally a monohull, but source page says "catamaran" and provided photo shows a sailing catamaran. Needs user confirmation before publishing.
 - Video reuse rights: asset copied from sailaquanimity.com — user must confirm licensing.
-- Video hero behavior (especially mobile) not yet browser-verified; compressed version would improve load.
-- Live CYA bookings test for ENDLESS HORIZON not yet run; diagnostic should report HTTP status, booking count, categories, dates, calendar mapping.
-- Dining section defects identified in production QA (not yet fixed — user reviewing findings before any code changes):
-  - ENDLESS HORIZON: photo-only CYA records rendered as empty menu accordions (e.g. "Breads" opens to empty panel); section height ~10,086px desktop / 12,829px mobile.
-  - MISCHIEVOUS: literal `Chef&rsquo;s` entity visible in introductory text; `cleanText` path doesn't decode named entities.
-  - VIVA LA VIDA: hardcoded fallback intro "Every meal is prepared fresh on board by your charter chef" is invented content, not CYA-sourced.
-  - Chef names present in CYA menu titles but not displayed as a dedicated hierarchy line.
-  - Automated tests lack assertions for empty panels, visible entities, fabricated fallback copy, and genuine post-expansion screenshots.
+- Video hero behavior (especially on mobile) not yet verified in a browser; a compressed version would improve load performance.
+- Live CYA bookings test for ENDLESS HORIZON (yacht ID `69f33df0b5a1600bf785869e`) not yet run — pending deployment to Vercel; diagnostic should report HTTP status, booking count, categories, dates, and calendar mapping.
+- If first yacht returns empty bookings array, additional yacht IDs (up to six) should be tested to confirm genuine booking records.
