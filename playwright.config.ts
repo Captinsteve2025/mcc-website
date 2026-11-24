@@ -17,5 +17,16 @@ export default defineConfig({
     // Chromium-based mobile emulation: a real mobile viewport and touch, without
     // requiring a second browser engine download in constrained environments.
     { name: "mobile", use: { ...devices["Pixel 7"] } },
+    // Real WebKit (Safari engine) for iPhone-width verification — catches
+    // Safari-only layout behaviour Chromium masks. Install with
+    // `npx playwright install webkit`; skipped gracefully when absent.
+    {
+      name: "mobile-webkit",
+      use: {
+        ...devices["iPhone 14"],
+        // WebKit cannot fetch remote CYA images with HTTP credentials off in CI;
+        // defaults are fine here.
+      },
+    },
   ],
 });

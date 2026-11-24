@@ -18,6 +18,11 @@ const YACHTS: Array<{ name: string; id: string }> = [
   { name: "VIVA LA VIDA", id: "69f83a8e8ae166becdd09df5" },
 ];
 
+// Yacht used for the iPhone-width responsive-layout checks (the yacht whose
+// screenshot exposed the mobile overflow defect).
+const RESPONSIVE_YACHT: { name: string; id: string } = { name: "XANDROS", id: process.env.PLAYWRIGHT_XANDROS_ID ?? "" };
+
+
 type Check = { name: string; passed: boolean; detail?: string };
 
 const collected: Array<{ yachtId: string; yachtName: string; viewport: string; checks: Check[]; pageErrors: string[] }> = [];
@@ -163,9 +168,95 @@ for (const yacht of SAMPLE) {
   });
 }
 
+// XANDROS responsive-layout verification: representative iPhone widths in both
+// Chromium and WebKit (project "mobile-webkit" in playwright.config.ts).
+// Checks container/section alignment, calendar sizing and horizontal overflow
+// — the defect class reported from the XANDROS iPhone screenshot.
+test.describe("XANDROS mobile responsive layout", () => {
+  const WIDTHS = [390, 430]; // iPhone 14/15 and 14/15 Pro Max logical widths
+
+  for (const width of WIDTHS) {
+    test(`consistent layout at ${width}px`, async ({ page }, testInfo) => {
+      test.skip(!RESPONSIVE_YACHT.id, "Set PLAYWRIGHT_XANDROS_ID to run the XANDROS responsive checks");
+      const checks: Check[] = [];
+      const errors: string[] = [];
+      const rec = async (name: string, fn: () => Promise<void>) => {
+        try {
+          await fn();
+          checks.push({ name, passed: true });
+        } catch (err) {
+          checks.push({ name, passed: false, detail: err instanceof Error ? err.message.slice(0, 300) : "failed" });
+          throw err;
+        }
+      };
+      page.on("pageerror", (e) => errors.push(`pageerror: ${e.message.slice(0, 200)}`));
+
+      await page.setViewportSize({ width, height: 844 });
+      await page.goto(`${BASE_URL}/charter-yachts/${RESPONSIVE_YACHT.id}`, { waitUntil: "domcontentloaded", timeout: 30_000 });
+
+      await rec("no horizontal overflow", async () => {
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth
+        );
+        expect(overflow, "horizontal overflow px").toBeLessThanOrEqual(1);
+      });
+      await rec("main containers span the viewport consistently", async () => {
+        const boxes = await page.evaluate(() =>
+          Array.from(document.querySelectorAll("main section, main > div")).map((el) => {
+            const rect = el.getBoundingClientRect();
+            return { left: Math.round(rect.left), width: Math.round(rect.width) };
+          })
+        );
+        const pageWidth = await page.evaluate(() => document.documentElement.clientWidth);
+        for (const box of boxes) {
+          expect(box.left, "section left edge never negative (uncontained content)").toBeGreaterThanOrEqual(0);
+          expect(box.left + box.width, "section right edge within viewport").toBeLessThanOrEqual(pageWidth);
+        }
+      });
+      await rec("calendar fits its container", async () => {
+        const cal = page.locator("#availability").locator("..").first();
+        await cal.scrollIntoViewIfNeeded();
+        const calBox = await cal.boundingBox();
+        expect(calBox, "calendar container renders").not.toBeNull();
+        expect(calBox!.width, "calendar width is a full column, not squeezed").toBeGreaterThan(width * 0.6);
+        const grid = page.locator("#availability").locator("..").locator("div.grid.grid-cols-7").first();
+        if (await grid.isVisible()) {
+          const gridBox = await grid.boundingBox();
+          expect(gridBox!.width, "month grid width").toBeLessThanOrEqual(calBox!.width);
+        }
+      });
+      await rec("persistent pricing controls fit the viewport", async () => {
+        const bar = page.locator("div.fixed.inset-x-0.bottom-0").first();
+        await page.locator("#enquire").scrollIntoViewIfNeeded().catch(() => {});
+        const barBox = await bar.boundingBox().catch(() => null);
+        if (barBox) {
+          expect(barBox.x, "persistent bar left edge").toBeGreaterThanOrEqual(0);
+          expect(barBox.x + barBox.width, "persistent bar right edge").toBeLessThanOrEqual(width + 1);
+        }
+      });
+      await rec("navigation is usable at this width", async () => {
+        await expect(page.locator("header").first()).toBeVisible();
+        const headerBox = await page.locator("header").first().boundingBox();
+        expect(headerBox!.width, "header width").toBeLessThanOrEqual(width + 1);
+      });
+
+      await page.screenshot({ path: `test-results/xandros-${width}-${testInfo.project.name}.png`, fullPage: false });
+      await page.screenshot({ path: `test-results/xandros-${width}-${testInfo.project.name}-full.png`, fullPage: true });
+
+      currentErrors.push(...errors);
+      collected.push({
+        yachtId: RESPONSIVE_YACHT.id,
+        yachtName: RESPONSIVE_YACHT.name,
+        viewport: `${testInfo.project.name}-${width}`,
+        checks,
+        pageErrors: errors,
+      });
+    });
+  }
+});
+
 // ENDLESS HORIZON-specific dining requirements (chef intro, five photos).
-test.describe("ENDLESS HORIZON dining specifics", () => {
-  test("chef introduction and five distinct photographs", async ({ page }) => {
+test.describe("ENDLESS HORIZON dining specifics", () => {  test("chef introduction and five distinct photographs", async ({ page }) => {
     const checks: Check[] = [];
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(`pageerror: ${e.message.slice(0, 200)}`));
