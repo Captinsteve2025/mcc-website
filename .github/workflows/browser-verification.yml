@@ -1,12 +1,9 @@
 name: Browser verification
 
-# Runs the Playwright browser checks against the live production site after
-# each deployment and imports the results into /admin/site-health. Results are
-# imported, never executed, by the health monitor itself.
+# Runs Playwright against the configured site on demand and on a schedule.
+# The health monitor imports results from the workflow.
 
 on:
-  # Vercel's GitHub integration finishes the deployment from the push; wait a
-  # fixed window instead of polling an API that needs extra permissions.
   workflow_dispatch:
     inputs:
       full:
@@ -34,20 +31,22 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
+          cache: npm
 
       - name: Install Playwright
         run: |
-          npm install --no-save @playwright/test@1
-          npx playwright install --with-deps chromium
+          npm ci
+          npm exec -- playwright install --with-deps chromium
 
       - name: Run browser checks
-        run: npx playwright test tests/browser-verification.spec.ts
+        run: npm run test:browser:live
 
       - name: Upload report on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report
-          path: playwright-report
+          path: .playwright/live-report
+          include-hidden-files: true
           retention-days: 14

@@ -41,6 +41,12 @@ Two-stage replacement, separate milestone from M5:
 
 ---
 
+### Development stabilization (In progress)
+
+Node 22, the npm lockfile, and the validation workflow define the development baseline. Fixture-based Playwright coverage checks the catalogue-to-detail flow on desktop and mobile, including iPhone WebKit. Live-data verification and production acceptance are pending.
+
+---
+
 ## Standing constraints
 - Never fabricate CYA data; empty or unknown fields render as unknown, never as defaults.
 - Deployment: user syncs to GitHub `mcc-website` `collaborate` branch → Vercel auto-deploy. Never deploy from the sandbox.

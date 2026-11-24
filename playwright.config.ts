@@ -2,12 +2,14 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
+  testMatch: "browser-verification.spec.ts",
   // These pages are very long (hero video streams continuously; 20k+ px of
   // content), so each test needs more than the default budget.
   timeout: 120_000,
   retries: 1,
   fullyParallel: false,
-  reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
+  outputDir: ".playwright/live-results",
+  reporter: [["list"], ["html", { open: "never", outputFolder: ".playwright/live-report" }]],
   use: {
     baseURL: process.env.PLAYWRIGHT_BASE_URL ?? "https://mcc-website-one.vercel.app",
     trace: "retain-on-failure",

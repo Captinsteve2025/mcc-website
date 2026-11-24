@@ -2,12 +2,18 @@
   "name": "mycaribbeancharters",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev -H 0.0.0.0 --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "bunx tsc --noEmit && next lint",
-    "format": "bunx biome format --write"
+    "typecheck": "tsc --noEmit --incremental false",
+    "lint": "eslint src tests playwright*.config.ts",
+    "format": "biome format --write",
+    "test:browser": "playwright test --config=playwright.fixture.config.ts",
+    "test:browser:live": "playwright test tests/browser-verification.spec.ts"
   },
   "dependencies": {
     "@netlify/plugin-nextjs": "^5.16.8",
