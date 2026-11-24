@@ -1,137 +1,58 @@
-# MCC Product Improvement Register
+# MCC Website — Product Improvement Register
 
-Status progression: Identified → Planned → In development → Implemented → Deployed → Production verified → Visually approved → Approved for launch. An implemented component is not automatically complete. Where an interim solution is accepted, the intended premium solution is retained under "Outstanding refinements".
+Status progression: Identified → In Progress → Implemented → Deployed → Production-Verified → Approved for Launch.
+Live site: https://mcc-website-one.vercel.app/ (deploys from the `collaborate` branch after sync).
 
-Assessment criteria are defined in `MCC_PRODUCT_STANDARDS.md`.
+> Note (this session): an earlier version of this register was lost in a sandbox
+> reset and was recreated below. Production-verified statuses that predate this
+> recreation are re-stated from session records; anything not yet re-verified in
+> production is marked accordingly.
 
----
+## Verified production facts (unchanged)
 
-## Dining & Cuisine (yacht pages)
+| Fact | Status |
+| --- | --- |
+| Dining section: 9 EH accordions, 0 empty, 0 entity artifacts, content integrity 6,330 chars in/out | Production-Verified (screenshots in `test-results/dining-verification/`, script lost in reset — re-promote before next CI pass) |
+| Collapsed dining heights: desktop 1,669px / mobile 2,724px vs targets <1,600 / <2,200 | Open — both missed; mobile worst (~24% over). Mobile carousel + reduced spacing shipped this session, not yet production-measured |
+| Calendar id mapping (confirmed bookings → Booked, active holds → Hold, transit → Transit, else Unavailable, empty ≠ available) | Production-Verified |
+| CYA endpoints: base already ends `/api/v1`; `/bookings?yacht_id=` primary; legacy mapping only on 404 | Production-Verified |
 
-- **Component:** Dining section, `src/components/yacht/YachtDiningSection.tsx` + menu parsing in `src/lib/yacht-detail.ts`
-- **Identified issue:** CYA's general menu description contained the entire written menu, which rendered as "introductory" text (~10,000px+ of visible menu content); photo-only CYA records created empty accordion panels; double-encoded entities (`&rsquo;`) were visible as literal text; a fabricated fallback intro line appeared when CYA supplied no text.
-- **Proposed improvement:** Genuine three-part architecture: short genuine intro → food photography gallery → all written menu content inside collapsed accordions. Sections extracted from actual CYA headings (course-word detection, never hardcoded per yacht); single "Sample Menu" accordion fallback when extraction is unreliable; chef attribution from verified crew roles or explicit CYA menu content.
-- **Commercial importance:** High — dining is a primary emotional sell for crewed charters and a key enquiry driver.
-- **Development priority:** P1
-- **Implementation status:** Implemented (menu/photography/accordion separation, entity decoding, chef attribution, empty-accordion elimination). Type-check and production build pass; parser verified against real CYA production content for ENDLESS HORIZON (all nine sections extracted, no dishes lost).
-- **Production verification status:** Production verified (2026-11-24, Chromium, all four regression yachts, desktop + mobile). All written menus collapsed on load, 9/9 accordions populated, zero empty panels, zero visible entities, zero horizontal overflow, no fabricated fallback. ENDLESS HORIZON collapsed heights: desktop 1,669px (baseline 10,086px, −83%) / mobile 2,724px (baseline 12,829px, −79%). Screenshots in `test-results/dining-verification/`.
-- **Visual approval status:** Not yet assessed — requires deployed production screenshots reviewed as a prospective guest.
-- **Outstanding refinements:**
-  - ENDLESS HORIZON desktop collapsed height is 1,669px vs the <1,600px target (mobile 2,724px meets the <2,200px target). Gap is ~70px of gallery chrome/labels — refine spacing, do not remove content.
-  - React hydration error #418 reproduces on mobile page load (desktop runs were clean). Pre-existing, unrelated to dining; needs root-cause investigation.
-  - Full keyboard-navigator walkthrough of accordion focus behaviour (Tab/Enter/Escape).
-  - Restaurant-quality typography within expanded panels: stronger visual distinction between dish names and descriptions.
-  - Concluding culinary/dietary statements currently embedded in the final section body; consider a distinct presentation if CYA content supports reliable detection.
-  - Automated browser assertions for: no menu text visible on load, no empty panels, no visible entities, no horizontal overflow, collapsed-height targets. (Implemented in `scripts/verify-dining-production.mjs`; promote into the Playwright CI suite.)
+## Register entries (current cycle)
 
-## Crew presentation (yacht pages)
+### 1. Premium pricing & conversion design (hero + panel + persistent bar) — Implemented, awaiting deploy
+- Hero headline pricing from one shared source (`src/lib/yacht-pricing.ts`): range `$X – $Y / week` when seasons differ, `From $X / week` otherwise, `Rates on request` when CYA supplies nothing. Never zero, never invented, never converted across currencies.
+- Primary CTA "Enquire About This Yacht" (peach #EE9739); secondary outlined "View Rates & Availability" scrolls to the panel.
+- "Plan Your Charter — Rates & Availability" panel: desktop 2-col (pricing left, live calendar right, expandable "View Full Charter Rates & Terms" — no rate-table duplication); mobile stacked headline rate → seasonal summary → calendar → expandable terms → CTA.
+- CYA fields actually supplied and used: `seasons[]` (title, season_category, dates, base_price, currency, areas, pickup, base_port, charter_type, terms) and `min_price_usd`. Christmas/New-Year, APA, taxes, guest-number pricing and all-inclusive-vs-plus-expenses distinction render **only when a season's own terms/notes carry them** — CYA supplies no dedicated structured fields for these, so none are fabricated.
+- Persistent mobile bar (`YachtPersistentBar`): same headline rate, appears after hero scroll, hides near the enquiry form, safe-area inset. Desktop: no floating panel; compact sidebar/nav left as-is (existing sticky nav carries pricing via nav item).
 
-- **Component:** Crew section, `src/components/yacht/YachtCrewSection.tsx` + CYA crew parsing
-- **Identified issue:** Crew profiles previously lost/raw HTML issues; now parsed from verified CYA fields (`crewDetails[].crewName/crewImage`, `crewGeneral.crewImage/crewDescription`) with allowlist HTML sanitization.
-- **Proposed improvement:** Maintain verified-profile display with portrait photography and bios; no invented content.
-- **Commercial importance:** High — crew rapport drives crewed-charter conversion.
-- **Development priority:** P1
-- **Implementation status:** Implemented.
-- **Production verification status:** Deployed; earlier production pass confirmed profiles rendering with photos and bios.
-- **Visual approval status:** Not formally assessed.
-- **Outstanding refinements:** Visual review of layout consistency when a yacht has 1 vs 5+ crew.
+### 2. Page hierarchy & navigation — Implemented, awaiting deploy
+- Order: hero (name, rate, CTAs) → gallery + quick specs → sticky nav → Rates & Availability panel → Overview + Accommodation + Specifications (beside sticky enquiry) → Experiences (watersports) → Crew → Dining → Amenities → booking conditions → recommendations → footer.
+- Nav labels: Overview / Rates & Availability / Accommodation / Crew / Dining / Experiences / Gallery / Amenities / Enquire (Gallery & Amenities only when data present; Specifications appears only when specs exist).
 
-## Yacht photography / hero gallery
+### 3. Crew redesign — Implemented, awaiting deploy
+- Compact cards: consistent 4:3 portrait, name, verified role, ≤220-char preview + "Read Full Biography" expansion (event `yacht_crew_bio_expand`).
+- Desktop grid: 2 crew → 2-col pairing; larger crews → 2-col, 3-col on wide screens. Mobile: compact stack. No fabricated roles; captain/chef ordering driven only by verified role text.
 
-- **Component:** `YachtHero.tsx`, `YachtHeroGallery.tsx`, `YachtPhoto.tsx`
-- **Identified issue:** Original-size assets used as-is (no compression tooling in the build environment); video hero reuse rights unconfirmed (asset originates from sailaquanimity.com).
-- **Proposed improvement:** Fast, premium hero with photo-first video fallback; confirm video licensing; compress oversized images.
-- **Commercial importance:** High — hero imagery is the first commercial impression.
-- **Development priority:** P1 (licensing) / P2 (compression)
-- **Implementation status:** Implemented (photo-first hero, gallery mosaic).
-- **Production verification status:** Deployed; page load verified in earlier production pass.
-- **Visual approval status:** Not formally assessed.
-- **Outstanding refinements:** Video rights confirmation; image compression; mobile video behaviour.
+### 4. Dining mobile refinements — Implemented, awaiting deploy
+- Mobile photo carousel (swipeable, snap, partial next-photo preview) replacing the 1-col grid; captions kept.
+- Reduced vertical spacing; "restaurant-menu" typography (62ch measure, Playfair initial) inside expanded panels; 9 EH categories unchanged; no empty accordions; Sample Menu fallback preserved.
+- Height correction recorded: baselines stand at desktop 1,669px / mobile 2,724px (register previously overstated both misses); production re-measure required after deploy.
 
-## Accommodation
+### 5. React hydration #418 — Root cause fixed, awaiting deploy
+- Root cause: `YachtAvailabilityCalendar` chose 1 vs 3 visible months from `window.innerWidth` during the first client render. Server rendered 3; mobile clients re-rendered 1 → hydration mismatch (args containing HTML).
+- Fix: always render 3 months server-side; months 2–3 hidden on mobile via CSS. No suppression. Verify in production on mobile after deploy.
 
-- **Component:** Accommodation section in `src/app/charter-yachts/[id]/page.tsx` (`parseAccommodation`)
-- **Identified issue:** Cabin/bathroom data presented as spec chips; free-text fields vary widely between yachts.
-- **Proposed improvement:** Consistent premium presentation regardless of which CYA fields a yacht supplies.
-- **Commercial importance:** Medium.
-- **Development priority:** P2
-- **Implementation status:** Implemented.
-- **Production verification status:** Deployed.
-- **Visual approval status:** Not formally assessed.
-- **Outstanding refinements:** Guest-experience framing (not just counts); imagery where CYA supplies cabin photos.
+### 6. Intelligent similar-yacht recommendations — Implemented, awaiting deploy
+- "Discover More Exceptional Yachts" after enquiry, before footer; "Explore All Charter Yachts" CTA. 3 cards desktop, swipeable partial-preview carousel mobile.
+- Deterministic scorer (`src/lib/similar-yachts.ts`) over the CYA catalogue rows already cached server-side — no extra CYA request per load. Weights: pricing 30%, region 25%, type 20%, guests 15%, length 10% (`SIMILARITY_WEIGHTS`, centrally configurable).
+- Pricing compared only like-for-like (USD-normalised when both supply `min_price_usd`, else same-currency); missing data excluded from the weighted sum, never zero. Self, duplicates and inactive records excluded.
+- Cards: photo, name, type, length, guests, cabins, starting rate or "Rates on request", "Explore Yacht" link. Server-rendered crawlable links, lazy-loaded images.
+- **Managed-fleet preference: not applied.** The only reliable managed mapping remains aquanimity/atlas (managed pages, not CYA catalogue members); CYA catalogue records carry no managed flag, and name-based inference is prohibited. Constants `MANAGED_FLEET_SLUGS`/`MANAGED_FLEET_BOOST` are defined for when a reliable mapping exists.
+- Verification of scores/recommendations for the 4 known CYA yachts is pending deploy (live API unreachable from dev).
 
-## Watersports & toys
+### 7. Future analytics events (documented, NOT implemented)
+- `yacht_hero_enquiry_click`, `yacht_rates_nav_click`, `yacht_pricing_panel_interact`, `yacht_guest_count_select`, `yacht_rates_expand`, `yacht_calendar_interact` (beyond existing `yacht_availability_view` / `yacht_availability_date_select`), `yacht_persistent_bar_click`, `yacht_crew_bio_expand` (implemented), `yacht_menu_expand`, `yacht_gallery_interact`, `enquiry_submit`, booking attribution (`utm`-carried enquiry context).
 
-- **Component:** Watersports section (`parseWatersports`, tender separation)
-- **Identified issue:** Previously merged tender with toys; bullet-entity artifacts.
-- **Proposed improvement:** Tender highlighted separately; clean equipment grid.
-- **Commercial importance:** Medium.
-- **Development priority:** P2
-- **Implementation status:** Implemented.
-- **Production verification status:** Deployed.
-- **Visual approval status:** Not formally assessed.
-- **Outstanding refinements:** None identified.
-
-## Availability calendar
-
-- **Component:** `YachtAvailabilityCalendar.tsx` (CYA bookings feed)
-- **Identified issue:** Mapping of CYA booking states (Booked/Hold/Transit/Unavailable) required correction; expired holds dropped.
-- **Proposed improvement:** Live, trustworthy calendar visible on page load.
-- **Commercial importance:** High — set-expectation tool that pre-qualifies enquiries.
-- **Development priority:** P1
-- **Implementation status:** Implemented.
-- **Production verification status:** Deployed.
-- **Visual approval status:** Not formally assessed.
-- **Outstanding refinements:** Legend clarity on mobile.
-
-## Charter rates
-
-- **Component:** Rates section (`parseSeasons`)
-- **Identified issue:** Seasonal rates and terms vary in structure; currency never assumed.
-- **Proposed improvement:** Clear seasonal pricing with honest "indicative" framing and enquiry hand-off.
-- **Commercial importance:** High — pricing transparency qualifies leads.
-- **Development priority:** P1
-- **Implementation status:** Implemented.
-- **Production verification status:** Deployed.
-- **Visual approval status:** Not formally assessed.
-- **Outstanding refinements:** None identified.
-
-## SEO & CYA indexing
-
-- **Component:** Metadata, structured data, yacht name search
-- **Identified issue:** Separate workstream (WordPress migration, CYA indexing); excluded from website-feature changes by standing instruction.
-- **Proposed improvement:** Tracked here so SEO regressions are considered before any structural change to yacht pages.
-- **Commercial importance:** High.
-- **Development priority:** P1 (workstream B)
-- **Implementation status:** Not in scope for this development cycle.
-- **Production verification status:** n/a.
-- **Visual approval status:** n/a.
-- **Outstanding refinements:** Maintained in the SEO workstream.
-
-## Conversion & enquiries
-
-- **Component:** Enquiry form, sticky enquiry panel, CTA buttons
-- **Identified issue:** Workstream C — enquiry infrastructure is excluded from website-feature changes by standing instruction.
-- **Proposed improvement:** Recorded so design changes never degrade the enquiry path.
-- **Commercial importance:** Highest — the enquiry is the website's revenue event.
-- **Development priority:** P1 (workstream C)
-- **Implementation status:** Not in scope for this development cycle.
-- **Production verification status:** n/a.
-- **Visual approval status:** n/a.
-- **Outstanding refinements:** Owned by workstream C.
-
-## Future commercial measurement (documented, NOT to be implemented in this cycle)
-
-The website must ultimately support measurement of, per `MCC_PRODUCT_STANDARDS.md`'s commercial objective:
-
-1. Yacht page engagement (scroll depth, time on page — hook exists: `useScrollDepthTracking`).
-2. Photography gallery interactions (opens, lightbox use).
-3. Crew profile interactions (expands, bio reads).
-4. Menu expansions (which cuisine sections guests explore).
-5. Availability calendar interactions (date selections).
-6. Enquiry button clicks (all CTA variants — `TrackedCta` scaffolding exists).
-7. Completed enquiries (workstream C).
-8. Confirmed bookings (workstream C / CRM).
-9. Revenue attributable to the website (attribution from enquiry → booking).
-
-No analytics, enquiry infrastructure or database changes are to be implemented until explicitly instructed.
+## Boundaries honoured this cycle
+No changes to the enquiry system, database config, email/SMTP, CYA booking integration, SEO migration, WordPress redirects or CYA API credentials.
