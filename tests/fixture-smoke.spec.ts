@@ -41,6 +41,28 @@ test("returns 404 for a yacht outside the fixture catalogue", async ({ page }) =
   expect(response?.status()).toBe(404);
 });
 
+test("shows at most three comparable yachts and carries the party's search", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  const yachtUrl = "/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa";
+  await page.goto(yachtUrl);
+  const recommendations = page.getByRole("region", { name: "Similar Yachts" });
+  await expect(recommendations.getByRole("heading", { level: 3 })).toHaveText([
+    "Closest Match", "Second Match", "Third Match",
+  ]);
+  await expect(recommendations.getByText("Shared cruising area: British Virgin Islands")).toHaveCount(3);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
+
+  await page.goto(`${yachtUrl}?guests=10&start=2027-02-01`);
+  await expect(recommendations.getByRole("heading", { level: 3 })).toHaveText(["Broader Match"]);
+  await expect(recommendations.getByText("Broader alternative", { exact: true })).toBeVisible();
+  await expect(recommendations.getByRole("link")).toHaveAttribute(
+    "href", "/charter-yachts/222222222222222222222222?start=2027-02-01&guests=10",
+  );
+
+  await page.goto(`${yachtUrl}?guests=12`);
+  await expect(recommendations).toHaveCount(0);
+});
+
 test("fits yacht brochure text and the training link at 320 pixels", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");

@@ -49,6 +49,10 @@ Node 22, the npm lockfile, and the validation workflow define the development ba
 
 Reproduced horizontal overflow on the live ENDLESS HORIZON, MISCHIEVOUS, and OHANA pages and on the training page at 320 px. The yacht brochure now has a bounded mobile column and permits long source text to wrap. The training link can wrap within its card. Production verification is pending.
 
+### Similar yachts on catalogue detail pages (Implemented)
+
+Each CYA yacht detail page ranks up to three alternatives. The matcher preserves the published yacht category, requires a shared cruising region and sufficient capacity, and compares like-currency weekly base rates. When CYA publishes differently named pricing arrangements on both listings, the match is excluded. The closest matches use a 25% price and length band. Clearly labeled broader alternatives may fill available places within a 40% band. An empty result hides the section. Production and commercial acceptance are pending.
+
 ---
 
 ## Standing constraints

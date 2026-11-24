@@ -107,17 +107,17 @@ export default async function YachtDetailPage({
 
   if (!yacht) notFound();
 
-  const [managedCrew, availability] = await Promise.all([getYachtCrew(id), getYachtAvailability(id)]);
-
-  // Recommendations source: the complete live catalogue, walked page by page
-  // through the shared Next fetch cache — no extra CYA request is attributable
-  // to the recommendations section itself. A failure degrades to no section.
-  let candidates: YachtCandidate[] = [];
-  try {
-    candidates = candidatesFromCatalogue(await fetchFullCatalogue());
-  } catch {
-    candidates = [];
-  }
+  const subject = subjectFromDetail(yacht, id);
+  const partySize = /^\d{1,3}$/.test(one("guests")) ? Number(one("guests")) : 0;
+  if (partySize > 0) subject.guests = partySize;
+  const candidates = subject.class && subject.lengthFt && subject.guests && subject.regions.length > 0
+    ? fetchFullCatalogue().then(candidatesFromCatalogue).catch((): YachtCandidate[] => [])
+    : Promise.resolve([] as YachtCandidate[]);
+  const [managedCrew, availability, catalogue] = await Promise.all([
+    getYachtCrew(id),
+    getYachtAvailability(id),
+    candidates,
+  ]);
   // Crew: admin-approved profiles first, then crew CYA supplies in the detail
   // record. When neither source has crew, the section is skipped — and the
   // missing-fields note below distinguishes "no crew published" from a
@@ -212,7 +212,12 @@ export default async function YachtDetailPage({
   // Two-stage similar-yacht engine: Stage-1 eligibility over the full
   // catalogue, then Stage-2 ranking with a controlled fallback tier. When the
   // catalogue is unavailable the section is skipped rather than degraded.
-  const recommendation = recommendSimilarYachts(subjectFromDetail(yacht), candidates);
+  const recommendation = recommendSimilarYachts(subject, catalogue);
+  const recommendationQuery = new URLSearchParams();
+  for (const key of ["destination", "start", "end", "guests"]) {
+    const value = one(key);
+    if (value) recommendationQuery.set(key, value);
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8f7f4]">
@@ -490,12 +495,11 @@ export default async function YachtDetailPage({
 
         {/* --- Discover More: deterministic similar-yacht recommendations,
             after the enquiry section, before the footer --- */}
-        <div className="container mx-auto px-4 pb-24">
-          <YachtRecommendations
-            strictMatches={recommendation.strictMatches}
-            broaderMatches={recommendation.broaderMatches}
-          />
-        </div>
+        <YachtRecommendations
+          strictMatches={recommendation.strictMatches}
+          broaderMatches={recommendation.broaderMatches}
+          searchQuery={recommendationQuery.toString()}
+        />
       </main>
 
       <Footer />

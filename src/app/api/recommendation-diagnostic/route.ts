@@ -40,7 +40,7 @@ export async function GET(request: Request) {
 
   try {
     const [detail, catalogue] = await Promise.all([getYachtDetail(yachtId), fetchFullCatalogue()]);
-    const subject = subjectFromDetail(detail);
+    const subject = subjectFromDetail(detail, yachtId);
     const result = recommendSimilarYachts(subject, candidatesFromCatalogue(catalogue));
 
     const byRule: Record<string, number> = {};
@@ -53,8 +53,8 @@ export async function GET(request: Request) {
       lengthFt: m.candidate.lengthFt !== null ? Math.round(m.candidate.lengthFt * 10) / 10 : null,
       guests: m.candidate.guests,
       cabins: m.candidate.cabins,
-      weeklyRate: m.candidate.minPriceUsd ?? m.candidate.minPrice,
-      currency: m.candidate.minPriceUsd !== null ? "USD" : m.candidate.currency,
+      weeklyRate: m.weeklyRate.amount,
+      currency: m.weeklyRate.currency,
       regions: m.candidate.regions,
       regionMatches: m.regionMatches,
       managedFleet: m.candidate.managedFleet,
