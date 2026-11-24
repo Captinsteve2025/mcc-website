@@ -26,7 +26,14 @@ import { YachtCrewSection } from "@/components/yacht/YachtCrewSection";
 import { YachtDiningSection } from "@/components/yacht/YachtDiningSection";
 import { YachtCtaButtons } from "@/components/yacht/YachtCtaButtons";
 import { YachtRecommendations } from "@/components/yacht/YachtRecommendations";
-import { getYachtDetail, searchYachts, yachtSeasonAreaNames, type Yacht as CyaCatalogueYacht } from "@/lib/cya";
+import { getYachtDetail } from "@/lib/cya";
+import {
+  candidatesFromCatalogue,
+  fetchFullCatalogue,
+  recommendSimilarYachts,
+  subjectFromDetail,
+  type YachtCandidate,
+} from "@/lib/similar-yachts";
 import { getYachtCrew, getYachtAvailability, mergeCrewProfiles } from "@/lib/yacht-content";
 import {
   beamWithUnit,
@@ -102,15 +109,14 @@ export default async function YachtDetailPage({
 
   const [managedCrew, availability] = await Promise.all([getYachtCrew(id), getYachtAvailability(id)]);
 
-  // Recommendations source: one page of the live catalogue, served from the
-  // shared Next fetch cache — no extra CYA request is attributable to the
-  // recommendations section itself. A failure degrades to no section.
-  let catalogue: CyaCatalogueYacht[] = [];
+  // Recommendations source: the complete live catalogue, walked page by page
+  // through the shared Next fetch cache — no extra CYA request is attributable
+  // to the recommendations section itself. A failure degrades to no section.
+  let candidates: YachtCandidate[] = [];
   try {
-    const response = await searchYachts({ page: 1, limit: 100, searchTerm: "", filters: {} });
-    catalogue = (response.yachts as CyaCatalogueYacht[] | undefined) ?? [];
+    candidates = candidatesFromCatalogue(await fetchFullCatalogue());
   } catch {
-    catalogue = [];
+    candidates = [];
   }
   // Crew: admin-approved profiles first, then crew CYA supplies in the detail
   // record. When neither source has crew, the section is skipped — and the
@@ -202,6 +208,11 @@ export default async function YachtDetailPage({
   tabs.push({ id: "enquire", label: "Enquire" });
 
   const slug = `cya-${id.slice(0, 12)}`;
+
+  // Two-stage similar-yacht engine: Stage-1 eligibility over the full
+  // catalogue, then Stage-2 ranking with a controlled fallback tier. When the
+  // catalogue is unavailable the section is skipped rather than degraded.
+  const recommendation = recommendSimilarYachts(subjectFromDetail(yacht), candidates);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8f7f4]">
@@ -481,20 +492,8 @@ export default async function YachtDetailPage({
             after the enquiry section, before the footer --- */}
         <div className="container mx-auto px-4 pb-24">
           <YachtRecommendations
-            subject={{
-              id,
-              type: yachtType,
-              length: length ? length.value : null,
-              guests: accommodation.pax,
-              minPrice: pricing.minPrice,
-              currency: pricing.currency,
-              minPriceUsd: minUsd,
-              areas: seasons
-                .map((s) => s.area)
-                .filter((a): a is string => Boolean(a))
-                .flatMap((a) => a.split(", ")),
-            }}
-            catalogue={catalogue}
+            strictMatches={recommendation.strictMatches}
+            broaderMatches={recommendation.broaderMatches}
           />
         </div>
       </main>

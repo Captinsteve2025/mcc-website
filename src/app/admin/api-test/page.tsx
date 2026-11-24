@@ -157,6 +157,9 @@ export default function AdminApiTestPage() {
   const [diningYachtId, setDiningYachtId] = useState(PRESET_YACHTS[0].id);
   const [diningResult, setDiningResult] = useState<DiningResult | null>(null);
   const [diningLoading, setDiningLoading] = useState(false);
+  const [recYachtId, setRecYachtId] = useState(PRESET_YACHTS[0].id);
+  const [recResult, setRecResult] = useState<TestResult | null>(null);
+  const [recLoading, setRecLoading] = useState(false);
 
   async function runTest(e: React.FormEvent) {
     e.preventDefault();
@@ -242,6 +245,23 @@ export default function AdminApiTestPage() {
       setError("The request to this website's server failed. Check your connection and try again.");
     } finally {
       setDiningLoading(false);
+    }
+  }
+
+  async function runRecommendations(yachtId: string) {
+    setRecLoading(true);
+    setError(null);
+    setRecResult(null);
+    try {
+      const response = await fetch(`/api/recommendation-diagnostic?yacht_id=${encodeURIComponent(yachtId)}`, {
+        headers: { "x-admin-token": token },
+      });
+      const body = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      setRecResult({ status: response.status, ok: response.ok, body });
+    } catch {
+      setError("The request to this website's server failed. Check your connection and try again.");
+    } finally {
+      setRecLoading(false);
     }
   }
 
@@ -398,6 +418,67 @@ export default function AdminApiTestPage() {
               </p>
             ) : (
               <CrewReport body={crewResult.body} />
+            )}
+          </div>
+        )}
+      </section>
+
+      <section className="mb-8 rounded-lg border border-[#061625]/10 bg-white p-6">
+        <h2 className="mb-1 font-display text-lg italic text-[#061625]">Similar-yacht recommendation tester</h2>
+        <p className="mb-4 text-sm leading-relaxed text-[#061625]/70">
+          Runs the two-stage recommendation engine for one reference yacht: the derived reference profile
+          (class, unit-normalised length, guests, cabins, published pricing, seasonal regions), how many
+          catalogue records were considered, exclusions grouped by rule, the eligible set, and the ranked
+          strict and broader matches with per-factor scores. Reuses the shared cached catalogue — no extra
+          CYA requests beyond the detail record.
+        </p>
+        <div className="mb-4 flex flex-wrap gap-2">
+          {PRESET_YACHTS.map((y) => (
+            <button
+              key={y.id}
+              type="button"
+              onClick={() => setRecYachtId(y.id)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                recYachtId === y.id
+                  ? "border-[#EE9739] bg-[#EE9739]/15 text-[#061625]"
+                  : "border-[#061625]/20 text-[#061625]/70 hover:bg-[#061625]/5"
+              }`}
+            >
+              {y.name}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            type="text"
+            value={recYachtId}
+            onChange={(e) => setRecYachtId(e.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            className="w-full rounded-md border border-[#061625]/20 bg-white px-4 py-3 font-mono text-sm text-[#061625] focus:outline-none focus:ring-2 focus:ring-[#EE9739]"
+            placeholder="CYA yacht id"
+          />
+          <button
+            type="button"
+            disabled={recLoading || !token || !recYachtId.trim()}
+            onClick={() => runRecommendations(recYachtId.trim())}
+            className="shrink-0 rounded-full bg-[#EE9739] px-6 py-3 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {recLoading ? "Testing…" : "Test Recommendations"}
+          </button>
+        </div>
+
+        {recResult && (
+          <div className="mt-5" aria-live="polite">
+            {!recResult.ok ? (
+              <p className="rounded-md bg-red-50 px-4 py-3 text-sm text-red-700">
+                Recommendation tester request failed (server response {recResult.status}).
+                {typeof recResult.body.error === "string" ? ` ${recResult.body.error}` : ""}
+              </p>
+            ) : (
+              <pre className="max-h-[32rem] overflow-auto rounded-md bg-[#061625]/5 p-4 text-xs leading-relaxed text-[#061625]">
+                {JSON.stringify(recResult.body, null, 2)}
+              </pre>
             )}
           </div>
         )}
