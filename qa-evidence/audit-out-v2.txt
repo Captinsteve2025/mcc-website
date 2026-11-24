@@ -1,0 +1,880 @@
+done: endless-horizon desktop
+done: endless-horizon mobile
+done: mischievous desktop
+done: mischievous mobile
+done: ohana desktop
+done: ohana mobile
+done: viva-la-vida desktop
+done: viva-la-vida mobile
+
+===AUDIT_JSON===
+[
+ {
+  "yacht": "endless-horizon",
+  "viewport": "desktop",
+  "url": "https://mcc-website-one.vercel.app/charter-yachts/69f33df0b5a1600bf785869e",
+  "diningPresent": true,
+  "measurements": {
+   "headings": [
+    {
+     "tag": "h2",
+     "text": "Dining & Cuisine"
+    },
+    {
+     "tag": "h3",
+     "text": "Sample Menus"
+    },
+    {
+     "tag": "h3",
+     "text": "Breads"
+    },
+    {
+     "tag": "h3",
+     "text": "Mains"
+    },
+    {
+     "tag": "h3",
+     "text": "Starters"
+    },
+    {
+     "tag": "h3",
+     "text": "Pasta"
+    },
+    {
+     "tag": "h3",
+     "text": "Plated Desserts"
+    },
+    {
+     "tag": "h3",
+     "text": "Cakes"
+    }
+   ],
+   "labelFound": true,
+   "labelText": "The Culinary Experience",
+   "labelColor": "rgb(238, 151, 57)",
+   "labelUppercase": "uppercase",
+   "chefLineText": null,
+   "introSample": null,
+   "imgCount": 5,
+   "distinctImgCount": 5,
+   "captionsSample": [
+    "Breads",
+    "Mains",
+    "Starters",
+    "Pasta"
+   ],
+   "literalTags": [],
+   "emptyCards": 0,
+   "accordions": [
+    {
+     "label": "Breads",
+     "expanded": false,
+     "controls": "menu-panel-0"
+    },
+    {
+     "label": "Mains",
+     "expanded": false,
+     "controls": "menu-panel-1"
+    },
+    {
+     "label": "Starters",
+     "expanded": false,
+     "controls": "menu-panel-2"
+    },
+    {
+     "label": "Pasta",
+     "expanded": false,
+     "controls": "menu-panel-3"
+    },
+    {
+     "label": "Plated Desserts",
+     "expanded": false,
+     "controls": "menu-panel-4"
+    },
+    {
+     "label": "Cakes",
+     "expanded": false,
+     "controls": "menu-panel-5"
+    }
+   ],
+   "viewAllText": null,
+   "darkPanelFound": true,
+   "bodyFontProbe": {
+    "size": "16px",
+    "lh": "25.6px"
+   },
+   "sectionHeightPx": 10085.640625,
+   "pageOverflowX": 0
+  },
+  "lightbox": {
+   "opened": true,
+   "screenshot": "endless-horizon-desktop-lightbox.png"
+  },
+  "accordionInteraction": {
+   "buttonsTotal": 6,
+   "openLabels": []
+  },
+  "afterExpand": {
+   "buttonsTotal": 6,
+   "openAfterClicks": 0,
+   "panelTexts": [],
+   "hOverflow": 0,
+   "hShift": null
+  },
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "yacht": "endless-horizon",
+  "viewport": "mobile",
+  "url": "https://mcc-website-one.vercel.app/charter-yachts/69f33df0b5a1600bf785869e",
+  "diningPresent": true,
+  "measurements": {
+   "headings": [
+    {
+     "tag": "h2",
+     "text": "Dining & Cuisine"
+    },
+    {
+     "tag": "h3",
+     "text": "Sample Menus"
+    },
+    {
+     "tag": "h3",
+     "text": "Breads"
+    },
+    {
+     "tag": "h3",
+     "text": "Mains"
+    },
+    {
+     "tag": "h3",
+     "text": "Starters"
+    },
+    {
+     "tag": "h3",
+     "text": "Pasta"
+    },
+    {
+     "tag": "h3",
+     "text": "Plated Desserts"
+    },
+    {
+     "tag": "h3",
+     "text": "Cakes"
+    }
+   ],
+   "labelFound": true,
+   "labelText": "The Culinary Experience",
+   "labelColor": "rgb(238, 151, 57)",
+   "labelUppercase": "uppercase",
+   "chefLineText": null,
+   "introSample": null,
+   "imgCount": 5,
+   "distinctImgCount": 5,
+   "captionsSample": [
+    "Breads",
+    "Mains",
+    "Starters",
+    "Pasta"
+   ],
+   "literalTags": [],
+   "emptyCards": 0,
+   "accordions": [
+    {
+     "label": "Breads",
+     "expanded": false,
+     "controls": "menu-panel-0"
+    },
+    {
+     "label": "Mains",
+     "expanded": false,
+     "controls": "menu-panel-1"
+    },
+    {
+     "label": "Starters",
+     "expanded": false,
+     "controls": "menu-panel-2"
+    },
+    {
+     "label": "Pasta",
+     "expanded": false,
+     "controls": "menu-panel-3"
+    },
+    {
+     "label": "Plated Desserts",
+     "expanded": false,
+     "controls": "menu-panel-4"
+    },
+    {
+     "label": "Cakes",
+     "expanded": false,
+     "controls": "menu-panel-5"
+    }
+   ],
+   "viewAllText": null,
+   "darkPanelFound": true,
+   "bodyFontProbe": {
+    "size": "16px",
+    "lh": "25.6px"
+   },
+   "sectionHeightPx": 12829.4375,
+   "pageOverflowX": 0
+  },
+  "lightbox": {
+   "opened": true,
+   "screenshot": "endless-horizon-mobile-lightbox.png"
+  },
+  "accordionInteraction": {
+   "buttonsTotal": 6,
+   "openLabels": []
+  },
+  "afterExpand": {
+   "buttonsTotal": 6,
+   "openAfterClicks": 0,
+   "panelTexts": [],
+   "hOverflow": 0,
+   "hShift": null
+  },
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "yacht": "mischievous",
+  "viewport": "desktop",
+  "url": "https://mcc-website-one.vercel.app/charter-yachts/69f33df2b5a1600bf78586a2",
+  "diningPresent": true,
+  "measurements": {
+   "headings": [
+    {
+     "tag": "h2",
+     "text": "Dining & Cuisine"
+    },
+    {
+     "tag": "h3",
+     "text": "Sample Menus"
+    },
+    {
+     "tag": "h3",
+     "text": "Cheesecake Soufflé"
+    },
+    {
+     "tag": "h3",
+     "text": "Salads"
+    },
+    {
+     "tag": "h3",
+     "text": "Tuna Tataki"
+    },
+    {
+     "tag": "h3",
+     "text": "Easter Brunch"
+    },
+    {
+     "tag": "h3",
+     "text": "Beef Filet"
+    },
+    {
+     "tag": "h3",
+     "text": "Ice Cream Cones"
+    },
+    {
+     "tag": "h3",
+     "text": "Cannoli"
+    },
+    {
+     "tag": "h3",
+     "text": "Dessert"
+    }
+   ],
+   "labelFound": true,
+   "labelText": "The Culinary Experience",
+   "labelColor": "rgb(238, 151, 57)",
+   "labelUppercase": "uppercase",
+   "chefLineText": null,
+   "introSample": "Chef Niki's Sample Menu Breakfast Chef&rsquo;s boat baked granola with Greek yoghurt Eggs Royale Eggs Benedict Caribbean toast, crispy bacon maple syrup, and fr",
+   "imgCount": 6,
+   "distinctImgCount": 6,
+   "captionsSample": [
+    "Cheesecake Soufflé",
+    "Salads",
+    "Tuna Tataki",
+    "Easter Brunch"
+   ],
+   "literalTags": [],
+   "emptyCards": 0,
+   "accordions": [
+    {
+     "label": "Cheesecake Soufflé",
+     "expanded": false,
+     "controls": "menu-panel-0"
+    },
+    {
+     "label": "Salads",
+     "expanded": false,
+     "controls": "menu-panel-1"
+    },
+    {
+     "label": "Tuna Tataki",
+     "expanded": false,
+     "controls": "menu-panel-2"
+    },
+    {
+     "label": "Easter Brunch",
+     "expanded": false,
+     "controls": "menu-panel-3"
+    },
+    {
+     "label": "Beef Filet",
+     "expanded": false,
+     "controls": "menu-panel-4"
+    },
+    {
+     "label": "Ice Cream Cones",
+     "expanded": false,
+     "controls": "menu-panel-5"
+    },
+    {
+     "label": "Cannoli",
+     "expanded": false,
+     "controls": "menu-panel-6"
+    },
+    {
+     "label": "Dessert",
+     "expanded": false,
+     "controls": "menu-panel-7"
+    }
+   ],
+   "viewAllText": "View All Food Photos (9)",
+   "darkPanelFound": true,
+   "bodyFontProbe": {
+    "size": "16px",
+    "lh": "25.6px"
+   },
+   "sectionHeightPx": 3363.75,
+   "pageOverflowX": 0
+  },
+  "lightbox": {
+   "opened": true,
+   "screenshot": "mischievous-desktop-lightbox.png"
+  },
+  "accordionInteraction": {
+   "buttonsTotal": 8,
+   "openLabels": []
+  },
+  "afterExpand": {
+   "buttonsTotal": 8,
+   "openAfterClicks": 0,
+   "panelTexts": [],
+   "hOverflow": 0,
+   "hShift": null
+  },
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "yacht": "mischievous",
+  "viewport": "mobile",
+  "url": "https://mcc-website-one.vercel.app/charter-yachts/69f33df2b5a1600bf78586a2",
+  "diningPresent": true,
+  "measurements": {
+   "headings": [
+    {
+     "tag": "h2",
+     "text": "Dining & Cuisine"
+    },
+    {
+     "tag": "h3",
+     "text": "Sample Menus"
+    },
+    {
+     "tag": "h3",
+     "text": "Cheesecake Soufflé"
+    },
+    {
+     "tag": "h3",
+     "text": "Salads"
+    },
+    {
+     "tag": "h3",
+     "text": "Tuna Tataki"
+    },
+    {
+     "tag": "h3",
+     "text": "Easter Brunch"
+    },
+    {
+     "tag": "h3",
+     "text": "Beef Filet"
+    },
+    {
+     "tag": "h3",
+     "text": "Ice Cream Cones"
+    },
+    {
+     "tag": "h3",
+     "text": "Cannoli"
+    },
+    {
+     "tag": "h3",
+     "text": "Dessert"
+    }
+   ],
+   "labelFound": true,
+   "labelText": "The Culinary Experience",
+   "labelColor": "rgb(238, 151, 57)",
+   "labelUppercase": "uppercase",
+   "chefLineText": null,
+   "introSample": "Chef Niki's Sample Menu Breakfast Chef&rsquo;s boat baked granola with Greek yoghurt Eggs Royale Eggs Benedict Caribbean toast, crispy bacon maple syrup, and fr",
+   "imgCount": 6,
+   "distinctImgCount": 6,
+   "captionsSample": [
+    "Cheesecake Soufflé",
+    "Salads",
+    "Tuna Tataki",
+    "Easter Brunch"
+   ],
+   "literalTags": [],
+   "emptyCards": 0,
+   "accordions": [
+    {
+     "label": "Cheesecake Soufflé",
+     "expanded": false,
+     "controls": "menu-panel-0"
+    },
+    {
+     "label": "Salads",
+     "expanded": false,
+     "controls": "menu-panel-1"
+    },
+    {
+     "label": "Tuna Tataki",
+     "expanded": false,
+     "controls": "menu-panel-2"
+    },
+    {
+     "label": "Easter Brunch",
+     "expanded": false,
+     "controls": "menu-panel-3"
+    },
+    {
+     "label": "Beef Filet",
+     "expanded": false,
+     "controls": "menu-panel-4"
+    },
+    {
+     "label": "Ice Cream Cones",
+     "expanded": false,
+     "controls": "menu-panel-5"
+    },
+    {
+     "label": "Cannoli",
+     "expanded": false,
+     "controls": "menu-panel-6"
+    },
+    {
+     "label": "Dessert",
+     "expanded": false,
+     "controls": "menu-panel-7"
+    }
+   ],
+   "viewAllText": "View All Food Photos (9)",
+   "darkPanelFound": true,
+   "bodyFontProbe": {
+    "size": "16px",
+    "lh": "25.6px"
+   },
+   "sectionHeightPx": 5202.4375,
+   "pageOverflowX": 0
+  },
+  "lightbox": {
+   "opened": true,
+   "screenshot": "mischievous-mobile-lightbox.png"
+  },
+  "accordionInteraction": {
+   "buttonsTotal": 8,
+   "openLabels": []
+  },
+  "afterExpand": {
+   "buttonsTotal": 8,
+   "openAfterClicks": 0,
+   "panelTexts": [],
+   "hOverflow": 0,
+   "hShift": null
+  },
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "yacht": "ohana",
+  "viewport": "desktop",
+  "url": "https://mcc-website-one.vercel.app/charter-yachts/6a023755ce6b8709506dfee5",
+  "diningPresent": true,
+  "measurements": {
+   "headings": [
+    {
+     "tag": "h2",
+     "text": "Dining & Cuisine"
+    },
+    {
+     "tag": "h3",
+     "text": "Sample Menus"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Dominic Breakfast"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Dominic Lunch"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Dominic Dinner"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Dominic Dessert"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Sam Breakfast"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Sam Lunch"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Sam Dinner"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Sam Dessert"
+    }
+   ],
+   "labelFound": true,
+   "labelText": "The Culinary Experience",
+   "labelColor": "rgb(238, 151, 57)",
+   "labelUppercase": "uppercase",
+   "chefLineText": null,
+   "introSample": "Ohana’s menu focus on featuring local items in a creative and sophisticated way. This means fresh-farmed eggs, hand picked microgreens, and island-farmed vegeta",
+   "imgCount": 6,
+   "distinctImgCount": 6,
+   "captionsSample": [
+    "Chef Dominic Breakfast",
+    "Chef Dominic Lunch",
+    "Chef Dominic Dinner",
+    "Chef Dominic Dessert"
+   ],
+   "literalTags": [],
+   "emptyCards": 0,
+   "accordions": [
+    {
+     "label": "Chef Dominic Breakfast",
+     "expanded": false,
+     "controls": "menu-panel-0"
+    },
+    {
+     "label": "Chef Dominic Lunch",
+     "expanded": false,
+     "controls": "menu-panel-1"
+    },
+    {
+     "label": "Chef Dominic Dinner",
+     "expanded": false,
+     "controls": "menu-panel-2"
+    },
+    {
+     "label": "Chef Dominic Dessert",
+     "expanded": false,
+     "controls": "menu-panel-3"
+    },
+    {
+     "label": "Chef Sam Breakfast",
+     "expanded": false,
+     "controls": "menu-panel-4"
+    },
+    {
+     "label": "Chef Sam Lunch",
+     "expanded": false,
+     "controls": "menu-panel-5"
+    },
+    {
+     "label": "Chef Sam Dinner",
+     "expanded": false,
+     "controls": "menu-panel-6"
+    },
+    {
+     "label": "Chef Sam Dessert",
+     "expanded": false,
+     "controls": "menu-panel-7"
+    }
+   ],
+   "viewAllText": "View All Food Photos (9)",
+   "darkPanelFound": true,
+   "bodyFontProbe": {
+    "size": "16px",
+    "lh": "25.6px"
+   },
+   "sectionHeightPx": 2058.46875,
+   "pageOverflowX": 0
+  },
+  "lightbox": {
+   "opened": true,
+   "screenshot": "ohana-desktop-lightbox.png"
+  },
+  "accordionInteraction": {
+   "buttonsTotal": 8,
+   "openLabels": []
+  },
+  "afterExpand": {
+   "buttonsTotal": 8,
+   "openAfterClicks": 0,
+   "panelTexts": [],
+   "hOverflow": 0,
+   "hShift": null
+  },
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "yacht": "ohana",
+  "viewport": "mobile",
+  "url": "https://mcc-website-one.vercel.app/charter-yachts/6a023755ce6b8709506dfee5",
+  "diningPresent": true,
+  "measurements": {
+   "headings": [
+    {
+     "tag": "h2",
+     "text": "Dining & Cuisine"
+    },
+    {
+     "tag": "h3",
+     "text": "Sample Menus"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Dominic Breakfast"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Dominic Lunch"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Dominic Dinner"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Dominic Dessert"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Sam Breakfast"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Sam Lunch"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Sam Dinner"
+    },
+    {
+     "tag": "h3",
+     "text": "Chef Sam Dessert"
+    }
+   ],
+   "labelFound": true,
+   "labelText": "The Culinary Experience",
+   "labelColor": "rgb(238, 151, 57)",
+   "labelUppercase": "uppercase",
+   "chefLineText": null,
+   "introSample": "Ohana’s menu focus on featuring local items in a creative and sophisticated way. This means fresh-farmed eggs, hand picked microgreens, and island-farmed vegeta",
+   "imgCount": 6,
+   "distinctImgCount": 6,
+   "captionsSample": [
+    "Chef Dominic Breakfast",
+    "Chef Dominic Lunch",
+    "Chef Dominic Dinner",
+    "Chef Dominic Dessert"
+   ],
+   "literalTags": [],
+   "emptyCards": 0,
+   "accordions": [
+    {
+     "label": "Chef Dominic Breakfast",
+     "expanded": false,
+     "controls": "menu-panel-0"
+    },
+    {
+     "label": "Chef Dominic Lunch",
+     "expanded": false,
+     "controls": "menu-panel-1"
+    },
+    {
+     "label": "Chef Dominic Dinner",
+     "expanded": false,
+     "controls": "menu-panel-2"
+    },
+    {
+     "label": "Chef Dominic Dessert",
+     "expanded": false,
+     "controls": "menu-panel-3"
+    },
+    {
+     "label": "Chef Sam Breakfast",
+     "expanded": false,
+     "controls": "menu-panel-4"
+    },
+    {
+     "label": "Chef Sam Lunch",
+     "expanded": false,
+     "controls": "menu-panel-5"
+    },
+    {
+     "label": "Chef Sam Dinner",
+     "expanded": false,
+     "controls": "menu-panel-6"
+    },
+    {
+     "label": "Chef Sam Dessert",
+     "expanded": false,
+     "controls": "menu-panel-7"
+    }
+   ],
+   "viewAllText": "View All Food Photos (9)",
+   "darkPanelFound": true,
+   "bodyFontProbe": {
+    "size": "16px",
+    "lh": "25.6px"
+   },
+   "sectionHeightPx": 3743.59375,
+   "pageOverflowX": 0
+  },
+  "lightbox": {
+   "opened": true,
+   "screenshot": "ohana-mobile-lightbox.png"
+  },
+  "accordionInteraction": {
+   "buttonsTotal": 8,
+   "openLabels": []
+  },
+  "afterExpand": {
+   "buttonsTotal": 8,
+   "openAfterClicks": 0,
+   "panelTexts": [],
+   "hOverflow": 0,
+   "hShift": null
+  },
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "yacht": "viva-la-vida",
+  "viewport": "desktop",
+  "url": "https://mcc-website-one.vercel.app/charter-yachts/69f83a8e8ae166becdd09df5",
+  "diningPresent": true,
+  "measurements": {
+   "headings": [
+    {
+     "tag": "h2",
+     "text": "Dining & Cuisine"
+    }
+   ],
+   "labelFound": true,
+   "labelText": "The Culinary Experience",
+   "labelColor": "rgb(238, 151, 57)",
+   "labelUppercase": "uppercase",
+   "chefLineText": null,
+   "introSample": null,
+   "imgCount": 1,
+   "distinctImgCount": 1,
+   "captionsSample": [
+    "From this yacht's menu"
+   ],
+   "literalTags": [],
+   "emptyCards": 0,
+   "accordions": [],
+   "viewAllText": null,
+   "darkPanelFound": true,
+   "bodyFontProbe": {
+    "size": "16px",
+    "lh": "26px"
+   },
+   "sectionHeightPx": 738,
+   "pageOverflowX": 0
+  },
+  "lightbox": {
+   "opened": true,
+   "screenshot": "viva-la-vida-desktop-lightbox.png"
+  },
+  "accordionInteraction": {
+   "buttonsTotal": 0,
+   "openLabels": []
+  },
+  "afterExpand": {
+   "buttonsTotal": 0,
+   "openAfterClicks": 0,
+   "panelTexts": [],
+   "hOverflow": 0,
+   "hShift": null
+  },
+  "consoleErrors": [],
+  "failedRequests": []
+ },
+ {
+  "yacht": "viva-la-vida",
+  "viewport": "mobile",
+  "url": "https://mcc-website-one.vercel.app/charter-yachts/69f83a8e8ae166becdd09df5",
+  "diningPresent": true,
+  "measurements": {
+   "headings": [
+    {
+     "tag": "h2",
+     "text": "Dining & Cuisine"
+    }
+   ],
+   "labelFound": true,
+   "labelText": "The Culinary Experience",
+   "labelColor": "rgb(238, 151, 57)",
+   "labelUppercase": "uppercase",
+   "chefLineText": null,
+   "introSample": null,
+   "imgCount": 1,
+   "distinctImgCount": 1,
+   "captionsSample": [
+    "From this yacht's menu"
+   ],
+   "literalTags": [],
+   "emptyCards": 0,
+   "accordions": [],
+   "viewAllText": null,
+   "darkPanelFound": true,
+   "bodyFontProbe": {
+    "size": "16px",
+    "lh": "26px"
+   },
+   "sectionHeightPx": 565,
+   "pageOverflowX": 0
+  },
+  "lightbox": {
+   "opened": true,
+   "screenshot": "viva-la-vida-mobile-lightbox.png"
+  },
+  "accordionInteraction": {
+   "buttonsTotal": 0,
+   "openLabels": []
+  },
+  "afterExpand": {
+   "buttonsTotal": 0,
+   "openAfterClicks": 0,
+   "panelTexts": [],
+   "hOverflow": 0,
+   "hShift": null
+  },
+  "consoleErrors": [],
+  "failedRequests": []
+ }
+]
