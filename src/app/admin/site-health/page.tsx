@@ -45,6 +45,29 @@ type SiteHealthReport = {
   metadata: DeploymentMetadata;
   storage: StorageReport;
   configuration: Array<{ variable: string; present: boolean; usedBy: string }>;
+  browser: BrowserReport;
+};
+
+type BrowserTestResult = {
+  ranAt: string;
+  commitSha: string | null;
+  deploymentId: string | null;
+  yachtId: string;
+  yachtName: string | null;
+  viewport: "desktop" | "mobile";
+  passed: boolean;
+  testsTotal: number;
+  testsFailed: number;
+  brokenImages: number;
+  failures: string[];
+  browserErrors: string[];
+  runner: string;
+  reportUrl: string | null;
+};
+
+type BrowserReport = {
+  yachts: Record<string, { latest: BrowserTestResult | null; history: BrowserTestResult[]; stale: boolean; error: string | null }>;
+  note: string;
 };
 
 const VERIFICATION_LABELS: Record<string, string> = {
@@ -111,6 +134,70 @@ function DeploymentMetadataCard({ metadata }: { metadata: DeploymentMetadata }) 
         </div>
       </dl>
       <p className="mt-3 text-xs italic text-[#061625]/60">{metadata.source}</p>
+    </div>
+  );
+}
+
+function BrowserVerificationCard({ browser, yachts }: { browser: BrowserReport; yachts: Array<{ name: string; id: string }> }) {
+  return (
+    <div className="rounded-lg border border-[#061625]/10 bg-white p-6">
+      <h2 className="mb-1 font-display text-lg italic text-[#061625]">Browser verification</h2>
+      <p className="mb-4 text-sm leading-relaxed text-[#061625]/70">{browser.note}</p>
+      <div className="space-y-3">
+        {yachts.map((y) => {
+          const v = browser.yachts[y.id];
+          const latest = v?.latest ?? null;
+          return (
+            <div key={y.id} className="rounded-md border border-[#061625]/10 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-semibold text-[#061625]">{y.name}</p>
+                {latest ? (
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${latest.passed && !v.stale ? "bg-green-100 text-green-800" : "bg-[#EE9739]/20 text-[#8a4a0d]"}`}>
+                    {latest.passed && !v.stale ? "Fully verified in production" : v.stale ? "Verified, results stale" : "Browser test failed"}
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-[#061625]/10 px-3 py-1 text-xs font-semibold text-[#061625]/70">Not browser-verified</span>
+                )}
+              </div>
+              {latest ? (
+                <>
+                  <dl className="mt-2 grid grid-cols-1 gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+                    <div><dt className="inline text-[#061625]/60">Tested: </dt><dd className="inline text-[#061625]/80">{new Date(latest.ranAt).toLocaleString()}</dd></div>
+                    <div><dt className="inline text-[#061625]/60">Commit: </dt><dd className="inline break-all font-mono text-xs text-[#061625]/80">{latest.commitSha ?? "not reported"}</dd></div>
+                    <div><dt className="inline text-[#061625]/60">Viewport: </dt><dd className="inline text-[#061625]/80">{latest.viewport}</dd></div>
+                    <div><dt className="inline text-[#061625]/60">Runner: </dt><dd className="inline text-[#061625]/80">{latest.runner}</dd></div>
+                    <div><dt className="inline text-[#061625]/60">Checks: </dt><dd className="inline text-[#061625]/80">{latest.testsTotal - latest.testsFailed}/{latest.testsTotal} passed</dd></div>
+                    <div><dt className="inline text-[#061625]/60">Broken images: </dt><dd className="inline text-[#061625]/80">{latest.brokenImages}</dd></div>
+                  </dl>
+                  {latest.deploymentId && <p className="mt-1 font-mono text-xs text-[#061625]/60">Deployment: {latest.deploymentId}</p>}
+                  {latest.failures.length > 0 && (
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-red-700">
+                      {latest.failures.map((f, i) => <li key={i}>{f}</li>)}
+                    </ul>
+                  )}
+                  {latest.browserErrors.length > 0 && (
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-[#8a4a0d]">
+                      {latest.browserErrors.map((e, i) => <li key={i}>{e}</li>)}
+                    </ul>
+                  )}
+                  {latest.reportUrl && (
+                    <p className="mt-2 text-sm">
+                      <a href={latest.reportUrl} className="text-[#337891] underline underline-offset-4">Full test report</a>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <p className="mt-2 text-sm text-[#061625]/60">
+                  No imported browser results for this yacht yet. Server checks show content as delivered, not browser-verified.
+                </p>
+              )}
+              {v?.history.length > 1 && (
+                <p className="mt-2 text-xs text-[#061625]/60">{v.history.length} imported runs kept (90 days).</p>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -273,6 +360,8 @@ export default function AdminSiteHealthPage() {
           )}
 
           <DeploymentMetadataCard metadata={report.metadata} />
+
+          <BrowserVerificationCard browser={report.browser} yachts={PRESET_YACHTS} />
 
           <div className="rounded-lg border border-[#061625]/10 bg-white p-6">
             <h2 className="mb-1 font-display text-lg italic text-[#061625]">Database configuration</h2>

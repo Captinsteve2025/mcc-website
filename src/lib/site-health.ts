@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { CyaApiError, getOperatingAreasRaw, getYachtDetail, normalizeOperatingAreas } from "@/lib/cya";
 import { collectRawMenuImageRefs, parseCrewGeneral, parseCrewWithTrace, parseMenus } from "@/lib/yacht-detail";
 import { getYachtAvailability } from "@/lib/yacht-content";
+import { getBrowserVerification, type BrowserTestResultRow, type YachtBrowserVerification } from "@/lib/browser-tests";
 
 // Server-side production health monitor. Every check reports exactly what it
 // observed — nothing is fabricated. Verdicts distinguish "CYA supplies no data"
@@ -73,6 +74,10 @@ export type SiteHealthReport = {
   metadata: DeploymentMetadata;
   storage: StorageReport;
   configuration: Array<{ variable: string; present: boolean; usedBy: string }>;
+  browser: {
+    yachts: Record<string, YachtBrowserVerification>;
+    note: string;
+  };
 };
 
 export const PRIMARY_YACHT_ID = "69f33df0b5a1600bf785869e"; // ENDLESS HORIZON
@@ -708,6 +713,14 @@ export async function runSiteHealth(yachtIds: string[], trigger: string): Promis
   const overall = worstStatus(checks.map((c) => c.status));
   const metadata = deploymentMetadata();
   const storage = await storeRun(checks, overall, metadata, trigger);
+  const browserYachts = await getBrowserVerification(ids);
+  const hasAnyResult = Object.values(browserYachts).some((v) => v.latest !== null);
+  const browser = {
+    yachts: browserYachts,
+    note: hasAnyResult
+      ? "Results were produced by an external Playwright browser run and imported; they are not executed by this monitor."
+      : "No imported browser results yet. A real browser test (Playwright — run manually or via GitHub Actions after deploy) must be imported before anything can be labelled fully verified.",
+  };
 
-  return { ranAt, overall, checks, metadata, storage, configuration: configurationAudit() };
+  return { ranAt, overall, checks, metadata, storage, configuration: configurationAudit(), browser };
 }
