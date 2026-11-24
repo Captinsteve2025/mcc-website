@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import { ChevronDown } from "lucide-react";
-import type { MenuCategory, MenuPhoto, MenuSummary } from "@/lib/yacht-detail";
+import type { MenuCategory, MenuPhoto, MenuSection, MenuSummary } from "@/lib/yacht-detail";
 
 // "The Culinary Experience" — premium dining presentation. Photography leads;
-// written menus are collapsed accordions. Everything shown comes from CYA —
-// nothing is invented, no stock photography is used.
+// ALL written menu content lives inside collapsed accordions. Everything shown
+// comes from CYA — nothing is invented, no stock photography is used.
 
 const INITIAL_PHOTOS = 6;
 
@@ -144,7 +144,18 @@ function MenuAccordion({ categories }: { categories: MenuCategory[] }) {
 }
 
 export function YachtDiningSection({ menus, chefName }: { menus: MenuSummary; chefName?: string | null }) {
-  const hasCategories = menus.categories.length > 0;
+  const general = menus.general;
+  const writtenSections: MenuCategory[] = [
+    ...menus.categories,
+    ...(general?.sections ?? []).map((section: MenuSection, index: number) => ({
+      title: section.title,
+      bodyHtml: null,
+      bodyText: section.bodyText,
+      photo: null,
+      path: `general-section-${index}`,
+    })),
+  ];
+  const hasWritten = writtenSections.length > 0;
   const hasPhotos = menus.photos.length > 0;
   const [lightbox, setLightbox] = useState<{ url: string; description: string | null } | null>(null);
 
@@ -159,9 +170,11 @@ export function YachtDiningSection({ menus, chefName }: { menus: MenuSummary; ch
   const captionFor = (photo: MenuPhoto) =>
     photo.description ?? titleForUrl.get(photo.url) ?? "From this yacht's menu";
 
-  if (!hasCategories && !hasPhotos && !menus.general) return null;
+  if (!hasWritten && !hasPhotos && !general) return null;
 
-  const generalText = menus.general?.descriptionText ?? null;
+  // Only the genuine introductory lines CYA supplies before the first menu
+  // heading — never the full written menu, never fallback marketing copy.
+  const introText = general?.introText ?? null;
 
   return (
     <section className="mt-14">
@@ -170,13 +183,8 @@ export function YachtDiningSection({ menus, chefName }: { menus: MenuSummary; ch
         Dining &amp; Cuisine
       </h2>
       {chefName && <p className="mb-3 font-display text-xl italic text-[#061625]/80">{chefName}</p>}
-      {generalText && (
-        <p className="mb-6 max-w-2xl whitespace-pre-line text-base leading-[1.6] text-[#061625]/70">{generalText}</p>
-      )}
-      {!generalText && (
-        <p className="mb-6 max-w-2xl leading-relaxed text-[#061625]/70">
-          Every meal is prepared fresh on board by your charter chef.
-        </p>
+      {introText && (
+        <p className="mb-6 max-w-2xl whitespace-pre-line text-base leading-[1.6] text-[#061625]/70">{introText}</p>
       )}
 
       {hasPhotos && (
@@ -185,10 +193,10 @@ export function YachtDiningSection({ menus, chefName }: { menus: MenuSummary; ch
         </div>
       )}
 
-      {hasCategories && (
+      {hasWritten && (
         <div>
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] text-[#061625]/60">Sample Menus</h3>
-          <MenuAccordion categories={menus.categories} />
+          <MenuAccordion categories={writtenSections} />
         </div>
       )}
 

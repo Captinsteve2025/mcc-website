@@ -77,10 +77,10 @@ export function collectGallery(detail: Yacht): GalleryImage[] {
   return gallery;
 }
 
-// One-pass HTML entity decoding: a named or numeric reference found in the
-// original text is decoded exactly once, so "&amp;bull;" becomes the literal
-// text "&bull;" and is never decoded a second time. Unknown named references
-// are left as-is; invalid numeric ones are dropped.
+// HTML entity decoding: repeated passes collapse CYA's double-encoded values
+// ("&amp;rsquo;" -> "&rsquo;" -> "'"). Passes stop as soon as the text is
+// stable, so singly-encoded content decodes exactly once. Unknown named
+// references are left as-is; invalid numeric ones are dropped.
 const NAMED_ENTITIES: Record<string, string> = {
   bull: "\u2022",
   middot: "\u00b7",
@@ -144,9 +144,14 @@ function decodeHtmlEntities(text: string): string {
 // accommodation and season text — plain text only. Rich CYA HTML (the general
 // crew description) goes through the separate HTML sanitizer instead.
 export function cleanText(value: unknown): string | null {
-  const text = str(value);
+  let text = str(value);
   if (text === null) return null;
-  const cleaned = decodeHtmlEntities(text)
+  for (let pass = 0; pass < 3; pass++) {
+    const decoded = decodeHtmlEntities(text);
+    if (decoded === text) break;
+    text = decoded;
+  }
+  const cleaned = text
     .replace(/<br\s*\/?>/gi, "\n")
     .replace(/<\/(p|div|li|h[1-6])>/gi, "\n")
     .replace(/<[^>]*>/g, "")
@@ -699,15 +704,69 @@ export type MenuCategory = {
   path: string;
 };
 
+export type MenuSection = { title: string; bodyText: string };
+
 export type MenuSummary = {
+  /** Written-menu records from menuDetails. Photo-only records are excluded. */
   categories: MenuCategory[];
   photos: MenuPhoto[];
   general: {
     photo: MenuPhoto | null;
+    /** Full decoded general description (diagnostics). */
     descriptionHtml: string | null;
     descriptionText: string | null;
+    /** Genuine introductory lines preceding the first menu heading. */
+    introText: string | null;
+    /** Written menu sections detected inside the general description. */
+    sections: MenuSection[];
   } | null;
 };
+
+// Course vocabulary used only to LOCATE section boundaries inside a free-text
+// menu description. The heading text itself is always rendered exactly as CYA
+// supplied it — nothing is hardcoded for a specific yacht.
+const MENU_SECTION_WORD_PATTERN =
+  /(BREAKFAST|BRUNCH|LUNCH|DINNER|SUPPER|CANAP[ÉE]S|STARTERS|APPETIZERS|MAIN COURSES|MAINS|ENTR[ÉE]ES|SOUPS|SALADS|SANDWICHES|DESSERTS|P[ÂA]TISSERIE|BAKING|BREADS|VEGETARIAN|PLANT.BASED|SWEET TREATS|CHEESE BOARD|SNACKS|SIDES|KIDS)/;
+
+// A section heading is a standalone ALL-CAPS line containing a course word.
+// Title-Case subheadings ("Pork", "Freshly Baked Pastries") contain lowercase
+// letters and stay inside their section body.
+function isMenuSectionHeading(line: string): boolean {
+  const trimmed = line.trim();
+  if (trimmed.length < 3 || trimmed.length > 60) return false;
+  if (/[a-z\u00e0-\u00ff]/.test(trimmed)) return false;
+  return MENU_SECTION_WORD_PATTERN.test(trimmed);
+}
+
+// Splits a general menu description into its genuine intro (everything before
+// the first recognised heading) and collapsed-menu sections. When no heading
+// can be reliably detected the whole text becomes ONE section so the complete
+// menu stays collapsed inside a single accordion and no intro is fabricated.
+function splitMenuDescription(text: string): { introText: string | null; sections: MenuSection[] } {
+  const lines = text.split("\n");
+  const introLines: string[] = [];
+  const sections: MenuSection[] = [];
+  let current: { title: string; body: string[] } | null = null;
+  for (const line of lines) {
+    if (isMenuSectionHeading(line)) {
+      if (current && current.body.some((l) => l.trim().length > 0)) {
+        sections.push({ title: current.title, bodyText: current.body.join("\n").trim() });
+      }
+      current = { title: line.trim(), body: [] };
+      continue;
+    }
+    if (current) current.body.push(line);
+    else introLines.push(line);
+  }
+  if (current && current.body.some((l) => l.trim().length > 0)) {
+    sections.push({ title: current.title, bodyText: current.body.join("\n").trim() });
+  }
+  if (sections.length === 0) {
+    return { introText: null, sections: [{ title: "Sample Menu", bodyText: text.trim() }] };
+  }
+  const introText = introLines.join("\n").replace(/\n{2,}/g, "\n\n").trim();
+  return { introText: introText.length > 0 ? introText : null, sections };
+}
 
 const MENU_TITLE_KEYS = ["menuTitle", "title", "meal", "meal_type", "course", "category", "menu_title", "name", "menu_category", "type"];
 const MENU_CATEGORY_KEYS = ["menuCategory", "menu_category", "category", "meal", "meal_type", "course", "type"];
@@ -837,9 +896,13 @@ export function parseMenus(detail: Yacht): MenuSummary {
     collectPhotoCollection(obj, prefix);
     const bodyHtml = sanitizeCrewHtml(bodyRaw);
     const bodyText = cleanText(bodyRaw);
-    if (title === null && bodyHtml === null && bodyText === null && photo === null) return null;
+    // A written-menu accordion needs genuine written content. Photo-only CYA
+    // records feed the gallery (above) and never become accordion panels.
+    const hasBody =
+      bodyText !== null || (bodyHtml !== null && cleanText(bodyHtml) !== null);
+    if (!hasBody) return null;
     return {
-      title: title ?? "Sample menu",
+      title: title ?? "Sample Menu",
       bodyHtml,
       bodyText,
       photo,
@@ -873,7 +936,8 @@ export function parseMenus(detail: Yacht): MenuSummary {
     const descriptionHtml = sanitizeCrewHtml(obj.menuDescription ?? obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
     const descriptionText = cleanText(obj.menuDescription ?? obj.description ?? obj.about ?? obj.menu_description ?? obj.text);
     if (photo || descriptionHtml || descriptionText) {
-      general = { photo, descriptionHtml, descriptionText };
+      const split = descriptionText ? splitMenuDescription(descriptionText) : { introText: null, sections: [] };
+      general = { photo, descriptionHtml, descriptionText, introText: split.introText, sections: split.sections };
     }
   }
 
