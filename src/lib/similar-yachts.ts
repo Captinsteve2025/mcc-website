@@ -1,208 +1,536 @@
-import type { Yacht as CyaCatalogueYacht } from "@/lib/cya";
+import { searchYachts } from "./cya";
+import { parseAccommodation } from "./yacht-detail";
+import type { Yacht as CyaYacht } from "./cya";
 
-// Deterministic similar-yacht recommendations over the CYA catalogue records
-// the page render already has. No extra CYA request is made per page load:
-// the caller passes catalogue rows fetched once (the Next fetch cache shares
-// them across renders anyway).
+// Two-stage similar-yacht engine.
 //
-// Scoring weights (centrally configurable):
-//   pricing 30%, cruising region 25%, type 20%, guests 15%, length 10%.
-// Missing data never scores as zero — each factor is normalised against the
-// candidates for which that factor is known, and unknown factors are excluded
-// from the weighted sum so a yacht with no price is not punished.
+// Stage 1 is hard eligibility: same genuine yacht class, at least one
+// verified overlapping charter region, pricing inside the reference band with
+// a comparable currency, length inside the band after unit normalisation
+// (metres and feet are never mixed up), and guest capacity at or above the
+// reference. Yachts failing any gate are excluded with the reason recorded —
+// they are never ranked, so missing data cannot inflate a score.
+//
+// Stage 2 ranks only eligible yachts: pricing 30%, region+season 25%,
+// class+model 20%, guests+cabins 15%, length 10%. Unknown factors score at a
+// neutral floor, never a perfect value.
+//
+// Weights and tolerances live in RECOMMENDATION_CONFIG so they can be tuned
+// centrally. No CYA data is invented anywhere in this module.
 
-export const SIMILARITY_WEIGHTS = {
-  pricing: 0.3,
-  region: 0.25,
-  type: 0.2,
-  guests: 0.15,
-  length: 0.1,
+export const RECOMMENDATION_CONFIG = {
+  strict: {
+    priceTolerance: 0.25,
+    lengthTolerance: 0.25,
+  },
+  fallback: {
+    priceTolerance: 0.6,
+    lengthTolerance: 0.5,
+  },
+  maxResults: 3,
+  minScore: 0.35,
+  managedFleetBoost: 0.05,
+  managedFleetIds: ["aquanimity", "atlas"],
+  weights: {
+    pricing: 0.3,
+    regionSeason: 0.25,
+    classModel: 0.2,
+    guestsCabins: 0.15,
+    length: 0.1,
+  },
 } as const;
 
-export type RecommendationCandidate = {
+const M_PER_FT = 3.28084;
+
+// ── Classification ──────────────────────────────────────────────────────────
+
+export type YachtClass =
+  | "sailing-catamaran"
+  | "power-catamaran"
+  | "sailing-monohull"
+  | "motor-yacht"
+  | "motorsailer";
+
+const SAILING_MARKERS = ["sail", "sloop", "ketch", "yawl", "schooner", "gulet"];
+const MOTOR_MARKERS = ["motor", "power", "flybridge", "trawler", "superyacht"];
+
+// Classifies a CYA yachtType string. Returns null when the type cannot be
+// assigned with confidence — uncertain records are excluded rather than
+// guessed.
+export function classifyYachtType(rawType: unknown): YachtClass | null {
+  if (typeof rawType !== "string" || rawType.trim().length === 0) return null;
+  const type = rawType.toLowerCase().trim();
+  const isCat = type.includes("catamaran") || /\bcat\b/.test(type);
+  const isSail = SAILING_MARKERS.some((m) => type.includes(m));
+  const isMotor = MOTOR_MARKERS.some((m) => type.includes(m));
+
+  if (isCat && isMotor) return "power-catamaran";
+  if (isCat && isSail) return "sailing-catamaran";
+  if (isCat) return null; // "catamaran" alone: sailing or power is unconfirmed
+  if (isSail && isMotor) return "motorsailer";
+  if (isSail) return "sailing-monohull";
+  if (isMotor) return "motor-yacht";
+  return null;
+}
+
+// Customer-facing class labels; no invented classifications, no "power" vs
+// "sail" jargon (a bare "yacht" label is used only when CYA itself is vague).
+export function customerClassLabel(rawType: unknown): string {
+  switch (classifyYachtType(rawType)) {
+    case "sailing-catamaran":
+      return "Sailing Catamaran";
+    case "power-catamaran":
+      return "Power Catamaran";
+    case "sailing-monohull":
+      return "Sailing Yacht";
+    case "motor-yacht":
+      return "Motor Yacht";
+    case "motorsailer":
+      return "Motorsailer";
+    default:
+      return "Yacht";
+  }
+}
+
+// ── Normalisation ───────────────────────────────────────────────────────────
+
+// Length to feet. CYA supplies `units` ("ft" or "m"); the unit is never
+// assumed and metres are never silently equated with feet.
+export function lengthToFeet(length: unknown, units: unknown): number | null {
+  const value = typeof length === "number" ? length : Number(length);
+  if (!Number.isFinite(value) || value <= 0) return null;
+  const unit = typeof units === "string" ? units.toLowerCase().trim() : "ft";
+  if (unit === "m" || unit === "meter" || unit === "meters" || unit === "metre" || unit === "metres") {
+    return value * M_PER_FT;
+  }
+  return value;
+}
+
+export type RegionArea = string | { label?: unknown; name?: unknown } | null | undefined;
+
+export function extractAreaNames(areas: unknown): string[] {
+  if (!Array.isArray(areas)) return [];
+  const names: string[] = [];
+  for (const area of areas as RegionArea[]) {
+    if (typeof area === "string") {
+      names.push(...area.split(/,|\|/).map((s) => s.trim()).filter(Boolean));
+    } else if (area && typeof area === "object") {
+      const label = area.label ?? area.name;
+      if (typeof label === "string") {
+        names.push(...label.split(/,|\|/).map((s) => s.trim()).filter(Boolean));
+      }
+    }
+  }
+  return [...new Set(names)];
+}
+
+function regionKey(area: string): string {
+  return area.toLowerCase().replace(/[^a-z\s]/g, "").replace(/\s+/g, " ").trim();
+}
+
+// Requires at least one shared region token. Word-level subset matching lets
+// "US Virgin Islands" match "Virgin Islands" without substring false hits.
+export function regionsOverlap(reference: string[], candidate: string[]): string[] {
+  const refKeys = new Set(reference.map(regionKey).filter(Boolean));
+  const overlaps: string[] = [];
+  for (const area of candidate) {
+    const key = regionKey(area);
+    if (!key) continue;
+    if (refKeys.has(key)) {
+      overlaps.push(area);
+      continue;
+    }
+    const candWords = key.split(" ");
+    for (const refKey of refKeys) {
+      const refWords = new Set(refKey.split(" "));
+      if (candWords.length > 0 && candWords.every((w) => refWords.has(w))) {
+        overlaps.push(area);
+        break;
+      }
+    }
+  }
+  return [...new Set(overlaps)];
+}
+
+// ── Candidates ──────────────────────────────────────────────────────────────
+
+export type YachtCandidate = {
   id: string;
   name: string;
-  type: string | null;
-  length: number | null;
-  lengthUnit: string | null;
+  rawType: string | null;
+  class: YachtClass | null;
+  lengthFt: number | null;
   guests: number | null;
   cabins: number | null;
-  /** Catalogue starting price in the yacht's own currency. */
+  minPriceUsd: number | null;
   minPrice: number | null;
   currency: string | null;
-  /** Catalogue USD-normalised starting price, when CYA supplies one. */
-  minPriceUsd: number | null;
-  areas: string[];
+  regions: string[];
   image: string | null;
-  /** CYA's own active flag when present; anything not actively true is excluded. */
-  active: boolean;
+  managedFleet: boolean;
 };
 
-export type Recommendation = {
-  candidate: RecommendationCandidate;
-  score: number;
-  /** Per-factor scores for the register/report (0..1 each, null = unknown). */
-  factors: {
-    pricing: number | null;
-    region: number | null;
-    type: number | null;
-    guests: number | null;
-    length: number | null;
-  };
-};
+function toNumber(v: unknown): number | null {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
 
-function toCandidate(yacht: CyaCatalogueYacht): RecommendationCandidate | null {
-  const id = typeof yacht.id === "string" ? yacht.id : "";
-  const name = typeof yacht.yachtName === "string" ? yacht.yachtName.trim() : "";
-  if (!id || !name) return null;
-  // Exclude anything CYA marks inactive (field absent is treated as active —
-  // the catalogue itself only returns listed yachts).
-  if (yacht.active === false || yacht.status === "inactive") return null;
-  const image = typeof yacht.image === "string" && yacht.image.startsWith("https://") ? yacht.image : null;
-  const areas = Array.isArray(yacht.seasonAreas)
-    ? yacht.seasonAreas
-        .map((a) => (typeof a === "string" ? a : a && typeof a === "object" ? String((a as Record<string, unknown>).label ?? (a as Record<string, unknown>).name ?? "") : ""))
-        .filter(Boolean)
-    : [];
+export function candidateFromCatalogue(rec: Record<string, unknown>): YachtCandidate | null {
+  if (typeof rec.id !== "string" || rec.id.length === 0) return null;
+  const rawType = typeof rec.yachtType === "string" ? rec.yachtType : null;
+  const idLower = rec.id.toLowerCase();
   return {
-    id,
-    name,
-    type: typeof yacht.yachtType === "string" ? yacht.yachtType : null,
-    length: typeof yacht.length === "number" ? yacht.length : null,
-    lengthUnit: typeof yacht.units === "string" ? yacht.units : null,
-    guests: typeof yacht.pax === "number" ? yacht.pax : null,
-    cabins: typeof yacht.cabins === "number" ? yacht.cabins : null,
-    minPrice: typeof yacht.min_price === "number" ? yacht.min_price : null,
-    currency: typeof yacht.currency === "string" ? yacht.currency : null,
-    minPriceUsd: typeof yacht.min_price_usd === "number" ? yacht.min_price_usd : null,
-    areas,
-    image,
-    active: true,
+    id: rec.id,
+    name: typeof rec.yachtName === "string" ? rec.yachtName : "Unnamed yacht",
+    rawType,
+    class: classifyYachtType(rawType),
+    lengthFt: lengthToFeet(rec.length, rec.units),
+    guests: toNumber(rec.pax),
+    cabins: toNumber(rec.cabins),
+    minPriceUsd: toNumber(rec.min_price_usd),
+    minPrice: toNumber(rec.min_price),
+    currency: typeof rec.currency === "string" ? rec.currency : null,
+    regions: extractAreaNames(rec.seasonAreas),
+    image: typeof rec.image === "string" && rec.image.length > 0 ? rec.image : null,
+    managedFleet: RECOMMENDATION_CONFIG.managedFleetIds.some((slug) => idLower.includes(slug)),
   };
 }
 
-function normaliseType(type: string | null): string {
-  const t = (type ?? "").toLowerCase();
-  if (t.includes("power cat") || t.includes("powercat")) return "power-catamaran";
-  if (t.includes("catamaran")) return "catamaran";
-  if (t.includes("motor") || t.includes("power") || t.includes("trawler")) return "motor";
-  if (t.includes("sail") || t.includes("mono") || t.includes("yacht")) return "monohull";
-  return "other";
+export function candidatesFromCatalogue(catalogue: CyaYacht[]): YachtCandidate[] {
+  return catalogue
+    .map((rec) => candidateFromCatalogue(rec as Record<string, unknown>))
+    .filter((c): c is YachtCandidate => c !== null);
 }
 
-function regionOverlap(a: string[], b: string[]): number | null {
-  if (a.length === 0 || b.length === 0) return null;
-  const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-  const bs = b.map(norm);
-  let matched = 0;
-  for (const area of a) {
-    const n = norm(area);
-    if (bs.some((x) => x.includes(n) || n.includes(x))) matched += 1;
-  }
-  return matched / Math.max(a.length, 1);
+// ── Subject profile ─────────────────────────────────────────────────────────
+
+export type SubjectProfile = {
+  id: string;
+  name: string;
+  rawType: string | null;
+  class: YachtClass | null;
+  lengthFt: number | null;
+  guests: number | null;
+  cabins: number | null;
+  minPrice: number | null;
+  maxPrice: number | null;
+  currency: string | null;
+  regions: string[];
+};
+
+// Built from the CYA detail record the page already fetched: raw season
+// prices, unit-aware length, accommodation pax/cabins, and seasonal charter
+// areas (not flag or builder).
+export function subjectFromDetail(detail: Record<string, unknown>): SubjectProfile {
+  const rawSeasons = (Array.isArray(detail.seasons) ? detail.seasons : []).filter(
+    (s): s is Record<string, unknown> => Boolean(s) && typeof s === "object"
+  );
+  const priced = rawSeasons
+    .map((s) => ({ price: toNumber(s.base_price), currency: typeof s.currency === "string" ? s.currency : null }))
+    .filter((s): s is { price: number; currency: string | null } => s.price !== null);
+
+  const currencies = [...new Set(priced.map((s) => s.currency).filter((c): c is string => Boolean(c)))];
+  const prices = priced.map((s) => s.price);
+  const accommodation = parseAccommodation(detail as CyaYacht);
+
+  const regions = rawSeasons.flatMap((s) => extractAreaNames(s.location_areas));
+
+  const rawType = typeof detail.yachtType === "string" ? detail.yachtType : null;
+  return {
+    id: typeof detail.id === "string" ? detail.id : "",
+    name: typeof detail.yachtName === "string" ? detail.yachtName : "Yacht",
+    rawType,
+    class: classifyYachtType(rawType),
+    lengthFt: lengthToFeet(detail.lenght, detail.units),
+    guests: accommodation.pax,
+    cabins: accommodation.cabins,
+    minPrice: prices.length > 0 ? Math.min(...prices) : null,
+    maxPrice: prices.length > 0 ? Math.max(...prices) : null,
+    currency: currencies.length === 1 ? currencies[0] : null,
+    regions: [...new Set(regions)],
+  };
 }
 
-// Pricing compares only like with like: USD-normalised prices when both
-// yachts carry one, otherwise raw prices only when the currency matches.
-// Missing or incomparable pricing yields null (excluded from the weighted
-// average), never zero.
-function pricingCloseness(subject: RecommendationCandidate, other: RecommendationCandidate): number | null {
-  let a: number | null = null;
-  let b: number | null = null;
-  if (subject.minPriceUsd !== null && other.minPriceUsd !== null) {
-    a = subject.minPriceUsd;
-    b = other.minPriceUsd;
-  } else if (subject.minPrice !== null && other.minPrice !== null && subject.currency === other.currency && subject.currency) {
-    a = subject.minPrice;
-    b = other.minPrice;
+// ── Stage 1: eligibility ────────────────────────────────────────────────────
+
+export type ExclusionRule =
+  | "self"
+  | "unclassified"
+  | "class-mismatch"
+  | "no-region-overlap"
+  | "price-missing"
+  | "price-out-of-band"
+  | "length-missing"
+  | "length-out-of-band"
+  | "guests-below-reference"
+  | "guests-missing";
+
+export type ExcludedRecord = {
+  id: string;
+  name: string;
+  rule: ExclusionRule;
+  detail: string;
+};
+
+export type ScoredCandidate = {
+  candidate: YachtCandidate;
+  scores: { pricing: number; regionSeason: number; classModel: number; guestsCabins: number; length: number };
+  regionMatches: string[];
+  total: number;
+};
+
+function comparePrice(
+  subject: SubjectProfile,
+  candidate: YachtCandidate,
+  tolerance: number
+): { ok: boolean; rule?: ExclusionRule } {
+  // Compare like with like: USD floor price when CYA supplies it, otherwise
+  // the listing currency only when the reference uses the same one. No
+  // invented conversions.
+  if (candidate.minPriceUsd !== null) {
+    const refUsd = subject.minPrice ?? subject.maxPrice;
+    if (refUsd === null) return { ok: false, rule: "price-missing" };
+    const low = refUsd * (1 - tolerance);
+    const high = refUsd * (1 + tolerance);
+    if (candidate.minPriceUsd < low || candidate.minPriceUsd > high) return { ok: false, rule: "price-out-of-band" };
+    return { ok: true };
   }
-  if (a === null || b === null || a <= 0 || b <= 0) return null;
-  // 1.0 at identical rates, falling smoothly; anything beyond 4x apart ~0.
-  return Math.max(0, 1 - Math.log(Math.max(a, b) / Math.min(a, b)) / Math.log(4));
+  if (candidate.minPrice === null) return { ok: false, rule: "price-missing" };
+  if (!subject.currency || !candidate.currency || subject.currency.toUpperCase() !== candidate.currency.toUpperCase()) {
+    return { ok: false, rule: "price-missing" };
+  }
+  const ref = subject.minPrice ?? subject.maxPrice;
+  if (ref === null) return { ok: false, rule: "price-missing" };
+  const low = ref * (1 - tolerance);
+  const high = ref * (1 + tolerance);
+  if (candidate.minPrice < low || candidate.minPrice > high) return { ok: false, rule: "price-out-of-band" };
+  return { ok: true };
 }
 
-export function findSimilarYachts(
-  subject: {
-    id: string;
-    type: string | null;
-    length: number | null;
-    guests: number | null;
-    minPrice: number | null;
-    currency: string | null;
-    minPriceUsd: number | null;
-    areas: string[];
-  },
-  catalogue: CyaCatalogueYacht[],
-  options?: { limit?: number }
-): Recommendation[] {
-  const limit = options?.limit ?? 3;
-  const subjectCandidate =
-    toCandidate({
-      id: subject.id,
-      yachtName: subject.id,
-      yachtType: subject.type,
-      length: subject.length,
-      pax: subject.guests,
-      min_price: subject.minPrice,
-      currency: subject.currency,
-      min_price_usd: subject.minPriceUsd,
-      seasonAreas: subject.areas,
-    } as CyaCatalogueYacht) ?? null;
+function compareLength(subject: SubjectProfile, candidate: YachtCandidate, tolerance: number): { ok: boolean; rule?: ExclusionRule } {
+  if (subject.lengthFt === null || candidate.lengthFt === null) return { ok: false, rule: "length-missing" };
+  const delta = Math.abs(candidate.lengthFt - subject.lengthFt) / subject.lengthFt;
+  if (delta > tolerance) return { ok: false, rule: "length-out-of-band" };
+  return { ok: true };
+}
 
-  if (!subjectCandidate) return [];
-
-  const subjectType = normaliseType(subjectCandidate.type);
-  const seen = new Set([subject.id]);
-  const candidates: RecommendationCandidate[] = [];
-  for (const raw of catalogue) {
-    const candidate = toCandidate(raw);
-    if (!candidate || seen.has(candidate.id)) continue;
-    seen.add(candidate.id);
-    candidates.push(candidate);
+function eligibilityCheck(
+  subject: SubjectProfile,
+  candidate: YachtCandidate,
+  priceTolerance: number,
+  lengthTolerance: number
+): { ok: true } | { ok: false; rule: ExclusionRule; detail: string } {
+  if (candidate.id === subject.id) {
+    return { ok: false, rule: "self", detail: "The reference yacht itself." };
   }
-
-  const scored: Recommendation[] = candidates.map((candidate) => {
-    const factors: Recommendation["factors"] = {
-      pricing: pricingCloseness(subjectCandidate, candidate),
-      region: regionOverlap(subjectCandidate.areas, candidate.areas),
-      type:
-        subjectType === "other" || normaliseType(candidate.type) === "other"
-          ? null
-          : normaliseType(candidate.type) === subjectType
-            ? 1
-            : 0,
-      guests:
-        subjectCandidate.guests !== null && candidate.guests !== null
-          ? Math.max(0, 1 - Math.abs(subjectCandidate.guests - candidate.guests) / 6)
-          : null,
-      length:
-        subjectCandidate.length !== null && candidate.length !== null
-          ? Math.max(0, 1 - Math.abs(subjectCandidate.length - candidate.length) / 30)
-          : null,
+  if (candidate.class === null) {
+    return {
+      ok: false,
+      rule: "unclassified",
+      detail: `CYA type "${candidate.rawType ?? "not published"}" could not be classified with confidence.`,
     };
-
-    let weighted = 0;
-    let weightSum = 0;
-    for (const [key, value] of Object.entries(factors)) {
-      if (value === null) continue;
-      const weight = SIMILARITY_WEIGHTS[key as keyof typeof SIMILARITY_WEIGHTS];
-      weighted += value * weight;
-      weightSum += weight;
-    }
-    const score = weightSum > 0 ? weighted / weightSum : 0;
-    return { candidate, score, factors };
-  });
-
-  return scored
-    .filter((r) => r.score > 0)
-    .sort((a, b) => b.score - a.score || a.candidate.name.localeCompare(b.candidate.name))
-    .slice(0, limit);
+  }
+  if (subject.class !== null && candidate.class !== subject.class) {
+    return {
+      ok: false,
+      rule: "class-mismatch",
+      detail: `Reference is a ${customerClassLabel(subject.rawType)}; this is a ${customerClassLabel(candidate.rawType)}.`,
+    };
+  }
+  if (subject.class === null) {
+    return {
+      ok: false,
+      rule: "class-mismatch",
+      detail: `The reference's own type ("${subject.rawType ?? "not published"}") is unclassified, so class eligibility cannot be established.`,
+    };
+  }
+  if (subject.regions.length > 0 && regionsOverlap(subject.regions, candidate.regions).length === 0) {
+    return {
+      ok: false,
+      rule: "no-region-overlap",
+      detail: `No shared charter region (candidate lists: ${candidate.regions.slice(0, 4).join(", ") || "none"}).`,
+    };
+  }
+  const price = comparePrice(subject, candidate, priceTolerance);
+  if (!price.ok) {
+    return {
+      ok: false,
+      rule: price.rule as ExclusionRule,
+      detail:
+        price.rule === "price-missing"
+          ? "No published weekly rate comparable with the reference's pricing arrangement."
+          : `Rate is outside the reference band (±${Math.round(priceTolerance * 100)}%).`,
+    };
+  }
+  const length = compareLength(subject, candidate, lengthTolerance);
+  if (!length.ok) {
+    return {
+      ok: false,
+      rule: length.rule as ExclusionRule,
+      detail:
+        length.rule === "length-missing"
+          ? "Length missing or unit unknown."
+          : `${candidate.lengthFt !== null ? Math.round(candidate.lengthFt) + " ft" : "Length"} is outside the reference band (±${Math.round(lengthTolerance * 100)}%).`,
+    };
+  }
+  if (subject.guests !== null && candidate.guests === null) {
+    return { ok: false, rule: "guests-missing", detail: "Guest capacity not published; cannot confirm it covers the party." };
+  }
+  if (subject.guests !== null && candidate.guests !== null && candidate.guests < subject.guests) {
+    return {
+      ok: false,
+      rule: "guests-below-reference",
+      detail: `Sleeps ${candidate.guests}, below the reference party of ${subject.guests}.`,
+    };
+  }
+  return { ok: true };
 }
 
-// Managed-fleet preference: only the two documented MCC-managed mappings
-// (aquanimity, atlas — see src/lib/managed-yachts.ts) can be identified as
-// managed. No name-based inference is performed: a catalogue yacht whose name
-// happens to contain "aquanimity" is NOT treated as managed. The preference is
-// applied as a small deterministic boost after scoring.
-export const MANAGED_FLEET_SLUGS = new Set(["aquanimity", "atlas"]);
-export const MANAGED_FLEET_BOOST = 0.05;
+// ── Stage 2: ranking ────────────────────────────────────────────────────────
+
+const NEUTRAL = 0.5; // unknown factors score here, never at a perfect value
+
+function clamp01(n: number): number {
+  return Math.min(1, Math.max(0, n));
+}
+
+function pricingScore(subject: SubjectProfile, candidate: YachtCandidate): number {
+  const ref = subject.minPrice ?? subject.maxPrice;
+  const cand = candidate.minPriceUsd ?? candidate.minPrice;
+  if (ref === null || cand === null) return NEUTRAL;
+  // Score against the nearer end of the reference's seasonal range.
+  const target = subject.maxPrice !== null && cand > ref ? subject.maxPrice : ref;
+  const delta = Math.abs(cand - target) / target;
+  return clamp01(1 - delta);
+}
+
+function regionSeasonScore(subject: SubjectProfile, candidate: YachtCandidate): number {
+  if (subject.regions.length === 0 || candidate.regions.length === 0) return NEUTRAL;
+  const matches = regionsOverlap(subject.regions, candidate.regions);
+  if (matches.length === 0) return 0;
+  return clamp01(matches.length / Math.min(subject.regions.length, candidate.regions.length));
+}
+
+function classModelScore(subject: SubjectProfile, candidate: YachtCandidate): number {
+  if (candidate.class !== null && candidate.class === subject.class) return 1;
+  return 0;
+}
+
+function guestsCabinsScore(subject: SubjectProfile, candidate: YachtCandidate): number {
+  if (subject.guests === null || candidate.guests === null) return NEUTRAL;
+  // Capacity at or above the reference is required; the closest fit ranks best.
+  const guestFit = candidate.guests === subject.guests ? 1 : clamp01(1 - (candidate.guests - subject.guests) / (subject.guests * 2));
+  let cabinFit = NEUTRAL;
+  if (subject.cabins !== null && candidate.cabins !== null) {
+    cabinFit = clamp01(1 - Math.abs(candidate.cabins - subject.cabins) * 0.25);
+  }
+  return clamp01(guestFit * 0.6 + cabinFit * 0.4);
+}
+
+function lengthScore(subject: SubjectProfile, candidate: YachtCandidate): number {
+  if (subject.lengthFt === null || candidate.lengthFt === null) return NEUTRAL;
+  const delta = Math.abs(candidate.lengthFt - subject.lengthFt) / subject.lengthFt;
+  return clamp01(1 - delta * 2);
+}
+
+function rankCandidates(subject: SubjectProfile, eligible: YachtCandidate[]): ScoredCandidate[] {
+  const w = RECOMMENDATION_CONFIG.weights;
+  const ranked = eligible.map((candidate) => {
+    const scores = {
+      pricing: pricingScore(subject, candidate),
+      regionSeason: regionSeasonScore(subject, candidate),
+      classModel: classModelScore(subject, candidate),
+      guestsCabins: guestsCabinsScore(subject, candidate),
+      length: lengthScore(subject, candidate),
+    };
+    const base =
+      scores.pricing * w.pricing +
+      scores.regionSeason * w.regionSeason +
+      scores.classModel * w.classModel +
+      scores.guestsCabins * w.guestsCabins +
+      scores.length * w.length;
+    const total = clamp01(base + (candidate.managedFleet ? RECOMMENDATION_CONFIG.managedFleetBoost : 0));
+    return {
+      candidate,
+      scores,
+      regionMatches: regionsOverlap(subject.regions, candidate.regions),
+      total,
+    };
+  });
+  ranked.sort((a, b) => b.total - a.total);
+  return ranked;
+}
+
+// ── Public entry point ──────────────────────────────────────────────────────
+
+export type RecommendationResult = {
+  subject: SubjectProfile;
+  considered: number;
+  eligible: ScoredCandidate[];
+  excluded: ExcludedRecord[];
+  strictMatches: ScoredCandidate[];
+  broaderMatches: ScoredCandidate[];
+};
+
+// Applies Stage-1 eligibility over the full candidate list, then Stage-2
+// ranking. Strict matches below the minimum similarity score are dropped; a
+// controlled fallback widens ONLY price and length tolerance — class,
+// region and guest gates are never relaxed — and broader matches are returned
+// in a separate tier so they can be labelled differently on the page. Fewer
+// than three results is an acceptable outcome; none is an acceptable outcome.
+export function recommendSimilarYachts(
+  subject: SubjectProfile,
+  catalogue: YachtCandidate[]
+): RecommendationResult {
+  const excluded: ExcludedRecord[] = [];
+  const eligible: YachtCandidate[] = [];
+
+  for (const rec of catalogue) {
+    const check = eligibilityCheck(subject, rec, RECOMMENDATION_CONFIG.strict.priceTolerance, RECOMMENDATION_CONFIG.strict.lengthTolerance);
+    if (check.ok) eligible.push(rec);
+    else excluded.push({ id: rec.id, name: rec.name, rule: check.rule, detail: check.detail });
+  }
+
+  const ranked = rankCandidates(subject, eligible);
+  const strictMatches = ranked.filter((r) => r.total >= RECOMMENDATION_CONFIG.minScore);
+
+  let broaderMatches: ScoredCandidate[] = [];
+  if (strictMatches.length < RECOMMENDATION_CONFIG.maxResults) {
+    const taken = new Set(strictMatches.map((r) => r.candidate.id));
+    const relaxed: YachtCandidate[] = [];
+    for (const rec of catalogue) {
+      if (taken.has(rec.id)) continue;
+      const check = eligibilityCheck(subject, rec, RECOMMENDATION_CONFIG.fallback.priceTolerance, RECOMMENDATION_CONFIG.fallback.lengthTolerance);
+      if (check.ok) relaxed.push(rec);
+    }
+    broaderMatches = rankCandidates(subject, relaxed)
+      .filter((r) => r.total >= RECOMMENDATION_CONFIG.minScore)
+      .slice(0, RECOMMENDATION_CONFIG.maxResults - strictMatches.length);
+  }
+
+  return { subject, considered: catalogue.length, eligible: ranked, excluded, strictMatches, broaderMatches };
+}
+
+// ── Full-catalogue walk ─────────────────────────────────────────────────────
+
+// Walks every page of the live catalogue (never a single 100-record subset)
+// through the shared cached searchYachts client, so the per-instance rate
+// guard and Next fetch cache still apply.
+export async function fetchFullCatalogue(): Promise<CyaYacht[]> {
+  const all: CyaYacht[] = [];
+  const seen = new Set<string>();
+  const pageSize = 200;
+  const maxPages = 20; // safety cap; ~1,920 records ≈ 10 pages
+  for (let page = 1; page <= maxPages; page++) {
+    const response = await searchYachts({ page, limit: pageSize, searchTerm: "", filters: {} });
+    const rows = (response.yachts as CyaYacht[] | undefined) ?? [];
+    for (const row of rows) {
+      const recId = typeof row.id === "string" ? row.id : null;
+      if (!recId || seen.has(recId)) continue;
+      seen.add(recId);
+      all.push(row);
+    }
+    if (rows.length < pageSize) break;
+  }
+  return all;
+}

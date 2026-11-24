@@ -1,80 +1,59 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { trackEvent } from "@/lib/analytics";
+import { ArrowRight, Ruler } from "lucide-react";
 
-// Persistent mobile pricing bar. Appears after the visitor scrolls past the
-// hero (so the hero band with the same price is not duplicated on screen) and
-// hides itself near the enquiry form so it never covers form fields, the
-// calendar or the lightbox. Shows the same headline rate as the hero and the
-// rates panel — one pricing source throughout.
-
-export function YachtPersistentBar({
-  yachtId,
-  headline,
-  hasRate,
-}: {
+type Props = {
   yachtId: string;
   headline: string;
   hasRate: boolean;
-}) {
+};
+
+// Sticky bar that appears once the hero has scrolled away and hides again
+// when the enquiry form is on screen (enquiry CTA would be redundant there).
+export function YachtPersistentBar({ yachtId, headline, hasRate }: Props) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const check = () => {
-      const hero = document.getElementById("yacht-hero");
-      const enquire = document.getElementById("enquire");
+    const hero = document.getElementById("yacht-hero");
+    const enquire = document.getElementById("enquire");
+    const onScroll = () => {
       const heroBottom = hero ? hero.getBoundingClientRect().bottom : 0;
-      let nearEnquire = false;
+      let enquireVisible = false;
       if (enquire) {
-        const r = enquire.getBoundingClientRect();
-        nearEnquire = r.top < window.innerHeight && r.bottom > 0;
+        const rect = enquire.getBoundingClientRect();
+        enquireVisible = rect.top < window.innerHeight && rect.bottom > 0;
       }
-      setVisible(heroBottom < 0 && !nearEnquire);
+      setVisible(heroBottom < 0 && !enquireVisible);
     };
-    check();
-    window.addEventListener("scroll", check, { passive: true });
-    window.addEventListener("resize", check);
-    return () => {
-      window.removeEventListener("scroll", check);
-      window.removeEventListener("resize", check);
-    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  const scrollTo = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 104, behavior: "smooth" });
-  };
 
   return (
     <div
-      aria-hidden={!visible}
-      className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#061625]/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(6,22,37,0.25)] backdrop-blur-md transition-transform duration-300 md:hidden ${
+      className={`fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[#061625] text-white transition-transform duration-300 ${
         visible ? "translate-y-0" : "translate-y-full"
       }`}
+      style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      aria-hidden={!visible}
     >
-      <div className="flex items-center gap-3">
-        <div className="min-w-0 flex-1">
-          <p className="truncate font-display text-lg italic leading-tight text-white">{headline}</p>
-          {!hasRate && <p className="text-xs text-white/60">Our team will confirm current rates</p>}
+      <div className="container mx-auto flex items-center justify-between gap-4 px-4 py-3">
+        <div className="flex min-w-0 items-center gap-3">
+          <Ruler className="h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
+          <p className="truncate text-sm">
+            {hasRate ? <span className="font-display italic text-[#EE9739]">{headline}</span> : <span className="text-white/80">Rates on request</span>}
+          </p>
         </div>
-        <button
-          type="button"
-          onClick={() => scrollTo("rates")}
-          className="shrink-0 rounded-full border border-white/40 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/10"
-        >
-          Rates &amp; Dates
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            trackEvent("yacht_proposal_click", { yacht_id: yachtId, source: "persistent_bar" });
-            scrollTo("enquire");
-          }}
-          className="shrink-0 rounded-full bg-[#EE9739] px-4 py-2.5 text-sm font-bold text-[#061625] shadow-lg transition-colors hover:bg-[#EA6F33]"
-        >
-          Enquire Now
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <a href="#rates" className="hidden rounded-full border border-white/25 px-4 py-2 text-xs font-medium text-white transition-colors hover:bg-white/10 sm:inline-flex">
+            Rates &amp; Dates
+          </a>
+          <a href="#enquire" className="inline-flex items-center gap-1.5 rounded-full bg-[#EE9739] px-4 py-2 text-xs font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]">
+            Enquire Now <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </a>
+        </div>
       </div>
     </div>
   );

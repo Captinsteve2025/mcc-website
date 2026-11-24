@@ -1,58 +1,48 @@
 # MCC Website — Product Improvement Register
 
-Status progression: Identified → In Progress → Implemented → Deployed → Production-Verified → Approved for Launch.
-Live site: https://mcc-website-one.vercel.app/ (deploys from the `collaborate` branch after sync).
+Statuses: Shipped · Verified in production · Failed commercial acceptance · In progress · Planned
 
-> Note (this session): an earlier version of this register was lost in a sandbox
-> reset and was recreated below. Production-verified statuses that predate this
-> recreation are re-stated from session records; anything not yet re-verified in
-> production is marked accordingly.
+---
 
-## Verified production facts (unchanged)
+## Milestones
 
-| Fact | Status |
-| --- | --- |
-| Dining section: 9 EH accordions, 0 empty, 0 entity artifacts, content integrity 6,330 chars in/out | Production-Verified (screenshots in `test-results/dining-verification/`, script lost in reset — re-promote before next CI pass) |
-| Collapsed dining heights: desktop 1,669px / mobile 2,724px vs targets <1,600 / <2,200 | Open — both missed; mobile worst (~24% over). Mobile carousel + reduced spacing shipped this session, not yet production-measured |
-| Calendar id mapping (confirmed bookings → Booked, active holds → Hold, transit → Transit, else Unavailable, empty ≠ available) | Production-Verified |
-| CYA endpoints: base already ends `/api/v1`; `/bookings?yacht_id=` primary; legacy mapping only on 404 | Production-Verified |
+### M1 — CYA availability calendar (Shipped · Verified in production)
+Public per-yacht availability from the CYA bookings feed: confirmed bookings → Booked, active holds → Hold (expired holds dropped), transit → Transit, other → Unavailable. Empty bookings are never shown as "available". Hydration fix: the calendar always renders three months, with the second and third hidden on mobile via CSS.
 
-## Register entries (current cycle)
+### M2 — Crew profiles (Shipped)
+Admin-maintained MCC profiles merged with CYA-supplied crew; compact 4:3 cards, biography expand tracking (`yacht_crew_bio_expand`). Crew diagnostic in `/admin/api-test` distinguishes "CYA supplies no crew data" from "parser gap". Contact details redacted in diagnostics.
 
-### 1. Premium pricing & conversion design (hero + panel + persistent bar) — Implemented, awaiting deploy
-- Hero headline pricing from one shared source (`src/lib/yacht-pricing.ts`): range `$X – $Y / week` when seasons differ, `From $X / week` otherwise, `Rates on request` when CYA supplies nothing. Never zero, never invented, never converted across currencies.
-- Primary CTA "Enquire About This Yacht" (peach #EE9739); secondary outlined "View Rates & Availability" scrolls to the panel.
-- "Plan Your Charter — Rates & Availability" panel: desktop 2-col (pricing left, live calendar right, expandable "View Full Charter Rates & Terms" — no rate-table duplication); mobile stacked headline rate → seasonal summary → calendar → expandable terms → CTA.
-- CYA fields actually supplied and used: `seasons[]` (title, season_category, dates, base_price, currency, areas, pickup, base_port, charter_type, terms) and `min_price_usd`. Christmas/New-Year, APA, taxes, guest-number pricing and all-inclusive-vs-plus-expenses distinction render **only when a season's own terms/notes carry them** — CYA supplies no dedicated structured fields for these, so none are fabricated.
-- Persistent mobile bar (`YachtPersistentBar`): same headline rate, appears after hero scroll, hides near the enquiry form, safe-area inset. Desktop: no floating panel; compact sidebar/nav left as-is (existing sticky nav carries pricing via nav item).
+### M3 — Dining & menus (Shipped · Verified in production)
+Dining & Cuisine section from CYA `menuDetails`/`menuGeneral`: categories, food photography, sample menus; mobile snap carousel. Field-mapping correction applied after production QA; menu diagnostic in `/admin/api-test`.
 
-### 2. Page hierarchy & navigation — Implemented, awaiting deploy
-- Order: hero (name, rate, CTAs) → gallery + quick specs → sticky nav → Rates & Availability panel → Overview + Accommodation + Specifications (beside sticky enquiry) → Experiences (watersports) → Crew → Dining → Amenities → booking conditions → recommendations → footer.
-- Nav labels: Overview / Rates & Availability / Accommodation / Crew / Dining / Experiences / Gallery / Amenities / Enquire (Gallery & Amenities only when data present; Specifications appears only when specs exist).
+### M4 — Premium pricing & conversion design (Shipped)
+"Plan Your Charter — Rates & Availability" panel directly under the hero gallery: published seasonal rates (unpriced seasons shown as "Rates on request" — nothing invented), full terms expander, live availability calendar beside the rates. Persistent bottom bar appears after the hero and hides at the enquiry form. Page hierarchy: hero → gallery + quick specs → section nav → rates panel → overview / accommodation / specifications beside sticky enquiry → amenities → booking conditions → persistent bar → recommendations → footer.
 
-### 3. Crew redesign — Implemented, awaiting deploy
-- Compact cards: consistent 4:3 portrait, name, verified role, ≤220-char preview + "Read Full Biography" expansion (event `yacht_crew_bio_expand`).
-- Desktop grid: 2 crew → 2-col pairing; larger crews → 2-col, 3-col on wide screens. Mobile: compact stack. No fabricated roles; captain/chef ordering driven only by verified role text.
+### M5 — Similar-yacht recommendations, original implementation — **FAILED COMMERCIAL ACCEPTANCE**
+The first recommendation engine shipped but its results for ENDLESS HORIZON (YCM FIFTY 165 ft motor $172,800; TRINAKRIA ~161 ft sail $86,400; NO BAD IDEAS 160 ft motor $225,000) were rejected on commercial review: a motor yacht and a 161 ft sail yacht are not credible alternatives to an 80 ft sailing catamaran at ~$87k–$92k/week. Root causes established on review:
+1. Only the first 100 of ~1,920 catalogue records were considered (single search page).
+2. No Stage-1 eligibility gates — pure weighted ranking let class-mismatched yachts rank; a type mismatch cost only 20% weight.
+3. Unknown factors were excluded from the weighted average, inflating scores for sparse records.
+4. Coarse type normalisation conflated sailing cats, power cats and motor yachts.
+5. No length-unit conversion (metres and feet treated as interchangeable).
+6. No pricing band or currency/basis comparability check.
+7. Guest capacity used a soft tolerance instead of "never below the reference party".
+8. Top 3 were always forced (only bar: score > 0), so unsuitable yachts filled the row.
 
-### 4. Dining mobile refinements — Implemented, awaiting deploy
-- Mobile photo carousel (swipeable, snap, partial next-photo preview) replacing the 1-col grid; captions kept.
-- Reduced vertical spacing; "restaurant-menu" typography (62ch measure, Playfair initial) inside expanded panels; 9 EH categories unchanged; no empty accordions; Sample Menu fallback preserved.
-- Height correction recorded: baselines stand at desktop 1,669px / mobile 2,724px (register previously overstated both misses); production re-measure required after deploy.
+### M6 — Correct similar-yacht recommendation engine (Shipped — pending commercial acceptance)
+Two-stage replacement, separate milestone from M5:
+- **Stage 1 — mandatory eligibility (hard gates):** same genuine yacht class (sailing cat / power cat / sailing monohull / motor / motorsailer; uncertain types excluded, never guessed); ≥1 verified overlapping charter region from seasonal CYA areas (never Mediterranean-for-Caribbean); pricing within ±25% of the reference's published range with comparable currency (no invented conversions or APA; no published rate → excluded from strict); length within ±25% after unit normalisation (m→ft ×3.28084, units never assumed); guest capacity ≥ reference party size; self and duplicate records excluded.
+- **Stage 2 — ranking of eligible yachts only:** pricing 30% / region+season 25% / class+model 20% / guests+cabins 15% / length 10%; unknown factors score at a neutral floor (missing data never inflates); minimum similarity threshold; weights and tolerances centrally configurable in `RECOMMENDATION_CONFIG`.
+- **Controlled fallback:** fewer than three strict matches is an honest outcome. A controlled expansion widens ONLY price and length tolerance; class, region and guest gates are never relaxed; broader alternatives are labelled distinctly on the page; a premium "ask MCC" CTA covers the empty case.
+- **Full catalogue:** all pages walked through the shared cached client (no single-page subset, no extra uncached CYA load).
+- **Cards:** customer-friendly class label (no invented classifications), length in feet, guests, cabins, verified weekly rate with currency, cruising region, Explore Yacht CTA.
+- **Admin diagnostic:** `/api/recommendation-diagnostic?yacht_id=` (admin token, `/admin/api-test` card) reports reference profile, records considered, exclusions per rule, eligible count, ranked scores with reasons, and relaxed-threshold usage.
+- **Acceptance plan:** ENDLESS HORIZON first (expected profile derived, not hardcoded: sailing cat, ~60–100 ft, ~$65,250–$115,000/wk, ≥8 guests, ≥4 cabins preferred, BVI/Bahamas overlap), then MISCHIEVOUS, OHANA, VIVA LA VIDA, plus edge cases (smaller sailing cat, power cat, motor yacht, missing pricing, missing regions, no-suitable-alternatives). Live runs happen in production after deploy; the engine is **not commercially approved until the owner reviews the results**.
 
-### 5. React hydration #418 — Root cause fixed, awaiting deploy
-- Root cause: `YachtAvailabilityCalendar` chose 1 vs 3 visible months from `window.innerWidth` during the first client render. Server rendered 3; mobile clients re-rendered 1 → hydration mismatch (args containing HTML).
-- Fix: always render 3 months server-side; months 2–3 hidden on mobile via CSS. No suppression. Verify in production on mobile after deploy.
+---
 
-### 6. Intelligent similar-yacht recommendations — Implemented, awaiting deploy
-- "Discover More Exceptional Yachts" after enquiry, before footer; "Explore All Charter Yachts" CTA. 3 cards desktop, swipeable partial-preview carousel mobile.
-- Deterministic scorer (`src/lib/similar-yachts.ts`) over the CYA catalogue rows already cached server-side — no extra CYA request per load. Weights: pricing 30%, region 25%, type 20%, guests 15%, length 10% (`SIMILARITY_WEIGHTS`, centrally configurable).
-- Pricing compared only like-for-like (USD-normalised when both supply `min_price_usd`, else same-currency); missing data excluded from the weighted sum, never zero. Self, duplicates and inactive records excluded.
-- Cards: photo, name, type, length, guests, cabins, starting rate or "Rates on request", "Explore Yacht" link. Server-rendered crawlable links, lazy-loaded images.
-- **Managed-fleet preference: not applied.** The only reliable managed mapping remains aquanimity/atlas (managed pages, not CYA catalogue members); CYA catalogue records carry no managed flag, and name-based inference is prohibited. Constants `MANAGED_FLEET_SLUGS`/`MANAGED_FLEET_BOOST` are defined for when a reliable mapping exists.
-- Verification of scores/recommendations for the 4 known CYA yachts is pending deploy (live API unreachable from dev).
-
-### 7. Future analytics events (documented, NOT implemented)
-- `yacht_hero_enquiry_click`, `yacht_rates_nav_click`, `yacht_pricing_panel_interact`, `yacht_guest_count_select`, `yacht_rates_expand`, `yacht_calendar_interact` (beyond existing `yacht_availability_view` / `yacht_availability_date_select`), `yacht_persistent_bar_click`, `yacht_crew_bio_expand` (implemented), `yacht_menu_expand`, `yacht_gallery_interact`, `enquiry_submit`, booking attribution (`utm`-carried enquiry context).
-
-## Boundaries honoured this cycle
-No changes to the enquiry system, database config, email/SMTP, CYA booking integration, SEO migration, WordPress redirects or CYA API credentials.
+## Standing constraints
+- Never fabricate CYA data; empty or unknown fields render as unknown, never as defaults.
+- Deployment: user syncs to GitHub `mcc-website` `collaborate` branch → Vercel auto-deploy. Never deploy from the sandbox.
+- Enquiry system, database config, SMTP, CYA booking integration, SEO migration and credentials are out of bounds.
+- Managed-fleet preference (Aquanimity, Atlas) applies only after eligibility; commercial preference never overrides suitability.
