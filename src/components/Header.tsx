@@ -30,7 +30,7 @@ function getDestinationLink(slug: string): string {
   return destinationPages[slug] || `/destinations/${slug}`;
 }
 
-export function Header() {
+export function Header({ compact = false }: { compact?: boolean } = {}) {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -49,12 +49,12 @@ export function Header() {
       role="banner"
     >
       <div className="container mx-auto px-4 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
+        <div className={`flex h-16 items-center justify-between ${compact ? "gap-3" : "lg:h-20"}`}>
           <Link href="/" className="flex items-center gap-2" aria-label="My Caribbean Charters - Home">
-            <Logo variant={isScrolled ? "dark" : "light"} />
+            <Logo variant={isScrolled ? "dark" : "light"} className={compact ? "!h-10 lg:!h-11" : ""} />
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-8" role="navigation" aria-label="Main navigation">
+          <nav className={`hidden items-center lg:flex ${compact ? "gap-4 whitespace-nowrap xl:gap-6" : "gap-8"}`} role="navigation" aria-label="Main navigation">
             <div className="relative group">
               <button
                 className={`flex items-center gap-1 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#EE9739] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#EE9739]" : "text-white hover:text-white/80"}`}
@@ -131,7 +131,8 @@ export function Header() {
               className={`hidden md:flex items-center gap-2 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739] rounded-md px-2 py-1 ${isScrolled ? "text-[#061625] hover:text-[#EE9739]" : "text-white hover:text-white/80"}`}
               aria-label="Call us at +1 786 520 1558"
             >
-              <Phone className="w-4 h-4" aria-hidden="true" /> +1 (786) 520-1558
+              <Phone className="h-4 w-4 shrink-0" aria-hidden="true" />
+              <span className={compact ? "hidden whitespace-nowrap xl:inline" : undefined}>+1 (786) 520-1558</span>
             </a>
             <Button asChild className="hidden sm:inline-flex">
               <Link href="#enquire">Enquire Now</Link>

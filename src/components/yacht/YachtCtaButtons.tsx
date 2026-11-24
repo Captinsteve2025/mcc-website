@@ -21,7 +21,7 @@ export function YachtCtaButtons({
   };
 
   return (
-    <div className="mt-6">
+    <div className="mt-3 lg:mt-0">
       <div className="hidden flex-wrap items-center gap-3 md:flex">
         <button
           type="button"
@@ -29,7 +29,7 @@ export function YachtCtaButtons({
             trackEvent("yacht_proposal_click", { yacht_id: yachtId });
             scrollTo("enquire");
           }}
-          className="inline-flex items-center gap-2 rounded-full bg-[#EE9739] px-7 py-3.5 text-base font-bold uppercase tracking-wide text-[#061625] shadow-xl transition-colors hover:bg-[#EA6F33]"
+          className="inline-flex items-center gap-2 rounded-full bg-[#EE9739] px-5 py-2.5 text-sm font-bold uppercase tracking-wide text-[#061625] shadow-xl transition-colors hover:bg-[#EA6F33]"
         >
           Enquire About This Yacht
         </button>

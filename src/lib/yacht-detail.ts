@@ -235,6 +235,15 @@ export type AccommodationSummary = {
   description: string | null;
 };
 
+export function guestAgeRestriction(accommodation: AccommodationSummary) {
+  const notes = [accommodation.description, ...accommodation.otherFields.map(({ value }) => value)].join(" ");
+  const match = notes.match(/\bfor (\d+) (?:and|&) (\d+) (?:pax|guests),? guests must be under (?:the age of )?(\d+)[^.!?]*\bprior approval\b/i);
+  if (!match) return null;
+  const [, first, last, age] = match.map(Number);
+  if (first < 2 || last !== first + 1 || last !== accommodation.pax || age < 1 || age > 17) return null;
+  return { adults: first - 1, maximum: last, age };
+}
+
 // Verified accommodations object: cabin counts, bathroom fixtures and free
 // text. Only meaningful, non-zero values are rendered.
 export function parseAccommodation(detail: Yacht): AccommodationSummary {
@@ -335,8 +344,8 @@ export function parseAmenities(detail: Yacht): Amenity[] {
   const waterCap = num(detail.water_capacity);
   if (waterCap !== null && waterCap > 0) amenities.push({ label: "Water capacity", value: `${waterCap} L` });
   const fuel = num(detail.fuel_consumption);
-  if (fuel !== null && fuel > 0) {
-    const unit = str(detail.fuel_consumption_unit) ?? "L/h";
+  const unit = str(detail.fuel_consumption_unit);
+  if (fuel !== null && fuel > 0 && unit && /[a-z]/i.test(unit)) {
     amenities.push({ label: "Fuel consumption", value: `${fuel} ${unit}` });
   }
   add("Wi-Fi", detail.wifi, "On board");

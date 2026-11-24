@@ -1,5 +1,5 @@
-import { searchYachts } from "./cya";
-import { parseAccommodation } from "./yacht-detail";
+import { getYachtDetail, searchYachts } from "./cya";
+import { guestAgeRestriction, parseAccommodation } from "./yacht-detail";
 import type { Yacht as CyaYacht } from "./cya";
 
 // Two-stage similar-yacht engine.
@@ -46,6 +46,7 @@ const FEET_PER_METRE = 3.28084;
 
 export type YachtClass =
   | "catamaran"
+  | "trimaran"
   | "sailing-catamaran"
   | "power-catamaran"
   | "sailing-monohull"
@@ -58,9 +59,13 @@ const MOTOR_MARKERS = ["motor", "power", "flybridge", "trawler", "superyacht"];
 // Classifies a CYA yachtType string. Returns null when the type cannot be
 // assigned with confidence — uncertain records are excluded rather than
 // guessed.
-export function classifyYachtType(rawType: unknown): YachtClass | null {
+export function classifyYachtType(rawType: unknown, id?: string): YachtClass | null {
+  // The operator's specs identify CUAN LAW as a trimaran despite the feed category.
+  // https://www.cuanlaw.com/about/
+  if (id === "6a023831ce6b8709506dfeed") return "trimaran";
   if (typeof rawType !== "string" || rawType.trim().length === 0) return null;
   const type = rawType.toLowerCase().trim();
+  if (type.includes("trimaran")) return "trimaran";
   const isCat = type.includes("catamaran") || /\b(?:powercat|cat)\b/.test(type);
   const isSail = SAILING_MARKERS.some((m) => type.includes(m));
   const isMotor = MOTOR_MARKERS.some((m) => type.includes(m));
@@ -77,10 +82,12 @@ export function classifyYachtType(rawType: unknown): YachtClass | null {
 
 // Customer-facing class labels; no invented classifications, no "power" vs
 // "sail" jargon (a bare "yacht" label is used only when CYA itself is vague).
-export function customerClassLabel(rawType: unknown): string {
-  switch (classifyYachtType(rawType)) {
+export function customerClassLabel(rawType: unknown, id?: string): string {
+  switch (classifyYachtType(rawType, id)) {
     case "catamaran":
       return "Catamaran";
+    case "trimaran":
+      return "Trimaran";
     case "sailing-catamaran":
       return "Sailing Catamaran";
     case "power-catamaran":
@@ -196,9 +203,10 @@ function currencyCode(value: unknown): string | null {
 }
 
 function pricingBasis(value: unknown): string | null {
-  return typeof value === "string" && value.trim()
-    ? value.toLowerCase().trim().replace(/[\s_-]+/g, " ")
-    : null;
+  if (typeof value !== "string" || !value.trim()) return null;
+  const basis = value.toLowerCase().trim().replace(/[\s_-]+/g, " ");
+  if (["inclusive", "allinclusive"].includes(basis)) return "all inclusive";
+  return basis;
 }
 
 export function candidateFromCatalogue(rec: Record<string, unknown>): YachtCandidate | null {
@@ -212,7 +220,7 @@ export function candidateFromCatalogue(rec: Record<string, unknown>): YachtCandi
     id: rec.id,
     name,
     rawType,
-    class: classifyYachtType(rawType),
+    class: classifyYachtType(rawType, idLower),
     lengthFt: lengthToFeet(rec.length, rec.units),
     guests: toNumber(rec.pax),
     cabins: toNumber(rec.cabins),
@@ -256,7 +264,8 @@ export type SubjectProfile = {
 // prices, unit-aware length, accommodation pax/cabins, and seasonal charter
 // areas (not flag or builder).
 export function subjectFromDetail(detail: Record<string, unknown>, id: string): SubjectProfile {
-  const rawSeasons = seasonsOf(detail);
+  const today = new Date().toISOString().slice(0, 10);
+  const rawSeasons = seasonsOf(detail).filter((season) => seasonDates([season]).some(({ end }) => end >= today));
   const priced = rawSeasons
     .map((s) => ({ price: toNumber(s.base_price), currency: currencyCode(s.currency) }))
     .filter((s): s is { price: number; currency: string | null } => s.price !== null);
@@ -272,13 +281,13 @@ export function subjectFromDetail(detail: Record<string, unknown>, id: string): 
     id,
     name: typeof detail.yachtName === "string" ? detail.yachtName : "Yacht",
     rawType,
-    class: classifyYachtType(rawType),
+    class: classifyYachtType(rawType, id.toLowerCase()),
     lengthFt: lengthToFeet(detail.lenght ?? detail.length, detail.units),
-    guests: accommodation.pax,
+    guests: guestAgeRestriction(accommodation)?.adults ?? accommodation.pax,
     cabins: accommodation.cabins,
     minPrice: currencies.length === 1 && currencies[0] ? Math.min(...prices) : null,
     maxPrice: currencies.length === 1 && currencies[0] ? Math.max(...prices) : null,
-    minPriceUsd: toNumber(detail.min_price_usd),
+    minPriceUsd: null, // The catalogue floor can include expired seasons.
     currency: currencies.length === 1 ? currencies[0] : null,
     pricingBases: [...new Set(rawSeasons.map((s) => pricingBasis(s.pricing_basis ?? s.charter_type)).filter((basis): basis is string => basis !== null))],
     regions: [...new Set(regions)],
@@ -549,6 +558,46 @@ export function recommendSimilarYachts(
   }
 
   return { subject, considered: catalogue.length, eligible: ranked, excluded, strictMatches, broaderMatches };
+}
+
+export async function loadYachtRecommendations(subject: SubjectProfile): Promise<RecommendationResult> {
+  if (!subject.class || !subject.lengthFt || !subject.guests || !subject.regions.length || subject.minPrice === null) {
+    return recommendSimilarYachts(subject, []);
+  }
+
+  const { priceTolerance, lengthTolerance } = RECOMMENDATION_CONFIG.fallback;
+  const candidates = candidatesFromCatalogue(await fetchFullCatalogue());
+  // The catalogue floor can be older than the brochure. Use it for a
+  // bounded shortlist, then compare current brochure rates and terms.
+  const shortlist = candidates
+    .map((candidate) => ({ ...candidate, pricingBasis: null }))
+    .filter((candidate) => eligibilityCheck(subject, candidate, priceTolerance, lengthTolerance).ok);
+  const ranked = rankCandidates(subject, shortlist).slice(0, 8);
+  const checked = await Promise.all(ranked.map(async ({ candidate }) => {
+    try {
+      const detail = await getYachtDetail(candidate.id);
+      const profile = subjectFromDetail(detail, candidate.id);
+      if (profile.minPrice === null || profile.pricingBases.length > 1) return null;
+      return {
+        ...candidate,
+        rawType: profile.rawType,
+        class: profile.class,
+        lengthFt: profile.lengthFt,
+        guests: profile.guests,
+        cabins: profile.cabins,
+        minPrice: profile.minPrice,
+        minPriceUsd: null,
+        currency: profile.currency,
+        pricingBasis: profile.pricingBases[0] ?? null,
+        regions: profile.regions,
+        seasonDates: profile.seasonDates,
+      };
+    } catch {
+      return null;
+    }
+  }));
+  const result = recommendSimilarYachts(subject, checked.filter((candidate) => candidate !== null));
+  return { ...result, considered: candidates.length };
 }
 
 // ── Full-catalogue walk ─────────────────────────────────────────────────────

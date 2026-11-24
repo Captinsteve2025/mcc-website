@@ -46,6 +46,8 @@ test("shows at most three comparable yachts and carries the party's search", asy
   const yachtUrl = "/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa";
   await page.goto(yachtUrl);
   const recommendations = page.getByRole("region", { name: "Similar Yachts" });
+  await expect(page.getByText("Up to 8 adults", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Guests 9 and 10 must be under 10 and require prior approval.")).toBeVisible();
   await expect(recommendations.getByRole("heading", { level: 3 })).toHaveText([
     "Closest Match", "Second Match", "Third Match",
   ]);
@@ -61,6 +63,23 @@ test("shows at most three comparable yachts and carries the party's search", asy
 
   await page.goto(`${yachtUrl}?guests=12`);
   await expect(recommendations).toHaveCount(0);
+});
+
+test("keeps the gallery high on the page and the desktop calendar inside its panel", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
+  expect(await page.locator("#gallery").evaluate((element) => element.getBoundingClientRect().top)).toBeLessThan(350);
+  const calendar = page.locator("#availability").getByRole("grid");
+  await expect(calendar).toHaveCount(1);
+  expect(await calendar.evaluate((grid) => {
+    const bounds = grid.getBoundingClientRect();
+    return Array.from(grid.querySelectorAll("button")).every((button) => {
+      const rect = button.getBoundingClientRect();
+      return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1;
+    });
+  })).toBe(true);
+  await expect(page.getByText("Engines", { exact: true })).toBeVisible();
+  await expect(page.getByText("Fuel consumption", { exact: true })).toHaveCount(0);
 });
 
 test("fits yacht brochure text and the training link at 320 pixels", async ({ page }) => {

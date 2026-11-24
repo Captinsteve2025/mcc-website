@@ -142,7 +142,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
   }
 
   return (
-    <div className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
+    <div className="rounded-xl bg-white p-5 shadow-sm [container-type:inline-size] sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="font-display text-xl italic text-[#061625]">Charter availability</h3>
         <div className="flex items-center gap-2">
@@ -167,7 +167,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
         </div>
       </div>
 
-      <div className={`grid gap-4 md:gap-6 ${"md:grid-cols-3"}`}>
+      <div className="grid grid-cols-1 gap-5 [@container(min-width:34rem)]:grid-cols-2 [@container(min-width:51rem)]:grid-cols-3">
         {visibleMonths.map((month, i) => {
           const year = month.getUTCFullYear();
           const monthIndex = month.getUTCMonth();
@@ -180,9 +180,10 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
           return (
             <div
               key={isoOf(month)}
-              // Months 2 and 3 are server-rendered too, so the mobile markup
-              // matches the server exactly; they are simply hidden by CSS.
-              className={i > 0 ? "hidden md:block" : undefined}
+              // Additional months appear only when the calendar panel can fit them.
+              className={i === 0 ? "min-w-0" : i === 1
+                ? "hidden min-w-0 [@container(min-width:34rem)]:block"
+                : "hidden min-w-0 [@container(min-width:51rem)]:block"}
             >
               <p className="mb-2 text-center text-sm font-semibold text-[#061625]">
                 {MONTHS[monthIndex]} {year}
@@ -211,7 +212,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
                       title={title}
                       aria-label={title}
                       aria-pressed={selected}
-                      className={`relative aspect-square rounded-md text-xs tabular-nums transition-colors ${
+                      className={`relative h-11 min-w-0 rounded-md text-xs tabular-nums transition-colors ${
                         selected
                           ? "bg-[#EE9739] font-bold text-[#061625] ring-2 ring-[#061625] ring-offset-1"
                           : ""

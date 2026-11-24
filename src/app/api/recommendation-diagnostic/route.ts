@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "node:crypto";
 import { getYachtDetail } from "@/lib/cya";
-import { RECOMMENDATION_CONFIG, recommendSimilarYachts, subjectFromDetail, candidatesFromCatalogue, fetchFullCatalogue } from "@/lib/similar-yachts";
+import { RECOMMENDATION_CONFIG, loadYachtRecommendations, subjectFromDetail } from "@/lib/similar-yachts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
 // profile (classification, unit-normalised length, guests, cabins, published
 // pricing, seasonal regions), how many catalogue records were considered,
 // exclusions grouped by rule with reasons, the eligible set, and the ranked
-// strict/broader selections with per-factor scores. Reuses the shared cached
-// catalogue client — no extra CYA requests beyond the detail record.
+// strict/broader selections with per-factor scores. Uses the same catalogue
+// and brochure checks as the yacht page.
 
 const DEFAULT_YACHT_ID = "69f33df0b5a1600bf785869e"; // ENDLESS HORIZON
 
@@ -39,9 +39,9 @@ export async function GET(request: Request) {
   const yachtId = /^[a-f0-9]{8,32}$/i.test(requested) ? requested : DEFAULT_YACHT_ID;
 
   try {
-    const [detail, catalogue] = await Promise.all([getYachtDetail(yachtId), fetchFullCatalogue()]);
+    const detail = await getYachtDetail(yachtId);
     const subject = subjectFromDetail(detail, yachtId);
-    const result = recommendSimilarYachts(subject, candidatesFromCatalogue(catalogue));
+    const result = await loadYachtRecommendations(subject);
 
     const byRule: Record<string, number> = {};
     for (const e of result.excluded) byRule[e.rule] = (byRule[e.rule] ?? 0) + 1;

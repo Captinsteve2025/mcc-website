@@ -53,6 +53,10 @@ Reproduced horizontal overflow on the live ENDLESS HORIZON, MISCHIEVOUS, and OHA
 
 Each CYA yacht detail page ranks up to three alternatives. The matcher preserves the published yacht category, requires a shared cruising region and sufficient capacity, and compares like-currency weekly base rates. When CYA publishes differently named pricing arrangements on both listings, the match is excluded. The closest matches use a 25% price and length band. Clearly labeled broader alternatives may fill available places within a 40% band. An empty result hides the section. Production and commercial acceptance are pending.
 
+### Yacht detail page review (Implemented)
+
+The shorter yacht header puts photography higher on the page. The calendar fits the number of months to its panel, and specification labels have a dedicated column. Fuel consumption appears when its unit is legible. Brochure checks exclude expired recommendation rates and use published age restrictions when comparing guest capacity. CUAN LAW's classification follows the operator's trimaran specification. Production and commercial acceptance are pending.
+
 ---
 
 ## Standing constraints

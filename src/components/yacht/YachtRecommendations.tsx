@@ -33,7 +33,7 @@ function RecommendationCard({ match, broader, searchQuery }: {
       </div>
       <div className="flex flex-1 flex-col p-5 [overflow-wrap:anywhere]">
         {broader && <p className="mb-2 text-xs font-semibold text-[#337891]">Broader alternative</p>}
-        <p className="text-xs font-medium uppercase tracking-wide text-[#061625]/60">{customerClassLabel(candidate.rawType)}</p>
+        <p className="text-xs font-medium uppercase tracking-wide text-[#061625]/60">{customerClassLabel(candidate.rawType, candidate.id)}</p>
         <h3 className="mt-1 font-display text-xl italic text-[#061625]">{candidate.name}</h3>
         <ul className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-[#061625]/70">
           {candidate.lengthFt !== null && (
@@ -82,7 +82,7 @@ export function YachtRecommendations({ strictMatches, broaderMatches, searchQuer
       <p className="mt-3 max-w-2xl text-sm text-[#061625]/70">
         Weekly rates are indicative. Availability for your dates is confirmed separately.
       </p>
-      <ul className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <ul className={`mt-6 grid grid-cols-1 gap-6 ${matches.length > 1 ? "md:grid-cols-2" : "max-w-md"} ${matches.length > 2 ? "lg:grid-cols-3" : ""}`}>
         {matches.map(({ match, broader }) => (
           <li key={match.candidate.id} className="min-w-0">
             <RecommendationCard match={match} broader={broader} searchQuery={searchQuery} />

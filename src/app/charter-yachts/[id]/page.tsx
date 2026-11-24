@@ -27,19 +27,14 @@ import { YachtDiningSection } from "@/components/yacht/YachtDiningSection";
 import { YachtCtaButtons } from "@/components/yacht/YachtCtaButtons";
 import { YachtRecommendations } from "@/components/yacht/YachtRecommendations";
 import { getYachtDetail } from "@/lib/cya";
-import {
-  candidatesFromCatalogue,
-  fetchFullCatalogue,
-  recommendSimilarYachts,
-  subjectFromDetail,
-  type YachtCandidate,
-} from "@/lib/similar-yachts";
+import { loadYachtRecommendations, subjectFromDetail } from "@/lib/similar-yachts";
 import { getYachtCrew, getYachtAvailability, mergeCrewProfiles } from "@/lib/yacht-content";
 import {
   beamWithUnit,
   cleanText,
   collectGallery,
   draftWithUnit,
+  guestAgeRestriction,
   lengthWithUnit,
   num,
   parseAccommodation,
@@ -110,13 +105,10 @@ export default async function YachtDetailPage({
   const subject = subjectFromDetail(yacht, id);
   const partySize = /^\d{1,3}$/.test(one("guests")) ? Number(one("guests")) : 0;
   if (partySize > 0) subject.guests = partySize;
-  const candidates = subject.class && subject.lengthFt && subject.guests && subject.regions.length > 0
-    ? fetchFullCatalogue().then(candidatesFromCatalogue).catch((): YachtCandidate[] => [])
-    : Promise.resolve([] as YachtCandidate[]);
-  const [managedCrew, availability, catalogue] = await Promise.all([
+  const [managedCrew, availability, recommendation] = await Promise.all([
     getYachtCrew(id),
     getYachtAvailability(id),
-    candidates,
+    loadYachtRecommendations(subject).catch(() => null),
   ]);
   // Crew: admin-approved profiles first, then crew CYA supplies in the detail
   // record. When neither source has crew, the section is skipped — and the
@@ -137,6 +129,8 @@ export default async function YachtDetailPage({
   const name = str(yacht.yachtName) ?? "Unnamed yacht";
   const gallery = collectGallery(yacht);
   const accommodation = parseAccommodation(yacht);
+  const restrictedGuests = guestAgeRestriction(accommodation);
+  const guestCapacity = restrictedGuests ? `Up to ${restrictedGuests.adults} adults` : `Up to ${accommodation.pax}`;
   const amenities = parseAmenities(yacht);
   const watersports = parseWatersports(yacht);
   const seasons = parseSeasons(yacht);
@@ -160,7 +154,7 @@ export default async function YachtDetailPage({
   // Quick spec strip — only fields this yacht actually provides.
   const quickSpecs: Array<{ icon: typeof Ruler; label: string; value: string }> = [];
   if (length) quickSpecs.push({ icon: Ruler, label: "Length", value: `${length.value} ${length.unit}` });
-  if (accommodation.pax !== null) quickSpecs.push({ icon: Users, label: "Guests", value: `Up to ${accommodation.pax}` });
+  if (accommodation.pax !== null) quickSpecs.push({ icon: Users, label: "Guests", value: guestCapacity });
   if (accommodation.cabins !== null) quickSpecs.push({ icon: BedDouble, label: "Cabins", value: String(accommodation.cabins) });
   if (cruiseSpeed !== null) quickSpecs.push({ icon: Gauge, label: "Cruising speed", value: `${cruiseSpeed} kn` });
   if (year !== null) quickSpecs.push({ icon: Calendar, label: "Built", value: String(year) });
@@ -209,10 +203,6 @@ export default async function YachtDetailPage({
 
   const slug = `cya-${id.slice(0, 12)}`;
 
-  // Two-stage similar-yacht engine: Stage-1 eligibility over the full
-  // catalogue, then Stage-2 ranking with a controlled fallback tier. When the
-  // catalogue is unavailable the section is skipped rather than degraded.
-  const recommendation = recommendSimilarYachts(subject, catalogue);
   const recommendationQuery = new URLSearchParams();
   for (const key of ["destination", "start", "end", "guests"]) {
     const value = one(key);
@@ -221,27 +211,29 @@ export default async function YachtDetailPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8f7f4]">
-      <Header />
+      <Header compact />
 
       <main className="flex-1">
         {/* --- Yacht identity --- */}
-        {/* Mobile: compact identity band so photography enters the first
-            viewport; desktop keeps the taller composition. */}
-        <section id="yacht-hero" className="bg-[#061625] px-4 pb-6 pt-24 text-white md:pb-12 md:pt-40">
+        <section id="yacht-hero" className="bg-[#061625] pb-5 pt-20 text-white md:pb-7 md:pt-24">
           <div className="container mx-auto px-4">
             <Link
               href={destination ? `/charter-yachts?destination=${encodeURIComponent(destination)}` : "/charter-yachts"}
-              className="mb-3 inline-flex items-center gap-2 text-sm text-white/80 transition-colors hover:text-white md:mb-6"
+              className="mb-1 inline-flex items-center gap-2 text-sm text-white/80 transition-colors hover:text-white"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" /> Back to all charter yachts
             </Link>
-            <h1 className="break-words font-display text-4xl font-normal italic leading-tight md:text-6xl">{name}</h1>
-            <p className="mt-2 text-white/80">
-              {[builder, year !== null ? `Built ${year}` : null].filter(Boolean).join(" | ") || (yachtType ?? "Charter yacht")}
-            </p>
-            <p className="mt-3 font-display text-2xl italic text-[#EE9739]">{heroPrice}</p>
-            <p className="mt-1 text-xs text-white/60">Indicative weekly rate — subject to confirmation</p>
-            <YachtCtaButtons yachtId={id} hasLiveData={availability.hasLiveData} />
+            <div className="lg:flex lg:items-end lg:justify-between lg:gap-6">
+              <div className="min-w-0">
+                <h1 className="break-words font-display text-4xl font-normal italic leading-tight md:text-5xl">{name}</h1>
+                <p className="mt-1 text-white/80">
+                  {[builder, year !== null ? `Built ${year}` : null].filter(Boolean).join(" | ") || (yachtType ?? "Charter yacht")}
+                </p>
+                <p className="mt-2 font-display text-2xl italic text-[#EE9739]">{heroPrice}</p>
+                <p className="mt-1 text-xs text-white/60">Indicative weekly rate — subject to confirmation</p>
+              </div>
+              <YachtCtaButtons yachtId={id} hasLiveData={availability.hasLiveData} />
+            </div>
           </div>
         </section>
 
@@ -290,7 +282,7 @@ export default async function YachtDetailPage({
                 {builder ? ` built by ${builder}` : ""}
                 {year !== null ? ` in ${year}` : ""}
                 {length ? `, measuring ${length.value} ${length.unit}` : ""}
-                {accommodation.pax !== null ? ` and welcoming up to ${accommodation.pax} guests` : ""}.
+                {accommodation.pax !== null ? ` and welcoming ${guestCapacity.toLowerCase()}${restrictedGuests ? "" : " guests"}` : ""}.
               </p>
               {accommodation.cabins !== null && accommodation.pax !== null && (
                 <p>
@@ -312,7 +304,7 @@ export default async function YachtDetailPage({
                     <div className="rounded-lg bg-white p-4 shadow-sm">
                       <Users className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
                       <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Guests</dt>
-                      <dd className="text-[#061625]">Up to {accommodation.pax}</dd>
+                      <dd className="text-[#061625]">{guestCapacity}</dd>
                     </div>
                   )}
                   {accommodation.cabins !== null && (
@@ -330,6 +322,11 @@ export default async function YachtDetailPage({
                     </div>
                   )}
                 </dl>
+                {restrictedGuests && (
+                  <p className="mt-3 text-sm text-[#061625]/80">
+                    Guests {restrictedGuests.adults + 1} and {restrictedGuests.maximum} must be under {restrictedGuests.age} and require prior approval.
+                  </p>
+                )}
                 {accommodation.configLine && (
                   <p className="mt-4 rounded-lg bg-white p-4 leading-relaxed text-[#061625]/80 shadow-sm">
                     {accommodation.configLine}.
@@ -361,7 +358,7 @@ export default async function YachtDetailPage({
                       <h3 className="mb-4 font-display text-xl italic text-[#061625]">{group.title}</h3>
                       <dl className="space-y-2.5">
                         {group.rows.map(([label, value]) => (
-                          <div key={label} className="flex items-baseline justify-between gap-4 border-b border-[#061625]/5 pb-2.5 last:border-0 last:pb-0">
+                          <div key={label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-baseline gap-3 border-b border-[#061625]/5 pb-2.5 last:border-0 last:pb-0">
                             <dt className="text-sm text-[#061625]/60">{label}</dt>
                             <dd className="min-w-0 text-right text-sm font-medium text-[#061625]">{value}</dd>
                           </div>
@@ -495,11 +492,13 @@ export default async function YachtDetailPage({
 
         {/* --- Discover More: deterministic similar-yacht recommendations,
             after the enquiry section, before the footer --- */}
-        <YachtRecommendations
-          strictMatches={recommendation.strictMatches}
-          broaderMatches={recommendation.broaderMatches}
-          searchQuery={recommendationQuery.toString()}
-        />
+        {recommendation && (
+          <YachtRecommendations
+            strictMatches={recommendation.strictMatches}
+            broaderMatches={recommendation.broaderMatches}
+            searchQuery={recommendationQuery.toString()}
+          />
+        )}
       </main>
 
       <Footer />

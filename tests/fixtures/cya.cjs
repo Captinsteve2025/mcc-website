@@ -1,18 +1,24 @@
 // This preload is used only by the local Playwright production server.
 const upstreamHost = /^cya-fixture-[a-f0-9-]+\.invalid$/;
+const futureDates = { start_date: "2099-01-01", end_date: "2099-12-31" };
 const yacht = {
   id: "aaaaaaaaaaaaaaaaaaaaaaaa",
   yachtName: "Fixture Catamaran",
   yachtType: "catamaran",
-  pax: 8,
+  pax: 10,
   cabins: 4,
   length: 60,
   lenght: 60,
   units: "ft",
   main_image: "https://fixture-images.invalid/yacht.png",
+  yachtEngines: "Fixture marine engine with onboard electric generator",
+  fuel_consumption: 6,
+  fuel_consumption_unit: "1",
+  accommodations: { details: "For 9 and 10 pax, guests must be under the age of 10 upon prior approval is gained." },
   seasons: [{
     title: "Fixture season", base_price: 12000, currency: "USD",
     charter_type: "all inclusive", location_areas: ["Caribbean Virgin Islands (BVI)"],
+    ...futureDates,
   }],
   crewGeneral: {
     crewDescription: "<p>Fixture captain biography.</p><p>UnbrokenCrewProfileReferenceForNarrowScreenTesting</p>",
@@ -35,7 +41,7 @@ const catalogueYacht = {
 const catalogue = [
   { ...catalogueYacht, ...yacht },
   { ...catalogueYacht, id: "c".repeat(24), yachtName: "Wrong Region", seasonAreas: ["Caribbean Virgin Islands (US)"] },
-  { ...catalogueYacht, id: "d".repeat(24), yachtName: "Closest Match" },
+  { ...catalogueYacht, id: "d".repeat(24), yachtName: "Closest Match", charter_type: "generic catalogue terms" },
   { ...catalogueYacht, id: "e".repeat(24), yachtName: "Second Match", length: 62, min_price: 13000 },
   { ...catalogueYacht, id: "f".repeat(24), yachtName: "Third Match", length: 63, min_price: 14000 },
   { ...catalogueYacht, id: "1".repeat(24), yachtName: "Fourth Match", length: 64, min_price: 14800 },
@@ -43,6 +49,8 @@ const catalogue = [
   { ...catalogueYacht, id: "3".repeat(24), yachtName: "Power Cat", yachtType: "powercat" },
   { ...catalogueYacht, id: "4".repeat(24), yachtName: "Different Currency", currency: "EUR" },
   { ...catalogueYacht, id: "5".repeat(24), yachtName: "Different Terms", charter_type: "plus expenses" },
+  { ...catalogueYacht, id: "6".repeat(24), yachtName: "Expired Rate", min_price: 11900 },
+  { ...catalogueYacht, id: "6a023831ce6b8709506dfeed", yachtName: "Misclassified Trimaran" },
 ];
 
 const originalFetch = globalThis.fetch;
@@ -58,6 +66,22 @@ globalThis.fetch = (input, init) => {
   }
   if (url.pathname === `/yachts_get/${yacht.id}`) {
     return Promise.resolve(Response.json(yacht));
+  }
+  if (url.pathname.startsWith("/yachts_get/")) {
+    const listing = catalogue.find((record) => url.pathname.endsWith(`/${record.id}`));
+    if (listing) {
+      const dates = listing.yachtName === "Expired Rate" ? { start_date: "2000-01-01", end_date: "2000-12-31" } : futureDates;
+      return Promise.resolve(Response.json({
+        ...listing,
+        seasons: [{
+          ...dates,
+          base_price: listing.min_price,
+          currency: listing.currency,
+          charter_type: listing.yachtName === "Closest Match" ? "allinclusive" : listing.charter_type,
+          location_areas: listing.seasonAreas,
+        }],
+      }));
+    }
   }
   if (url.pathname === "/bookings" && url.searchParams.get("yacht_id") === yacht.id) {
     const today = new Date().toISOString().slice(0, 10);
