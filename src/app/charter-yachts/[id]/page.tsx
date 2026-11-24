@@ -33,7 +33,8 @@ import {
   recommendSimilarYachts,
   subjectFromDetail,
   type YachtCandidate,
-} from "@/lib/similar-yachts";import { getYachtCrew, getYachtAvailability, mergeCrewProfiles } from "@/lib/yacht-content";
+} from "@/lib/similar-yachts";
+import { getYachtCrew, getYachtAvailability, mergeCrewProfiles } from "@/lib/yacht-content";
 import {
   beamWithUnit,
   cleanText,
@@ -211,11 +212,7 @@ export default async function YachtDetailPage({
   // Two-stage similar-yacht engine: Stage-1 eligibility over the full
   // catalogue, then Stage-2 ranking with a controlled fallback tier. When the
   // catalogue is unavailable the section is skipped rather than degraded.
-  // A destination the visitor selected on the catalogue narrows the regional
-  // gate to that destination; otherwise the yacht's own seasonal areas apply.
-  const recommendation = recommendSimilarYachts(subjectFromDetail(yacht), candidates, {
-    destination: destination || null,
-  });
+  const recommendation = recommendSimilarYachts(subjectFromDetail(yacht), candidates);
 
   return (
     <div className="flex min-h-screen flex-col bg-[#f8f7f4]">
@@ -277,13 +274,9 @@ export default async function YachtDetailPage({
 
         {/* --- Overview, accommodation and specifications beside the sticky
             enquiry panel; per the brief: overview → rates+availability (above)
-            → accommodation → crew → dining → experiences. min-w-0 on the grid
-            children is the root-cause fix for the mobile overflow: a grid
-            column otherwise grows to its content's minimum width, so long
-            unbroken CYA words stretched the page and squeezed the calendar
-            column to a fraction of the viewport. --- */}
+            → accommodation → crew → dining → experiences --- */}
         <div className="container mx-auto grid gap-12 px-4 pb-24 lg:grid-cols-5">
-          <div className="lg:col-span-3 min-w-0">
+          <div className="lg:col-span-3">
             {/* --- Overview --- */}
             <SectionHeading id="overview" title="Overview" />
             <div className="space-y-4 leading-relaxed text-[#061625]/80">
@@ -301,7 +294,7 @@ export default async function YachtDetailPage({
                 </p>
               )}
               {cleanText(yacht.description) && (
-                <p className="whitespace-pre-line break-words min-w-0">{cleanText(yacht.description)}</p>
+                <p className="whitespace-pre-line">{cleanText(yacht.description)}</p>
               )}
             </div>
 
@@ -338,7 +331,7 @@ export default async function YachtDetailPage({
                   </p>
                 )}
                 {accommodation.description && (
-                  <p className="mt-4 whitespace-pre-line break-words leading-relaxed text-[#061625]/80">{accommodation.description}</p>
+                  <p className="mt-4 whitespace-pre-line leading-relaxed text-[#061625]/80">{accommodation.description}</p>
                 )}
                 {accommodation.otherFields.length > 0 && (
                   <dl className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -378,7 +371,7 @@ export default async function YachtDetailPage({
 
           {/* --- Crew, dining and watersports: beneath the enquiry panel's
               sticky column on desktop, stacked in the brief's order --- */}
-          <div className="lg:col-span-5 min-w-0">
+          <div className="lg:col-span-5">
             {/* --- Watersports & Experiences --- */}
             {(watersports.tender || watersports.items.length > 0) && (
               <section className="mt-14">
@@ -417,7 +410,7 @@ export default async function YachtDetailPage({
           </div>
 
           {/* --- Enquiry panel (sticky beside the introductory content) --- */}
-          <div className="lg:col-span-2 -mt-12 lg:row-start-1 lg:col-start-4 min-w-0">
+          <div className="lg:col-span-2 -mt-12 lg:row-start-1 lg:col-start-4">
             <div id="enquire" className="scroll-mt-32 lg:sticky lg:top-28">
               <div className="rounded-2xl bg-[#061625] p-6 text-white md:p-8">
                 <h2 className="mb-2 font-display text-3xl font-normal italic">Request Your Personal Charter Proposal</h2>

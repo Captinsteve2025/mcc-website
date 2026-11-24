@@ -84,12 +84,6 @@ const PRESET_YACHTS: Array<{ name: string; id: string }> = [
   { name: "VIVA LA VIDA", id: "69f83a8e8ae166becdd09df5" },
 ];
 
-// XANDROS appears wherever its CYA id is known (responsive-defect yacht). Set
-// via the environment when the id is confirmed; hidden from the presets until then.
-const XANDROS_ID = process.env.NEXT_PUBLIC_XANDROS_CYA_ID ?? "";
-if (XANDROS_ID) PRESET_YACHTS.push({ name: "XANDROS", id: XANDROS_ID });
-
-
 type TestDetail = {
   label?: string;
   httpStatus?: number;

@@ -26,9 +26,7 @@ export function money(amount: number, currency: string | null): string {
 type RawSeason = Record<string, unknown>;
 
 function rawSeasons(yacht: Record<string, unknown>): RawSeason[] {
-  return Array.isArray(yacht.seasons)
-    ? (yacht.seasons as RawSeason[]).filter((s) => Boolean(s) && typeof s === "object")
-    : [];
+  return Array.isArray(yacht.seasons) ? (yacht.seasons as RawSeason[]).filter((s) => Boolean(s) && typeof s === "object") : [];
 }
 
 function num(value: unknown): number | null {
