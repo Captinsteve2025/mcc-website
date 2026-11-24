@@ -42,9 +42,9 @@ export function YachtSectionNav({ tabs, yachtId }: { tabs: SectionTab[]; yachtId
   return (
     <nav
       aria-label="Yacht sections"
-      className="sticky top-[64px] z-30 -mx-4 mb-10 border-b border-[#061625]/10 bg-[#f8f7f4]/95 backdrop-blur-sm md:top-[72px]"
+      className="sticky top-[64px] z-30 mb-10 border-b border-[#061625]/10 bg-[#f8f7f4]/95 backdrop-blur-sm md:top-[72px]"
     >
-      <div className="flex items-center gap-1 overflow-x-auto px-4 py-2 md:justify-center">
+      <div className="container mx-auto flex items-center gap-1 overflow-x-auto px-4 py-2 md:justify-center">
         {tabs.map((tab) => (
           <button
             key={tab.id}

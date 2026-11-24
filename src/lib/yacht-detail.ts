@@ -621,11 +621,24 @@ export function unusedCrewEntryKeys(entry: Record<string, unknown>): string[] {
 // HTML sanitizing for CYA's general crew description. Only a small tag
 // allowlist survives; every attribute is stripped, so no link, style or event
 // handler can reach the page. Entities stay inert as text.
+// Sanitize CYA rich-text HTML for display. CYA sometimes double-encodes its
+// markup (the whole string arrives as &lt;pre&gt;...&lt;br/&gt; text), so
+// entity decoding runs FIRST and is repeated while fully-encoded tags keep
+// appearing. Everything then passes a strict tag allowlist that rebuilds each
+// tag bare — style/class/on* attributes can never survive — and scripts,
+// styles and comments are dropped outright. Shared by crew and menu content.
 const CREW_HTML_ALLOWED_TAGS = new Set(["p", "br", "b", "strong", "i", "em", "ul", "ol", "li"]);
 
 export function sanitizeCrewHtml(value: unknown): string | null {
-  const text = str(value);
+  let text = str(value);
   if (text === null) return null;
+  // Un-wrap repeatedly: "&lt;pre&gt;" becomes "<pre>", which the next pass
+  // recognizes as a tag. Bounded so hostile input cannot loop forever.
+  for (let pass = 0; pass < 3; pass++) {
+    const decoded = decodeHtmlEntities(text);
+    if (decoded === text) break;
+    text = decoded;
+  }
   const out = text
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")

@@ -255,7 +255,10 @@ export default async function YachtDetailPage({
             the portrait-and-bio layout gets room on desktop. --- */}
         <div className="container mx-auto px-4">
           <YachtCrewSection crew={crew} yachtId={id} crewGeneral={crewGeneral} />
-          <YachtDiningSection menus={menus} />
+          <YachtDiningSection
+            menus={menus}
+            chefName={crew.find((member) => /chef/i.test(member.role))?.name ?? null}
+          />
         </div>
 
         <div className="container mx-auto grid gap-12 px-4 pb-24 lg:grid-cols-5">
