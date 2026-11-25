@@ -47,6 +47,7 @@ export function summarizePricing(
     .filter((s): s is { price: number; currency: string | null } => s.price !== null)
     .sort((a, b) => a.price - b.price);
 
+  const hasGuestRates = seasons.some((season) => season.guestRates.length > 0);
   const currencies = [...new Set(priced.map((s) => s.currency).filter((c): c is string => Boolean(c)))];
   const currency = currencies.length === 1 ? currencies[0] : null;
 
@@ -58,13 +59,15 @@ export function summarizePricing(
     headline = `${money(minPrice, currency)} – ${money(maxPrice, currency)} / week`;
   } else if (minPrice !== null) {
     headline = `From ${money(minPrice, currency)} / week`;
+  } else if (hasGuestRates) {
+    headline = "See weekly rates by guest count";
   } else if (num(yacht.min_price_usd) !== null) {
     headline = `From ${money(yacht.min_price_usd as number, "USD")} / week`;
   }
 
   return {
     headline,
-    hasRate: minPrice !== null || num(yacht.min_price_usd) !== null,
+    hasRate: minPrice !== null || hasGuestRates || num(yacht.min_price_usd) !== null,
     minPrice,
     maxPrice,
     currency,

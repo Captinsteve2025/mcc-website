@@ -1,25 +1,58 @@
 "use client";
 
 import { YachtAvailabilityCalendar } from "./YachtAvailabilityCalendar";
-import type { PricingSummary } from "@/lib/yacht-pricing";
+import { money, type PricingSummary } from "@/lib/yacht-pricing";
+import type { SeasonRate } from "@/lib/yacht-detail";
 import type { YachtAvailability } from "@/lib/yacht-content";
 import { ArrowRight, CalendarDays, ChevronDown } from "lucide-react";
 import { useState } from "react";
 
 type Props = {
   yachtId: string;
-  name: string;
   pricing: PricingSummary;
   availability: YachtAvailability;
 };
 
-// "Plan Your Charter" panel: published CYA rates beside the live availability
-// calendar. Only seasons CYA actually prices are shown as priced; unpriced
-// seasons display as "Rates on request". Nothing is invented.
+function GuestRateTable({ season }: { season: SeasonRate }) {
+  return (
+    <details className="mt-3 border-t border-[#061625]/10 pt-3">
+      <summary className="cursor-pointer text-sm font-semibold text-[#061625]">
+        Weekly rates by guest count
+      </summary>
+      <table className="mt-2 w-full text-sm text-[#061625]">
+        <caption className="sr-only">{season.title} weekly rates by guest count</caption>
+        <thead>
+          <tr className="border-b border-[#061625]/10">
+            <th className="py-2 text-left font-medium" scope="col">Guests</th>
+            <th className="py-2 text-right font-medium" scope="col">
+              Weekly rate{season.currency ? ` (${season.currency})` : ""}
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-[#061625]/10">
+          {season.guestRates.map(({ guests, amount }) => (
+            <tr key={guests}>
+              <th className="py-1.5 text-left font-normal" scope="row">{guests}</th>
+              <td className="py-1.5 text-right tabular-nums">
+                {season.currency ? money(amount, season.currency) : amount.toLocaleString("en-US")}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </details>
+  );
+}
+
 export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
   const [showAllTerms, setShowAllTerms] = useState(false);
-  const priced = pricing.seasons.filter((s) => s.price !== null);
-  const unpriced = pricing.seasons.filter((s) => s.price === null);
+  const priced = pricing.seasons.filter((s) => s.price !== null || s.guestRates.length > 0);
+  const unpriced = pricing.seasons.filter((s) => s.price === null && s.guestRates.length === 0);
+  const charterNotes = new Map<string, string[]>();
+  for (const { additionalRateDetails, title } of pricing.seasons) {
+    if (!additionalRateDetails) continue;
+    charterNotes.set(additionalRateDetails, [...(charterNotes.get(additionalRateDetails) ?? []), title]);
+  }
 
   return (
     <section id="rates" className="scroll-mt-32 py-6 md:py-10">
@@ -28,7 +61,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
         <h2 className="font-display text-3xl font-normal italic text-[#061625] md:text-4xl">Rates &amp; Availability</h2>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid items-start gap-6 lg:grid-cols-2">
         <div className="rounded-xl bg-white p-6 shadow-sm md:p-8">
           <div className="mb-6 flex items-start gap-3">
             <ArrowRight className="mt-1 h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
@@ -47,8 +80,10 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
                     {s.category && <span className="ml-2 text-xs font-normal text-[#061625]/60">{s.category}</span>}
                   </dt>
                   {s.dates && <dd className="mt-0.5 text-xs text-[#061625]/60">{s.dates}</dd>}
-                  <dd className="mt-1 text-sm font-medium text-[#061625]">{s.price}</dd>
+                  {s.price && <dd className="mt-1 text-sm font-medium text-[#061625]">{s.price}</dd>}
+                  {s.apa !== null && <dd className="mt-1 text-sm text-[#061625]">Plus {s.apa}% APA</dd>}
                   {s.area && <dd className="mt-1 text-xs text-[#061625]/60">{s.area}</dd>}
+                  {s.guestRates.length > 0 && <dd><GuestRateTable season={s} /></dd>}
                 </div>
               ))}
             </dl>
@@ -63,6 +98,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
                     <dt className="text-sm font-medium text-[#061625]">{s.title}</dt>
                     {s.dates && <dd className="mt-0.5 text-xs text-[#061625]/60">{s.dates}</dd>}
                     <dd className="mt-1 text-sm italic text-[#061625]/70">Rates on request</dd>
+                    {s.apa !== null && <dd className="mt-1 text-sm text-[#061625]">Plus {s.apa}% APA</dd>}
                   </div>
                 ))}
               </dl>
@@ -123,8 +159,23 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
               ranges={availability.ranges}
               lastUpdated={availability.lastUpdated}
               hasLiveData={availability.hasLiveData}
+              seasons={pricing.seasons.map(({ startDate, endDate, turnaroundHours }) => ({ startDate, endDate, turnaroundHours }))}
             />
           </div>
+          {charterNotes.size > 0 && (
+            <details className="mt-5 rounded-lg border border-[#061625]/10 p-4 [overflow-wrap:anywhere]">
+              <summary className="cursor-pointer text-sm font-semibold text-[#061625]">
+                Charter rules &amp; rate notes
+              </summary>
+              <p className="mt-2 text-xs text-[#061625]/70">Please confirm any exceptions and holiday terms with our charter team.</p>
+              {[...charterNotes].map(([notes, titles]) => (
+                <div className="mt-3" key={notes}>
+                  <p className="text-sm font-medium text-[#061625]">{[...new Set(titles)].join(" · ")}</p>
+                  <p className="mt-1 whitespace-pre-line text-sm leading-relaxed text-[#061625]/80">{notes}</p>
+                </div>
+              ))}
+            </details>
+          )}
           <ul className="mt-6 space-y-2 text-xs text-[#061625]/70">
             <li className="flex items-start gap-2">
               <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#EE9739]" aria-hidden="true" />

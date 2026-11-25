@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import type { AvailabilityRange } from "@/lib/yacht-content";
+import type { SeasonRate } from "@/lib/yacht-detail";
 
 const STATUS_STYLES: Record<AvailabilityRange["status"], { cell: string; dot: string; label: string }> = {
   available: { cell: "bg-[#1F7A5A]/15 text-[#1F7A5A]", dot: "bg-[#1F7A5A]", label: "Available" },
@@ -43,15 +44,53 @@ function buildStatusMap(ranges: AvailabilityRange[]): Map<string, { status: Avai
   return map;
 }
 
+type TurnaroundSeason = Pick<SeasonRate, "startDate" | "endDate" | "turnaroundHours">;
+
+function turnaroundForDate(day: string, seasons: TurnaroundSeason[]): number {
+  return seasons.reduce((hours, season) => {
+    const start = season.startDate?.slice(0, 10);
+    const end = season.endDate?.slice(0, 10);
+    if (!start || !end || day < start || day > end) return hours;
+    return Math.max(hours, season.turnaroundHours ?? 0);
+  }, 0);
+}
+
+function shortTurnaround(
+  start: string,
+  end: string,
+  ranges: AvailabilityRange[],
+  seasons: TurnaroundSeason[],
+): number {
+  const beforeHours = turnaroundForDate(start, seasons);
+  const afterHours = turnaroundForDate(end, seasons);
+  const startTime = toUtcDate(start).getTime();
+  const endTime = toUtcDate(end).getTime();
+  let flaggedHours = 0;
+
+  for (const range of ranges) {
+    if (range.status !== "booked") continue;
+    if (range.endDate < start) {
+      const gapHours = (startTime - toUtcDate(range.endDate).getTime()) / 3_600_000;
+      if (gapHours < beforeHours) flaggedHours = Math.max(flaggedHours, beforeHours);
+    }
+    if (range.startDate > end) {
+      const gapHours = (toUtcDate(range.startDate).getTime() - endTime) / 3_600_000;
+      if (gapHours < afterHours) flaggedHours = Math.max(flaggedHours, afterHours);
+    }
+  }
+  return flaggedHours;
+}
+
 type Props = {
   yachtId: string;
   ranges: AvailabilityRange[];
   lastUpdated: string | null;
   /** True when at least one range comes from CYA's live bookings feed. */
   hasLiveData?: boolean;
+  seasons: TurnaroundSeason[];
 };
 
-export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiveData = false }: Props) {
+export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiveData = false, seasons }: Props) {
   const today = new Date();
   const [monthOffset, setMonthOffset] = useState(0); // months from the current month
   const [selectStart, setSelectStart] = useState<string | null>(null);
@@ -112,6 +151,10 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
     }
     return null;
   }, [selectStart, selectEnd, statusMap]);
+
+  const turnaroundToConfirm = selectStart && selectEnd && !chosenStatus
+    ? shortTurnaround(selectStart, selectEnd, ranges, seasons)
+    : 0;
 
   const canGoBack = monthOffset > 0;
   const canGoForward = monthOffset < 11;
@@ -264,6 +307,12 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
                   ? `Heads up: part of this range is marked ${STATUS_STYLES[chosenStatus].label.toLowerCase()} in the live calendar. Our team will confirm what is possible.`
                   : "Our team will confirm these dates with your personalized proposal."}
               </p>
+              {turnaroundToConfirm > 0 && (
+                <p className="mt-2 text-sm">
+                  Your dates may leave less than the published {turnaroundToConfirm}-hour turnaround between charters.
+                  Our team will confirm whether a shorter gap is possible.
+                </p>
+              )}
               <a
                 href="#enquire"
                 className="mt-2 inline-block rounded-full bg-[#EE9739] px-4 py-2 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]"

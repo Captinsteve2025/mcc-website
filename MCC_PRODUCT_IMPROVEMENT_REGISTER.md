@@ -57,6 +57,10 @@ Each CYA yacht detail page ranks up to three alternatives. The matcher preserves
 
 The shorter yacht header puts photography higher on the page. The calendar fits the number of months to its panel, and specification labels have a dedicated column. Fuel consumption appears when its unit is legible. Brochure checks exclude expired recommendation rates and use published age restrictions when comparing guest capacity. CUAN LAW's classification follows the operator's trimaran specification. Production and commercial acceptance are pending.
 
+### CYA guest-count rates, reviews and charter guidance (Implemented)
+
+The yacht detail page shows published weekly prices by season and guest count, a separate APA percentage, and guest reviews from the CYA detail response. The calendar flags short gaps around recorded bookings using the season’s turnaround hours. The proposal form uses published guest capacity, and the charter notes disclose minimum stays, age conditions, and holiday terms for broker confirmation. Desktop and mobile Chromium fixture checks and local OHANA detail replay passed. Production and commercial acceptance are pending.
+
 ---
 
 ## Standing constraints

@@ -20,6 +20,7 @@ import { Footer } from "@/components/Footer";
 import { YachtEnquiryForm } from "@/components/yacht/YachtEnquiryForm";
 import { YachtHeroGallery } from "@/components/yacht/YachtHeroGallery";
 import { YachtSectionNav, type SectionTab } from "@/components/yacht/YachtSectionNav";
+import { YachtReviewsSection } from "@/components/yacht/YachtReviewsSection";
 import { YachtPricingPanel } from "@/components/yacht/YachtPricingPanel";
 import { YachtPersistentBar } from "@/components/yacht/YachtPersistentBar";
 import { YachtCrewSection } from "@/components/yacht/YachtCrewSection";
@@ -44,6 +45,7 @@ import {
   parseMenus,
   parseSeasons,
   parseWatersports,
+  parseYachtReviews,
   str,
 } from "@/lib/yacht-detail";
 import { summarizePricing } from "@/lib/yacht-pricing";
@@ -134,6 +136,7 @@ export default async function YachtDetailPage({
   const amenities = parseAmenities(yacht);
   const watersports = parseWatersports(yacht);
   const seasons = parseSeasons(yacht);
+  const reviews = parseYachtReviews(yacht);
   const length = lengthWithUnit(yacht);
   const beam = beamWithUnit(yacht);
   const draft = draftWithUnit(yacht);
@@ -199,6 +202,7 @@ export default async function YachtDetailPage({
   if (specGroups.length > 0) tabs.push({ id: "specifications", label: "Specifications" });
   if (gallery.length > 0) tabs.push({ id: "gallery", label: "Gallery" });
   if (amenities.length > 0) tabs.push({ id: "amenities", label: "Amenities" });
+  if (reviews.length > 0) tabs.push({ id: "reviews", label: "Guest reviews" });
   tabs.push({ id: "enquire", label: "Enquire" });
 
   const slug = `cya-${id.slice(0, 12)}`;
@@ -263,7 +267,6 @@ export default async function YachtDetailPage({
         <div className="container mx-auto px-4">
           <YachtPricingPanel
             yachtId={id}
-            name={name}
             pricing={pricing}
             availability={availability}
           />
@@ -324,7 +327,7 @@ export default async function YachtDetailPage({
                 </dl>
                 {restrictedGuests && (
                   <p className="mt-3 text-sm text-[#061625]/80">
-                    Guests {restrictedGuests.adults + 1} and {restrictedGuests.maximum} must be under {restrictedGuests.age} and require prior approval.
+                    Guests {restrictedGuests.adults + 1} and {restrictedGuests.maximum} are subject to the under-{restrictedGuests.age} rule. Please confirm approval requirements with our charter team.
                   </p>
                 )}
                 {accommodation.configLine && (
@@ -438,6 +441,9 @@ export default async function YachtDetailPage({
                   cyaYachtId={id}
                   initialDates={preferredDates || undefined}
                   initialGuests={guests || undefined}
+                  maxGuests={accommodation.pax !== null && Number.isSafeInteger(accommodation.pax) && accommodation.pax > 0
+                    ? accommodation.pax
+                    : undefined}
                 />
               </div>
             </div>
@@ -460,6 +466,8 @@ export default async function YachtDetailPage({
                 </ul>
               </section>
             )}
+
+            <YachtReviewsSection reviews={reviews} />
 
             {/* --- Booking conditions (rates panel above carries the seasons) --- */}
             <section className="mt-14 rounded-xl bg-white p-6 shadow-sm">

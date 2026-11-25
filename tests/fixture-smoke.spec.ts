@@ -47,7 +47,7 @@ test("shows at most three comparable yachts and carries the party's search", asy
   await page.goto(yachtUrl);
   const recommendations = page.getByRole("region", { name: "Similar Yachts" });
   await expect(page.getByText("Up to 8 adults", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Guests 9 and 10 must be under 10 and require prior approval.")).toBeVisible();
+  await expect(page.getByText("Guests 9 and 10 are subject to the under-10 rule. Please confirm approval requirements with our charter team.")).toBeVisible();
   await expect(recommendations.getByRole("heading", { level: 3 })).toHaveText([
     "Closest Match", "Second Match", "Third Match",
   ]);
@@ -101,4 +101,34 @@ test("fits yacht brochure text and the training link at 320 pixels", async ({ pa
   const linkRight = await licenseLink.evaluate((element) => element.getBoundingClientRect().right);
   expect(linkRight).toBeLessThanOrEqual(321);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(321);
+});
+
+
+test("shows CYA guest rates, reviews and advisory charter rules", async ({ page }) => {
+  await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
+  await page.getByText("Weekly rates by guest count", { exact: true }).click();
+  const rates = page.getByRole("table", { name: "Fixture season weekly rates by guest count" });
+  await expect(rates.getByRole("row", { name: "10 $15,500" })).toBeVisible();
+  await expect(rates.getByRole("row")).toHaveCount(3);
+  await expect(page.getByText("Plus 5% APA")).toBeVisible();
+
+  await page.getByText("Charter rules & rate notes", { exact: true }).click();
+  await expect(page.getByText("Minimum seven nights. Confirm holiday dates before booking.")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "A great week | May 1–8, 2026" })).toBeVisible();
+  await expect(page.getByText("Wonderful crew & sailing.")).toBeVisible();
+  await expect(page.getByText("unexpected content")).toHaveCount(0);
+  await expect(page.getByLabel("Number of guests")).toHaveAttribute("max", "10");
+  await page.getByLabel("Number of guests").fill("11");
+  await page.getByRole("button", { name: "Check availability & get my proposal" }).click();
+  await expect(page.getByText("Please enter the number of guests (1 to 10).")).toBeVisible();
+
+  for (const offset of [1, 2]) {
+    const date = new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+    const day = page.getByRole("button", { name: `${date}: contact us to confirm`, exact: true });
+    if (!(await day.isVisible())) await page.getByRole("button", { name: "Next month" }).click();
+    await day.click();
+  }
+  await expect(page.getByRole("status").filter({ hasText: "published 72-hour turnaround" })).toBeVisible();
+  await expect(page.getByRole("link", { name: "Continue to proposal form" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

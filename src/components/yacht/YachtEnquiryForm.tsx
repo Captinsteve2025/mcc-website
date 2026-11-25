@@ -17,6 +17,7 @@ interface YachtEnquiryFormProps {
   /** Values carried from the visitor's search, offered as starting points. */
   initialDates?: string;
   initialGuests?: string;
+  maxGuests?: number;
 }
 
 interface FormValues {
@@ -53,14 +54,14 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ATTRIBUTION_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid"] as const;
 const DUPLICATE_KEY_ERROR = "23505";
 
-function validate(values: FormValues): FieldErrors {
+function validate(values: FormValues, maxGuests: number): FieldErrors {
   const errors: FieldErrors = {};
   if (!values.fullName.trim()) errors.fullName = "Please enter your full name.";
   if (!EMAIL_PATTERN.test(values.email.trim())) errors.email = "Please enter a valid email address.";
   if (!values.preferredDates.trim()) errors.preferredDates = "Please tell us your preferred charter dates.";
   const guests = Number(values.guestCount);
-  if (!Number.isInteger(guests) || guests < 1 || guests > 100) {
-    errors.guestCount = "Please enter the number of guests (1 to 100).";
+  if (!Number.isInteger(guests) || guests < 1 || guests > maxGuests) {
+    errors.guestCount = `Please enter the number of guests (1 to ${maxGuests}).`;
   }
   if (!values.privacyConsent) errors.privacyConsent = "Please agree to the privacy policy to continue.";
   return errors;
@@ -87,7 +88,7 @@ const inputClass = "h-11 rounded-md border-[#CBD5DF] bg-white text-[#061625] pla
 const labelClass = "mb-1.5 block text-sm font-medium text-[#061625]";
 const errorClass = "mt-1.5 text-sm text-[#B42318]";
 
-export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDates, initialGuests }: YachtEnquiryFormProps) {
+export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDates, initialGuests, maxGuests = 100 }: YachtEnquiryFormProps) {
   const [values, setValues] = useState<FormValues>({
     ...EMPTY_VALUES,
     preferredDates: initialDates ?? "",
@@ -127,7 +128,7 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
     event.preventDefault();
     if (status === "submitting" || status === "saved") return;
 
-    const fieldErrors = validate(values);
+    const fieldErrors = validate(values, maxGuests);
     setErrors(fieldErrors);
     setServerError(null);
     if (Object.keys(fieldErrors).length > 0) return;
@@ -251,7 +252,7 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
             type="number"
             inputMode="numeric"
             min={1}
-            max={100}
+            max={maxGuests}
             required
             value={values.guestCount}
             onChange={(e) => set("guestCount", e.target.value)}

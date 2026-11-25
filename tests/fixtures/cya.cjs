@@ -19,6 +19,17 @@ const yacht = {
     title: "Fixture season", base_price: 12000, currency: "USD",
     charter_type: "all inclusive", location_areas: ["Caribbean Virgin Islands (BVI)"],
     ...futureDates,
+    start_date: "2000-01-01",
+    prices: [{ paxes: 2, price: 12000 }, { paxes: 10, price: 15500 }],
+    has_apa: true,
+    apa: 5,
+    turnaround_hours: 72,
+    additional_rate_details: "<p>Minimum seven nights. Confirm holiday dates before booking.</p>",
+  }],
+  reviews: [{
+    title: "A great week | May 1–8, 2026",
+    description: "<p>Wonderful crew &amp; sailing.</p><script>unexpected content</script>",
+    updateDate: "2026-09-03T19:40:23.396000",
   }],
   crewGeneral: {
     crewDescription: "<p>Fixture captain biography.</p><p>UnbrokenCrewProfileReferenceForNarrowScreenTesting</p>",

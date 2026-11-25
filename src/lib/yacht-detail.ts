@@ -165,7 +165,14 @@ export type SeasonRate = {
   title: string;
   category: string | null;
   dates: string | null;
+  startDate: string | null;
+  endDate: string | null;
   price: string | null;
+  currency: string | null;
+  guestRates: Array<{ guests: number; amount: number }>;
+  apa: number | null;
+  turnaroundHours: number | null;
+  additionalRateDetails: string | null;
   area: string | null;
   details: string | null;
   pickup: string | null;
@@ -179,12 +186,15 @@ function formatMoney(amount: number, currency: string | null): string {
   if (currency === "USD") return `$${rounded}`;
   if (currency === "EUR") return `\u20ac${rounded}`;
   if (currency === "GBP") return `\u00a3${rounded}`;
-  return currency ? `${currency} ${rounded}` : `$${rounded}`;
+  return currency ? `${currency} ${rounded}` : rounded;
 }
 
-// Verified seasons[] structure: title, season_category, start_date, end_date,
-// base_price, currency, location_areas, location_details, preferred_pickup,
-// base_port, charter_type, terms. Currency is never assumed to be USD.
+function readSeasonNumber(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : Number(str(value) ?? NaN);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+// Detail rates carry guest totals and charter rules on each season.
 export function parseSeasons(detail: Yacht): SeasonRate[] {
   const seasons = detail.seasons;
   if (!Array.isArray(seasons)) return [];
@@ -197,6 +207,19 @@ export function parseSeasons(detail: Yacht): SeasonRate[] {
     const end = str(obj.end_date);
     const rawPrice = num(obj.base_price);
     const currency = str(obj.currency);
+    const guestRates = new Map<number, number>();
+    if (Array.isArray(obj.prices)) {
+      for (const row of obj.prices) {
+        if (!row || typeof row !== "object") continue;
+        const guests = readSeasonNumber(row.paxes);
+        const amount = readSeasonNumber(row.price);
+        if (guests !== null && Number.isSafeInteger(guests) && guests > 0 && amount !== null && amount > 0 && !guestRates.has(guests)) {
+          guestRates.set(guests, amount);
+        }
+      }
+    }
+    const apa = readSeasonNumber(obj.apa);
+    const turnaroundHours = readSeasonNumber(obj.turnaround_hours);
     const areaNames = Array.isArray(obj.location_areas)
       ? obj.location_areas
           .map((a) =>
@@ -214,7 +237,14 @@ export function parseSeasons(detail: Yacht): SeasonRate[] {
       title,
       category: str(obj.season_category),
       dates: start || end ? [start, end].filter(Boolean).join(" \u2013 ") : null,
+      startDate: start,
+      endDate: end,
       price: rawPrice !== null ? `${formatMoney(rawPrice, currency)} / week` : null,
+      currency,
+      guestRates: [...guestRates].sort(([a], [b]) => a - b).map(([guests, amount]) => ({ guests, amount })),
+      apa: obj.has_apa !== false && apa !== null && apa > 0 ? apa : null,
+      turnaroundHours: turnaroundHours !== null && turnaroundHours > 0 ? turnaroundHours : null,
+      additionalRateDetails: cleanText(obj.additional_rate_details),
       area: areaNames,
       details: cleanText(obj.location_details),
       pickup: cleanText(obj.preferred_pickup),
@@ -666,6 +696,17 @@ export function sanitizeCrewHtml(value: unknown): string | null {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
   return out.length > 0 ? out : null;
+}
+
+export type YachtReview = { title: string | null; comment: string };
+
+export function parseYachtReviews(detail: Yacht): YachtReview[] {
+  if (!Array.isArray(detail.reviews)) return [];
+  return detail.reviews.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const comment = cleanText(sanitizeCrewHtml(item.description));
+    return comment ? [{ title: str(item.title), comment }] : [];
+  });
 }
 
 export type CrewGeneral = {
