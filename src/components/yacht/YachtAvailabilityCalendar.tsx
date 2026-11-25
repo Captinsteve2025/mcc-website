@@ -29,6 +29,15 @@ function isoOf(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+function formatCharterDate(iso: string): string {
+  return toUtcDate(iso).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
+
 // Builds a day-status map from confirmed ranges. Days outside any range stay
 // unknown (neutral) — never shown as available without a real record.
 function buildStatusMap(ranges: AvailabilityRange[]): Map<string, { status: AvailabilityRange["status"]; note: string | null }> {
@@ -88,9 +97,12 @@ type Props = {
   /** True when at least one range comes from CYA's live bookings feed. */
   hasLiveData?: boolean;
   seasons: TurnaroundSeason[];
+  onSelectedDatesChange: (dates: string) => void;
 };
 
-export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiveData = false, seasons }: Props) {
+export function YachtAvailabilityCalendar({
+  yachtId, ranges, lastUpdated, hasLiveData = false, seasons, onSelectedDatesChange,
+}: Props) {
   const today = new Date();
   const [monthOffset, setMonthOffset] = useState(0); // months from the current month
   const [selectStart, setSelectStart] = useState<string | null>(null);
@@ -122,6 +134,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
     if (!selectStart || (selectStart && selectEnd)) {
       setSelectStart(iso);
       setSelectEnd(null);
+      onSelectedDatesChange("");
       return;
     }
     if (iso < selectStart) {
@@ -133,11 +146,9 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
     trackEvent("yacht_availability_date_select", { yacht_id: yachtId });
     const start = iso < selectStart ? iso : selectStart;
     const end = iso < selectStart ? selectStart : iso;
-    window.dispatchEvent(
-      new CustomEvent("mcc:yacht-dates", {
-        detail: { dates: `${toUtcDate(start).toLocaleDateString("en-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" })} to ${toUtcDate(end).toLocaleDateString("en-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" })}` },
-      })
-    );
+    const dates = `${formatCharterDate(start)} to ${formatCharterDate(end)}`;
+    onSelectedDatesChange(dates);
+    window.dispatchEvent(new CustomEvent("mcc:yacht-dates", { detail: { dates } }));
   };
 
   const inSelection = (iso: string) =>
@@ -298,9 +309,7 @@ export function YachtAvailabilityCalendar({ yachtId, ranges, lastUpdated, hasLiv
           {selectEnd ? (
             <>
               <p className="font-medium">
-                Proposed charter: {new Date(`${selectStart}T12:00:00Z`).toLocaleDateString("en-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" })}
-                {" "}
-                to {new Date(`${selectEnd}T12:00:00Z`).toLocaleDateString("en-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" })}
+                Proposed charter: {formatCharterDate(selectStart)} to {formatCharterDate(selectEnd)}
               </p>
               <p className="mt-0.5 text-xs text-[#061625]/70">
                 {chosenStatus

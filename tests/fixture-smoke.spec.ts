@@ -104,7 +104,8 @@ test("fits yacht brochure text and the training link at 320 pixels", async ({ pa
 });
 
 
-test("shows CYA guest rates, reviews and advisory charter rules", async ({ page }) => {
+test("carries calendar dates to the disabled hold request alongside CYA pricing and reviews", async ({ page, isMobile }) => {
+  if (isMobile) await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
   await page.getByText("Weekly rates by guest count", { exact: true }).click();
   const rates = page.getByRole("table", { name: "Fixture season weekly rates by guest count" });
@@ -122,13 +123,34 @@ test("shows CYA guest rates, reviews and advisory charter rules", async ({ page 
   await page.getByRole("button", { name: "Check availability & get my proposal" }).click();
   await expect(page.getByText("Please enter the number of guests (1 to 10).")).toBeVisible();
 
-  for (const offset of [1, 2]) {
-    const date = new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
-    const day = page.getByRole("button", { name: `${date}: contact us to confirm`, exact: true });
+  const hold = page.getByRole("region", { name: "Request a hold" });
+  const holdButton = hold.getByRole("button", { name: "Request a hold" });
+  const holdDates = hold.locator("dd");
+  await expect(page.locator("#availability + section")).toHaveAttribute("aria-labelledby", "request-hold-title");
+  await expect(holdDates).toHaveText("Choose dates in the calendar");
+  await expect(holdButton).toBeDisabled();
+
+  const selectDate = async (offset: number) => {
+    const iso = new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
+    const day = page.getByRole("button", { name: `${iso}: contact us to confirm`, exact: true });
     if (!(await day.isVisible())) await page.getByRole("button", { name: "Next month" }).click();
     await day.click();
-  }
+    return new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", {
+      timeZone: "UTC", day: "numeric", month: "short", year: "numeric",
+    });
+  };
+  const start = await selectDate(1);
+  const end = await selectDate(2);
+  await expect(holdDates).toHaveText(`${start} to ${end}`);
+  await expect(page.getByLabel(/Preferred charter dates/)).toHaveValue(`${start} to ${end}`);
+  await expect(holdButton).toBeDisabled();
   await expect(page.getByRole("status").filter({ hasText: "published 72-hour turnaround" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Continue to proposal form" })).toBeVisible();
+
+  const nextStart = await selectDate(3);
+  await expect(holdDates).toHaveText("Choose dates in the calendar");
+  const nextEnd = await selectDate(4);
+  await expect(holdDates).toHaveText(`${nextStart} to ${nextEnd}`);
+  await expect(holdButton).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

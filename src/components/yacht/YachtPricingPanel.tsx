@@ -46,6 +46,7 @@ function GuestRateTable({ season }: { season: SeasonRate }) {
 
 export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
   const [showAllTerms, setShowAllTerms] = useState(false);
+  const [holdDates, setHoldDates] = useState("");
   const priced = pricing.seasons.filter((s) => s.price !== null || s.guestRates.length > 0);
   const unpriced = pricing.seasons.filter((s) => s.price === null && s.guestRates.length === 0);
   const charterNotes = new Map<string, string[]>();
@@ -159,9 +160,33 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
               ranges={availability.ranges}
               lastUpdated={availability.lastUpdated}
               hasLiveData={availability.hasLiveData}
+              onSelectedDatesChange={setHoldDates}
               seasons={pricing.seasons.map(({ startDate, endDate, turnaroundHours }) => ({ startDate, endDate, turnaroundHours }))}
             />
           </div>
+          <section
+            className="mt-4 rounded-xl border border-[#061625]/10 bg-[#f8f7f4] p-4 text-[#061625] sm:p-5"
+            aria-labelledby="request-hold-title"
+          >
+            <h3 id="request-hold-title" className="font-display text-xl italic">Request a hold</h3>
+            <dl className="mt-3">
+              <dt className="text-sm font-medium">Selected dates</dt>
+              <dd className="mt-1 rounded-md border border-[#061625]/15 bg-white px-3 py-2 text-sm">
+                {holdDates || (availability.ranges.length > 0 ? "Choose dates in the calendar" : "Calendar dates unavailable")}
+              </dd>
+            </dl>
+            <p id="hold-submission-note" className="mt-3 text-sm text-[#061625]/75">
+              Hold requests are currently unavailable. <a className="underline underline-offset-2" href="#enquire">Ask about your dates</a> using the proposal form.
+            </p>
+            <button
+              type="button"
+              disabled
+              aria-describedby="hold-submission-note"
+              className="mt-3 w-full cursor-not-allowed rounded-full bg-[#061625]/10 px-5 py-2.5 text-sm font-semibold text-[#061625]/60 sm:w-auto"
+            >
+              Request a hold
+            </button>
+          </section>
           {charterNotes.size > 0 && (
             <details className="mt-5 rounded-lg border border-[#061625]/10 p-4 [overflow-wrap:anywhere]">
               <summary className="cursor-pointer text-sm font-semibold text-[#061625]">
