@@ -7,3 +7,9 @@ export type CharterDateSelection = {
   end: string;
   label: string;
 };
+
+export type CharterCalendarSelection = CharterDateSelection | {
+  start: string;
+  end: null;
+  label: string;
+};

@@ -73,9 +73,13 @@ The full hold request panel now uses MCC orange with navy text. The production b
 
 The availability panel leads to a charter proposal with the selected dates. The form puts dates, party size, and contact details first, with optional trip details grouped separately. The confirmation summarizes the request and explains the availability check and follow-up. The yacht page gives the main photograph priority, places a CYA guest quote near the proposal, and leads with verified crew roles and portraits. Detailed specifications and the original crew notes remain available in expandable sections. The build and 12 desktop and mobile Chromium fixture checks passed. A mocked submission check verified failure, retry, and confirmation at desktop and 320 px mobile widths. Vercel verified that commit `d21a959` is serving the production hostname. Production browser verification is pending.
 
-### OHANA broker-reviewed hold pilot (Implemented locally)
+### OHANA broker-reviewed hold pilot (Deployed)
 
 The orange hold panel below the calendar carries the selected dates into a dedicated OHANA form. The request is saved for broker review before Resend attempts the broker notification and guest acknowledgment. Both use `bookings@mycaribbeancharters.com` as sender and reply address. The form preserves the calendar’s turnaround warning and gives the guest a reference. A broker checks availability and places any hold in CYA after review. Desktop and 320 px mobile Chromium checks against local PostgreSQL and mocked CYA and Resend verified date carryover, receipt, email failure and retry, and duplicate prevention. The owner applied the production Supabase migration in SQL Editor and confirmed the table, both functions, and row-level security. Recording migration version `20261125193000` in Supabase’s migration history is pending. Production browser verification and live mailbox delivery remain pending.
+
+Vercel reported commit `6dd1a52` on `collaborate` ready and assigned to the production hostname on November 25, 2026. A read-only Vercel fetch returned HTTP 200 with the orange hold panel and calendar instructions in the live OHANA page. A browser connection error prevented live interaction tests from this workspace.
+
+The date-selection update is implemented locally. The calendar explains check-in, check-out, and month navigation. The orange block shows the first selected date, calls for a different checkout day, and reveals the form in place when both dates are selected. Its primary button reads **Request a hold**. Pricing and itinerary enquiries remain available through a text link to the proposal form. The calendar preserves the turnaround advisory. The build and desktop and 320 px mobile Chromium fixture checks passed. Deployment of this update is pending.
 
 ---
 

@@ -105,35 +105,36 @@ export function YachtHoldRequestForm({ yachtId, dates }: { yachtId: string; date
   }
 
   return (
-    <details className="mt-4 rounded-xl bg-white p-4 text-[#061625]">
-      <summary className="cursor-pointer text-sm font-semibold">Enter your contact details</summary>
-      <form aria-label="OHANA hold request" aria-busy={sending} onSubmit={handleSubmit} className="mt-4 space-y-3 text-sm">
-        <p>Send your dates to our charter team for review.</p>
-        <label className="block">
-          <span className="mb-1 block font-medium">Full name</span>
-          <Input name="name" autoComplete="name" maxLength={120} required />
-        </label>
-        <label className="block">
-          <span className="mb-1 block font-medium">Email address</span>
-          <Input name="email" type="email" autoComplete="email" maxLength={254} required />
-        </label>
-        <label className="block">
-          <span className="mb-1 block font-medium">Number of guests</span>
-          <Input name="guests" type="number" inputMode="numeric" min={1} max={HOLD_PILOT_MAX_GUESTS} required />
-        </label>
-        <label className="flex items-start gap-2">
-          <input type="checkbox" name="privacyConsent" required className="mt-0.5 h-5 w-5 shrink-0 accent-[#061625]" />
-          <span>I agree that My Caribbean Charters may contact me about these dates.</span>
-        </label>
-        {error && (
-          <p role="alert" className="rounded-md bg-red-50 p-2 text-[#B42318]">
-            {error} <a href={`mailto:${HOLD_BOOKINGS_EMAIL}`} className="underline">Email our bookings team</a>.
-          </p>
-        )}
-        <button type="submit" disabled={sending} className={actionClass}>
-          {sending ? "Sending your request…" : "Send hold request"}
-        </button>
-      </form>
-    </details>
+    <form
+      aria-label="OHANA hold request"
+      aria-busy={sending}
+      onSubmit={handleSubmit}
+      className="mt-4 space-y-3 rounded-xl bg-white p-4 text-sm text-[#061625]"
+    >
+      <label className="block">
+        <span className="mb-1 block font-medium">Full name</span>
+        <Input name="name" autoComplete="name" maxLength={120} required />
+      </label>
+      <label className="block">
+        <span className="mb-1 block font-medium">Email address</span>
+        <Input name="email" type="email" autoComplete="email" maxLength={254} required />
+      </label>
+      <label className="block">
+        <span className="mb-1 block font-medium">Number of guests</span>
+        <Input name="guests" type="number" inputMode="numeric" min={1} max={HOLD_PILOT_MAX_GUESTS} required />
+      </label>
+      <label className="flex items-start gap-2">
+        <input type="checkbox" name="privacyConsent" required className="mt-0.5 h-5 w-5 shrink-0 accent-[#061625]" />
+        <span>I agree that My Caribbean Charters may contact me about these dates.</span>
+      </label>
+      {error && (
+        <p role="alert" className="rounded-md bg-red-50 p-2 text-[#B42318]">
+          {error} <a href={`mailto:${HOLD_BOOKINGS_EMAIL}`} className="underline">Email our bookings team</a>.
+        </p>
+      )}
+      <button type="submit" disabled={sending} className={actionClass}>
+        {sending ? "Sending your request…" : "Request a hold"}
+      </button>
+    </form>
   );
 }

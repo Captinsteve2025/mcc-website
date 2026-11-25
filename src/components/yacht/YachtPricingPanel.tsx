@@ -1,7 +1,7 @@
 "use client";
 
 import { YachtHoldRequestForm } from "./YachtHoldRequestForm";
-import type { CharterDateSelection } from "@/lib/hold-request";
+import type { CharterCalendarSelection } from "@/lib/hold-request";
 import { YachtAvailabilityCalendar } from "./YachtAvailabilityCalendar";
 import { money, type PricingSummary } from "@/lib/yacht-pricing";
 import type { SeasonRate } from "@/lib/yacht-detail";
@@ -49,7 +49,16 @@ function GuestRateTable({ season }: { season: SeasonRate }) {
 
 export function YachtPricingPanel({ yachtId, pricing, availability, canRequestHold = false }: Props) {
   const [showAllTerms, setShowAllTerms] = useState(false);
-  const [holdDates, setHoldDates] = useState<CharterDateSelection | null>(null);
+  const [holdDates, setHoldDates] = useState<CharterCalendarSelection | null>(null);
+  const selectedRange = holdDates?.end ? holdDates : null;
+  let dateSummary = availability.ranges.length > 0 ? "Choose dates in the calendar" : "Calendar dates unavailable";
+  if (selectedRange) {
+    dateSummary = selectedRange.label;
+  } else if (canRequestHold && holdDates) {
+    dateSummary = `Check-in selected for ${holdDates.label}. Select your check-out date above.`;
+  } else if (canRequestHold && availability.ranges.length > 0) {
+    dateSummary = "Select your check-in and check-out dates in the calendar above.";
+  }
   const priced = pricing.seasons.filter((s) => s.price !== null || s.guestRates.length > 0);
   const unpriced = pricing.seasons.filter((s) => s.price === null && s.guestRates.length === 0);
   const charterNotes = new Map<string, string[]>();
@@ -163,6 +172,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability, canRequestHo
               ranges={availability.ranges}
               lastUpdated={availability.lastUpdated}
               hasLiveData={availability.hasLiveData}
+              canRequestHold={canRequestHold}
               onSelectedDatesChange={setHoldDates}
               seasons={pricing.seasons.map(({ startDate, endDate, turnaroundHours }) => ({ startDate, endDate, turnaroundHours }))}
             />
@@ -174,28 +184,42 @@ export function YachtPricingPanel({ yachtId, pricing, availability, canRequestHo
             <h3 id="request-hold-title" className="font-display text-xl italic">
               {canRequestHold ? "Request a hold" : "Ask about your charter dates"}
             </h3>
+            {canRequestHold && (
+              <p className="mt-2 text-sm">
+                Our charter team will check your dates and let you know if OHANA can be held.
+              </p>
+            )}
             <dl className="mt-3">
               <dt className="text-sm font-medium">Selected dates</dt>
               <dd className="mt-1 border-l-2 border-[#061625]/40 pl-3 text-sm font-medium">
-                {holdDates?.label || (availability.hasLiveData || availability.ranges.length > 0 ? "Choose dates in the calendar" : "Calendar dates unavailable")}
+                {dateSummary}
               </dd>
             </dl>
-            {canRequestHold && holdDates && holdDates.start < holdDates.end && (
-              <YachtHoldRequestForm key={holdDates.label} yachtId={yachtId} dates={holdDates} />
+            {canRequestHold && selectedRange && (
+              <YachtHoldRequestForm key={selectedRange.label} yachtId={yachtId} dates={selectedRange} />
             )}
-            <p id="hold-submission-note" className="mt-3 text-sm">
-              {canRequestHold
-                ? "For pricing and itinerary ideas, request a personalized charter proposal."
-                : "Our charter team will check availability and prepare a personalized proposal for your group."}
-            </p>
-            <a
-              href="#enquire"
-              aria-describedby="hold-submission-note"
-              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#061625] px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#061625]/85 focus-visible:ring-2 focus-visible:ring-[#061625] focus-visible:ring-offset-2 sm:w-auto"
-            >
-              Request a charter proposal
-              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
-            </a>
+            {canRequestHold ? (
+              <p className="mt-3 text-sm">
+                For pricing or itinerary ideas,{" "}
+                <a href="#enquire" className="font-medium underline underline-offset-4">
+                  request a charter proposal
+                </a>.
+              </p>
+            ) : (
+              <>
+                <p id="hold-submission-note" className="mt-3 text-sm">
+                  Our charter team will check availability and prepare a personalized proposal for your group.
+                </p>
+                <a
+                  href="#enquire"
+                  aria-describedby="hold-submission-note"
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#061625] px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#061625]/85 focus-visible:ring-2 focus-visible:ring-[#061625] focus-visible:ring-offset-2 sm:w-auto"
+                >
+                  Request a charter proposal
+                  <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+                </a>
+              </>
+            )}
           </section>
           {charterNotes.size > 0 && (
             <details className="mt-5 rounded-lg border border-[#061625]/10 p-4 [overflow-wrap:anywhere]">

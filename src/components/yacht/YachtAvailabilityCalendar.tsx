@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import type { AvailabilityRange } from "@/lib/yacht-content";
-import type { CharterDateSelection } from "@/lib/hold-request";
+import type { CharterCalendarSelection } from "@/lib/hold-request";
 import type { SeasonRate } from "@/lib/yacht-detail";
 
 const STATUS_STYLES: Record<AvailabilityRange["status"], { cell: string; dot: string; label: string }> = {
@@ -98,11 +98,12 @@ type Props = {
   /** True when at least one range comes from CYA's live bookings feed. */
   hasLiveData?: boolean;
   seasons: TurnaroundSeason[];
-  onSelectedDatesChange: (dates: CharterDateSelection | null) => void;
+  onSelectedDatesChange: (dates: CharterCalendarSelection) => void;
+  canRequestHold?: boolean;
 };
 
 export function YachtAvailabilityCalendar({
-  yachtId, ranges, lastUpdated, hasLiveData = false, seasons, onSelectedDatesChange,
+  yachtId, ranges, lastUpdated, hasLiveData = false, seasons, onSelectedDatesChange, canRequestHold = false,
 }: Props) {
   const today = new Date();
   const [monthOffset, setMonthOffset] = useState(0); // months from the current month
@@ -135,18 +136,15 @@ export function YachtAvailabilityCalendar({
     if (!selectStart || (selectStart && selectEnd)) {
       setSelectStart(iso);
       setSelectEnd(null);
-      onSelectedDatesChange(null);
+      onSelectedDatesChange({ start: iso, end: null, label: formatCharterDate(iso) });
       return;
     }
-    if (iso < selectStart) {
-      setSelectEnd(selectStart);
-      setSelectStart(iso);
-    } else {
-      setSelectEnd(iso);
-    }
-    trackEvent("yacht_availability_date_select", { yacht_id: yachtId });
+    if (iso === selectStart) return;
     const start = iso < selectStart ? iso : selectStart;
     const end = iso < selectStart ? selectStart : iso;
+    setSelectStart(start);
+    setSelectEnd(end);
+    trackEvent("yacht_availability_date_select", { yacht_id: yachtId });
     const dates = `${formatCharterDate(start)} to ${formatCharterDate(end)}`;
     onSelectedDatesChange({ start, end, label: dates });
     window.dispatchEvent(new CustomEvent("mcc:yacht-dates", { detail: { dates } }));
@@ -222,6 +220,9 @@ export function YachtAvailabilityCalendar({
         </div>
       </div>
 
+      <p className="mb-4 text-sm text-[#061625]/80">
+        Select your check-in date, then your check-out date. Use the arrows to change months.
+      </p>
       <div className="grid grid-cols-1 gap-5 [@container(min-width:34rem)]:grid-cols-2 [@container(min-width:51rem)]:grid-cols-3">
         {visibleMonths.map((month, i) => {
           const year = month.getUTCFullYear();
@@ -315,7 +316,7 @@ export function YachtAvailabilityCalendar({
               <p className="mt-0.5 text-xs text-[#061625]/70">
                 {chosenStatus
                   ? `Heads up: part of this range is marked ${STATUS_STYLES[chosenStatus].label.toLowerCase()} in the live calendar. Our team will confirm what is possible.`
-                  : "Our team will confirm these dates with your personalized proposal."}
+                  : "Our charter team will check availability for these dates."}
               </p>
               {turnaroundToConfirm > 0 && (
                 <p className="mt-2 text-sm">
@@ -323,15 +324,19 @@ export function YachtAvailabilityCalendar({
                   Our team will confirm whether a shorter gap is possible.
                 </p>
               )}
-              <a
-                href="#enquire"
-                className="mt-2 inline-block rounded-full bg-[#EE9739] px-4 py-2 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]"
-              >
-                Request a charter proposal
-              </a>
+              {canRequestHold ? (
+                <p className="mt-2 text-sm font-medium">Your hold request form is just below.</p>
+              ) : (
+                <a
+                  href="#enquire"
+                  className="mt-2 inline-block rounded-full bg-[#EE9739] px-4 py-2 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]"
+                >
+                  Request a charter proposal
+                </a>
+              )}
             </>
           ) : (
-            <p>Now select your check-out date.</p>
+            <p>Check-in selected for {formatCharterDate(selectStart)}. Select a different day for check-out.</p>
           )}
         </div>
       )}
