@@ -29,3 +29,9 @@ The live suite is separate. Run `npm run test:browser:live` with `PLAYWRIGHT_BAS
 ## Review and release
 
 Open feature pull requests against `collaborate`. GitHub Actions runs the build and fixture checks for pull requests targeting `collaborate` or `main`. Confirm the configured production branch and Node version in Vercel before release. Use an approved Vercel preview for live-data checks against the exact commit. After an approved release, run the live checks and record the tested commit and results in the [product improvement register](MCC_PRODUCT_IMPROVEMENT_REGISTER.md).
+
+### OHANA hold pilot
+
+Apply the [hold request migration](supabase/migrations/20261125193000_create_yacht_hold_requests.sql) to the intended Supabase project. Verify the sending domain `mycaribbeancharters.com` in Resend and confirm that `bookings@mycaribbeancharters.com` receives mail. Add `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` as server-side secrets in the intended Vercel environment, and use `SUPABASE_URL` or the existing `NEXT_PUBLIC_SUPABASE_URL` for that database. Set `HOLD_REQUESTS_ENABLED=true` when those checks are complete.
+
+The form saves requests for broker review and sends a broker notification and guest acknowledgment. The broker checks availability and turnaround in CYA before placing a hold. If an email remains pending, the guest can retry from the receipt or an operator can call `POST /api/hold-requests/retry` with the existing `ADMIN_API_TOKEN` in the `x-admin-token` header. Reconcile pending records older than 23 hours with Resend before sending manually.

@@ -1,5 +1,7 @@
 "use client";
 
+import { YachtHoldRequestForm } from "./YachtHoldRequestForm";
+import type { CharterDateSelection } from "@/lib/hold-request";
 import { YachtAvailabilityCalendar } from "./YachtAvailabilityCalendar";
 import { money, type PricingSummary } from "@/lib/yacht-pricing";
 import type { SeasonRate } from "@/lib/yacht-detail";
@@ -11,6 +13,7 @@ type Props = {
   yachtId: string;
   pricing: PricingSummary;
   availability: YachtAvailability;
+  canRequestHold?: boolean;
 };
 
 function GuestRateTable({ season }: { season: SeasonRate }) {
@@ -44,9 +47,9 @@ function GuestRateTable({ season }: { season: SeasonRate }) {
   );
 }
 
-export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
+export function YachtPricingPanel({ yachtId, pricing, availability, canRequestHold = false }: Props) {
   const [showAllTerms, setShowAllTerms] = useState(false);
-  const [holdDates, setHoldDates] = useState("");
+  const [holdDates, setHoldDates] = useState<CharterDateSelection | null>(null);
   const priced = pricing.seasons.filter((s) => s.price !== null || s.guestRates.length > 0);
   const unpriced = pricing.seasons.filter((s) => s.price === null && s.guestRates.length === 0);
   const charterNotes = new Map<string, string[]>();
@@ -168,15 +171,22 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
             className="mt-4 rounded-xl border border-[#061625]/15 bg-[#EE9739] p-4 text-[#061625] sm:p-5"
             aria-labelledby="request-hold-title"
           >
-            <h3 id="request-hold-title" className="font-display text-xl italic">Ask about your charter dates</h3>
+            <h3 id="request-hold-title" className="font-display text-xl italic">
+              {canRequestHold ? "Request a hold" : "Ask about your charter dates"}
+            </h3>
             <dl className="mt-3">
               <dt className="text-sm font-medium">Selected dates</dt>
               <dd className="mt-1 border-l-2 border-[#061625]/40 pl-3 text-sm font-medium">
-                {holdDates || (availability.ranges.length > 0 ? "Choose dates in the calendar" : "Calendar dates unavailable")}
+                {holdDates?.label || (availability.hasLiveData || availability.ranges.length > 0 ? "Choose dates in the calendar" : "Calendar dates unavailable")}
               </dd>
             </dl>
+            {canRequestHold && holdDates && holdDates.start < holdDates.end && (
+              <YachtHoldRequestForm key={holdDates.label} yachtId={yachtId} dates={holdDates} />
+            )}
             <p id="hold-submission-note" className="mt-3 text-sm">
-              Our charter team will check availability and prepare a personalized proposal for your group.
+              {canRequestHold
+                ? "For pricing and itinerary ideas, request a personalized charter proposal."
+                : "Our charter team will check availability and prepare a personalized proposal for your group."}
             </p>
             <a
               href="#enquire"

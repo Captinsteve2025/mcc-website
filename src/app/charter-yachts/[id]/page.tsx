@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { HOLD_PILOT_YACHT_ID } from "@/lib/hold-request";
+import { holdRequestsEnabled } from "@/lib/hold-request-server";
 import {
   ArrowLeft,
   Users,
@@ -276,6 +278,7 @@ export default async function YachtDetailPage({
             yachtId={id}
             pricing={pricing}
             availability={availability}
+            canRequestHold={id === HOLD_PILOT_YACHT_ID && holdRequestsEnabled()}
           />
         </div>
 

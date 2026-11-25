@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import type { AvailabilityRange } from "@/lib/yacht-content";
+import type { CharterDateSelection } from "@/lib/hold-request";
 import type { SeasonRate } from "@/lib/yacht-detail";
 
 const STATUS_STYLES: Record<AvailabilityRange["status"], { cell: string; dot: string; label: string }> = {
@@ -97,7 +98,7 @@ type Props = {
   /** True when at least one range comes from CYA's live bookings feed. */
   hasLiveData?: boolean;
   seasons: TurnaroundSeason[];
-  onSelectedDatesChange: (dates: string) => void;
+  onSelectedDatesChange: (dates: CharterDateSelection | null) => void;
 };
 
 export function YachtAvailabilityCalendar({
@@ -134,7 +135,7 @@ export function YachtAvailabilityCalendar({
     if (!selectStart || (selectStart && selectEnd)) {
       setSelectStart(iso);
       setSelectEnd(null);
-      onSelectedDatesChange("");
+      onSelectedDatesChange(null);
       return;
     }
     if (iso < selectStart) {
@@ -147,7 +148,7 @@ export function YachtAvailabilityCalendar({
     const start = iso < selectStart ? iso : selectStart;
     const end = iso < selectStart ? selectStart : iso;
     const dates = `${formatCharterDate(start)} to ${formatCharterDate(end)}`;
-    onSelectedDatesChange(dates);
+    onSelectedDatesChange({ start, end, label: dates });
     window.dispatchEvent(new CustomEvent("mcc:yacht-dates", { detail: { dates } }));
   };
 
