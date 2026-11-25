@@ -165,7 +165,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
             />
           </div>
           <section
-            className="mt-4 rounded-xl border border-[#061625]/10 bg-[#f8f7f4] p-4 text-[#061625] sm:p-5"
+            className="mt-4 rounded-xl border border-[#061625]/15 bg-[#EE9739] p-4 text-[#061625] sm:p-5"
             aria-labelledby="request-hold-title"
           >
             <h3 id="request-hold-title" className="font-display text-xl italic">Request a hold</h3>
@@ -175,7 +175,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
                 {holdDates || (availability.ranges.length > 0 ? "Choose dates in the calendar" : "Calendar dates unavailable")}
               </dd>
             </dl>
-            <p id="hold-submission-note" className="mt-3 text-sm text-[#061625]/75">
+            <p id="hold-submission-note" className="mt-3 text-sm">
               Direct hold requests are currently unavailable. Our charter team can review your dates through a proposal request.
             </p>
             <a

@@ -65,7 +65,9 @@ The yacht detail page shows published weekly prices by season and guest count, a
 
 The yacht detail page displays a hold request panel immediately below the yacht availability calendar. It mirrors a complete date selection and clears it when the visitor starts choosing a new range. Submission is disabled pending the email backend. The local Chromium fixture suite passed on desktop and at 320 px mobile width, including date carryover, guest-count rates, guest reviews, and the turnaround advisory. Vercel reported a successful deployment for commit `55f9d3b` on `collaborate`. Production browser verification is pending.
 
-The follow-up layout and handoff fix aligns the proposal with the availability panel and replaces the inactive hold button with a link to the existing proposal form. The proposal receives the selected dates. The production build and desktop and 320 px mobile Chromium fixture checks passed for this follow-up. Deployment is pending.
+The follow-up layout and handoff fix aligns the proposal with the availability panel and replaces the inactive hold button with a link to the existing proposal form. The proposal receives the selected dates. The production build and desktop and 320 px mobile Chromium fixture checks passed for this follow-up. Vercel verified that commit `3660080` is serving the production hostname. Production browser verification is pending.
+
+The full hold request panel now uses MCC orange with navy text. The production build and desktop and mobile Chromium hold-to-proposal checks passed locally. Deployment is pending.
 
 ---
 
