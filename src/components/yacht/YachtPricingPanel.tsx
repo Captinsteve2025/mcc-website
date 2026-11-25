@@ -176,16 +176,16 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
               </dd>
             </dl>
             <p id="hold-submission-note" className="mt-3 text-sm text-[#061625]/75">
-              Hold requests are currently unavailable. <a className="underline underline-offset-2" href="#enquire">Ask about your dates</a> using the proposal form.
+              Direct hold requests are currently unavailable. Our charter team can review your dates through a proposal request.
             </p>
-            <button
-              type="button"
-              disabled
+            <a
+              href="#enquire"
               aria-describedby="hold-submission-note"
-              className="mt-3 w-full cursor-not-allowed rounded-full bg-[#061625]/10 px-5 py-2.5 text-sm font-semibold text-[#061625]/60 sm:w-auto"
+              className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#061625] px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#061625]/85 focus-visible:ring-2 focus-visible:ring-[#061625] focus-visible:ring-offset-2 sm:w-auto"
             >
-              Request a hold
-            </button>
+              {holdDates ? "Ask about these dates" : "Open proposal form"}
+              <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+            </a>
           </section>
           {charterNotes.size > 0 && (
             <details className="mt-5 rounded-lg border border-[#061625]/10 p-4 [overflow-wrap:anywhere]">

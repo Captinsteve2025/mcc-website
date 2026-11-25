@@ -104,7 +104,7 @@ test("fits yacht brochure text and the training link at 320 pixels", async ({ pa
 });
 
 
-test("carries calendar dates to the disabled hold request alongside CYA pricing and reviews", async ({ page, isMobile }) => {
+test("keeps the hold panel and proposal aligned and carries dates to the proposal", async ({ page, isMobile }) => {
   if (isMobile) await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
   await page.getByText("Weekly rates by guest count", { exact: true }).click();
@@ -124,11 +124,10 @@ test("carries calendar dates to the disabled hold request alongside CYA pricing 
   await expect(page.getByText("Please enter the number of guests (1 to 10).")).toBeVisible();
 
   const hold = page.getByRole("region", { name: "Request a hold" });
-  const holdButton = hold.getByRole("button", { name: "Request a hold" });
   const holdDates = hold.locator("dd");
   await expect(page.locator("#availability + section")).toHaveAttribute("aria-labelledby", "request-hold-title");
   await expect(holdDates).toHaveText("Choose dates in the calendar");
-  await expect(holdButton).toBeDisabled();
+  await expect(hold.getByRole("button")).toHaveCount(0);
 
   const selectDate = async (offset: number) => {
     const iso = new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10);
@@ -143,7 +142,10 @@ test("carries calendar dates to the disabled hold request alongside CYA pricing 
   const end = await selectDate(2);
   await expect(holdDates).toHaveText(`${start} to ${end}`);
   await expect(page.getByLabel(/Preferred charter dates/)).toHaveValue(`${start} to ${end}`);
-  await expect(holdButton).toBeDisabled();
+  await expect(hold.getByText("Direct hold requests are currently unavailable.")).toBeVisible();
+  await hold.getByRole("link", { name: "Ask about these dates" }).click();
+  await expect(page).toHaveURL(/#enquire$/);
+  await expect(page.locator("#enquire")).toBeFocused();
   await expect(page.getByRole("status").filter({ hasText: "published 72-hour turnaround" })).toBeVisible();
   await expect(page.getByRole("link", { name: "Continue to proposal form" })).toBeVisible();
 
@@ -151,6 +153,13 @@ test("carries calendar dates to the disabled hold request alongside CYA pricing 
   await expect(holdDates).toHaveText("Choose dates in the calendar");
   const nextEnd = await selectDate(4);
   await expect(holdDates).toHaveText(`${nextStart} to ${nextEnd}`);
-  await expect(holdButton).toBeDisabled();
+  await expect(hold.getByRole("link", { name: "Ask about these dates" })).toBeVisible();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await expect.poll(async () => page.evaluate(() => {
+    const proposal = document.querySelector("#enquire")!.getBoundingClientRect();
+    const availability = document.querySelector("#availability")!.parentElement!.getBoundingClientRect();
+    return proposal.top > availability.bottom && Math.abs(proposal.left - availability.left) <= 1
+      && Math.abs(proposal.right - availability.right) <= 1;
+  })).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });

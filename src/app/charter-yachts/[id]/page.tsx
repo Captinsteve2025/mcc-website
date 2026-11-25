@@ -272,11 +272,9 @@ export default async function YachtDetailPage({
           />
         </div>
 
-        {/* --- Overview, accommodation and specifications beside the sticky
-            enquiry panel; per the brief: overview → rates+availability (above)
-            → accommodation → crew → dining → experiences --- */}
-        <div className="container mx-auto grid grid-cols-1 gap-12 px-4 pb-24 [overflow-wrap:anywhere] lg:grid-cols-5">
-          <div className="lg:col-span-3">
+        {/* Match the rates and availability columns above. */}
+        <div className="container mx-auto grid grid-cols-1 gap-x-6 gap-y-12 px-4 pb-24 [overflow-wrap:anywhere] lg:grid-cols-2">
+          <div>
             {/* --- Overview --- */}
             <SectionHeading id="overview" title="Overview" />
             <div className="space-y-4 leading-relaxed text-[#061625]/80">
@@ -374,9 +372,43 @@ export default async function YachtDetailPage({
             )}
           </div>
 
-          {/* --- Crew, dining and watersports: beneath the enquiry panel's
-              sticky column on desktop, stacked in the brief's order --- */}
-          <div className="lg:col-span-5">
+          {/* --- Enquiry panel (sticky beside the introductory content) --- */}
+          <div className="min-w-0">
+            <div id="enquire" tabIndex={-1} className="scroll-mt-32 lg:sticky lg:top-28">
+              <div className="rounded-2xl bg-[#061625] p-6 text-white md:p-8">
+                <h2 className="mb-2 font-display text-3xl font-normal italic">Request Your Personal Charter Proposal</h2>
+                <p className="mb-5 text-sm text-white/80">
+                  Tell us your preferred dates and guest details. Our charter team will confirm availability and
+                  prepare your personalized quotation.
+                </p>
+                {(preferredDates || guests) && (
+                  <p className="mb-5 flex items-start gap-2 rounded-lg bg-white/10 p-3 text-xs text-white/90">
+                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#EE9739]" aria-hidden="true" />
+                    <span>
+                      {preferredDates && <>Dates carried from your search: {preferredDates}. </>}
+                      {guests && <>Guests: {guests}. </>}
+                      Please confirm the details below.
+                    </span>
+                  </p>
+                )}
+              </div>
+              <div className="mt-6">
+                <YachtEnquiryForm
+                  yachtSlug={slug}
+                  yachtName={name}
+                  cyaYachtId={id}
+                  initialDates={preferredDates || undefined}
+                  initialGuests={guests || undefined}
+                  maxGuests={accommodation.pax !== null && Number.isSafeInteger(accommodation.pax) && accommodation.pax > 0
+                    ? accommodation.pax
+                    : undefined}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* --- Crew, dining and watersports --- */}
+          <div className="lg:col-span-2">
             {/* --- Watersports & Experiences --- */}
             {(watersports.tender || watersports.items.length > 0) && (
               <section className="mt-14">
@@ -412,41 +444,6 @@ export default async function YachtDetailPage({
                 null
               }
             />
-          </div>
-
-          {/* --- Enquiry panel (sticky beside the introductory content) --- */}
-          <div className="lg:col-span-2 -mt-12 lg:row-start-1 lg:col-start-4">
-            <div id="enquire" className="scroll-mt-32 lg:sticky lg:top-28">
-              <div className="rounded-2xl bg-[#061625] p-6 text-white md:p-8">
-                <h2 className="mb-2 font-display text-3xl font-normal italic">Request Your Personal Charter Proposal</h2>
-                <p className="mb-5 text-sm text-white/80">
-                  Tell us your preferred dates and guest details. Our charter team will confirm availability and
-                  prepare your personalized quotation.
-                </p>
-                {(preferredDates || guests) && (
-                  <p className="mb-5 flex items-start gap-2 rounded-lg bg-white/10 p-3 text-xs text-white/90">
-                    <CalendarDays className="mt-0.5 h-4 w-4 shrink-0 text-[#EE9739]" aria-hidden="true" />
-                    <span>
-                      {preferredDates && <>Dates carried from your search: {preferredDates}. </>}
-                      {guests && <>Guests: {guests}. </>}
-                      Please confirm the details below.
-                    </span>
-                  </p>
-                )}
-              </div>
-              <div className="mt-6">
-                <YachtEnquiryForm
-                  yachtSlug={slug}
-                  yachtName={name}
-                  cyaYachtId={id}
-                  initialDates={preferredDates || undefined}
-                  initialGuests={guests || undefined}
-                  maxGuests={accommodation.pax !== null && Number.isSafeInteger(accommodation.pax) && accommodation.pax > 0
-                    ? accommodation.pax
-                    : undefined}
-                />
-              </div>
-            </div>
           </div>
         </div>
 
