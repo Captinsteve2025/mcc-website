@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight, CalendarDays } from "lucide-react";
 import { trackEvent } from "@/lib/analytics";
 import type { AvailabilityRange } from "@/lib/yacht-content";
-import type { CharterCalendarSelection } from "@/lib/hold-request";
+import { formatHoldDate as formatCharterDate, type CharterCalendarSelection } from "@/lib/hold-request";
 import type { SeasonRate } from "@/lib/yacht-detail";
 
 const STATUS_STYLES: Record<AvailabilityRange["status"], { cell: string; dot: string; label: string }> = {
@@ -28,15 +28,6 @@ function toUtcDate(iso: string): Date {
 
 function isoOf(date: Date): string {
   return date.toISOString().slice(0, 10);
-}
-
-function formatCharterDate(iso: string): string {
-  return toUtcDate(iso).toLocaleDateString("en-US", {
-    timeZone: "UTC",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
 }
 
 // Builds a day-status map from confirmed ranges. Days outside any range stay
@@ -179,16 +170,19 @@ export function YachtAvailabilityCalendar({
           <div className="min-w-0 flex-1">
             <h3 className="font-display text-lg italic text-[#061625]">Availability data currently unavailable</h3>
             <p className="mt-0.5 text-sm text-[#061625]/70">
-              Live dates for this yacht are not in our feed yet — ask our team and we will confirm availability for
-              your dates personally.
+              {canRequestHold
+                ? "Live calendar dates are unavailable. Enter your preferred dates below and our team will check them."
+                : "Live dates for this yacht are not in our feed yet. Ask our team to confirm availability for your dates."}
             </p>
           </div>
-          <a
-            href="#enquire"
-            className="shrink-0 rounded-full bg-[#EE9739] px-5 py-2.5 text-center text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]"
-          >
-            Ask about your dates
-          </a>
+          {!canRequestHold && (
+            <a
+              href="#enquire"
+              className="shrink-0 rounded-full bg-[#EE9739] px-5 py-2.5 text-center text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]"
+            >
+              Ask about your dates
+            </a>
+          )}
         </div>
       </div>
     );

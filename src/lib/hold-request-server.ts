@@ -1,7 +1,10 @@
 import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { HOLD_BOOKINGS_EMAIL } from "@/lib/hold-request";
+import { CyaApiError, getYachtDetail } from "@/lib/cya";
+import { CYA_YACHT_ID_PATTERN, HOLD_BOOKINGS_EMAIL, holdGuestLimit, MANAGED_YACHT_HOLD_PREFIX } from "@/lib/hold-request";
+import { managedYachts } from "@/lib/managed-yachts";
+import { parseAccommodation, str } from "@/lib/yacht-detail";
 
 export function holdRequestsEnabled(): boolean {
   return process.env.HOLD_REQUESTS_ENABLED === "true" && Boolean(
@@ -19,9 +22,29 @@ export function getHoldDatabase(): SupabaseClient {
   );
 }
 
+export async function getYachtForHold(id: string): Promise<{ name: string; maxGuests: number } | null> {
+  if (id.startsWith(MANAGED_YACHT_HOLD_PREFIX)) {
+    const yacht = managedYachts.find(({ slug }) => id === MANAGED_YACHT_HOLD_PREFIX + slug);
+    return yacht ? { name: yacht.name, maxGuests: holdGuestLimit(yacht.maxGuests) } : null;
+  }
+  if (!CYA_YACHT_ID_PATTERN.test(id)) return null;
+
+  try {
+    const yacht = await getYachtDetail(id);
+    return {
+      name: str(yacht.yachtName)?.replace(/\s+/g, " ").slice(0, 200) ?? "Charter yacht",
+      maxGuests: holdGuestLimit(parseAccommodation(yacht).pax),
+    };
+  } catch (error) {
+    if (error instanceof CyaApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
 type HoldDelivery = {
   id: string;
   yacht_id: string;
+  yacht_name: string | null;
   start_date: string;
   end_date: string;
   guest_count: number;
@@ -36,22 +59,28 @@ const emailKinds = ["broker", "guest"] as const;
 function emailFor(request: HoldDelivery, kind: typeof emailKinds[number]) {
   const dates = `${request.start_date} to ${request.end_date}`;
   const reference = `Reference ${request.id}`;
+  const name = request.yacht_name ?? "OHANA"; // Legacy requests came from the OHANA-only form.
   const base = {
     from: `My Caribbean Charters <${HOLD_BOOKINGS_EMAIL}>`,
     reply_to: HOLD_BOOKINGS_EMAIL,
   };
 
   if (kind === "broker") {
+    const managed = request.yacht_id.startsWith(MANAGED_YACHT_HOLD_PREFIX);
     return {
       ...base,
       to: [HOLD_BOOKINGS_EMAIL],
-      subject: "OHANA hold request for review",
+      subject: `${name} hold request for review`,
       text: [
         reference,
-        `OHANA · ${dates} · ${request.guest_count} guests`,
+        `${name} · ${dates} · ${request.guest_count} guests`,
         `Guest: ${request.full_name} <${request.email}>`,
-        "Check CYA for existing bookings, holds, and turnaround requirements before placing a hold. Contact the guest once you have reviewed the dates.",
-        `CYA yacht ID: ${request.yacht_id}`,
+        managed
+          ? "Check the yacht’s bookings, holds, and turnaround requirements before placing a hold. Contact the guest once you have reviewed the dates."
+          : "Check CYA for existing bookings, holds, and turnaround requirements before placing a hold. Contact the guest once you have reviewed the dates.",
+        managed
+          ? `Managed yacht: ${request.yacht_id.slice(MANAGED_YACHT_HOLD_PREFIX.length)}`
+          : `CYA yacht ID: ${request.yacht_id}`,
       ].join("\n\n"),
     };
   }
@@ -59,10 +88,10 @@ function emailFor(request: HoldDelivery, kind: typeof emailKinds[number]) {
   return {
     ...base,
     to: [request.email],
-    subject: "Your OHANA hold request was received",
+    subject: `Your ${name} hold request was received`,
     text: [
       `Hello ${request.full_name},`,
-      `We received your request for OHANA for ${dates} for ${request.guest_count} guests.`,
+      `We received your request for ${name} for ${dates} for ${request.guest_count} guests.`,
       "Our charter team will check availability and contact you. Your dates are subject to confirmation.",
       reference,
       "You can reply to this email with any questions.",

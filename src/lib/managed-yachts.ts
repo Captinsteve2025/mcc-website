@@ -14,6 +14,7 @@ export interface ManagedYacht {
   // Null means no published rate: the page shows "Charter rates on request".
   displayRate: string | null;
   minimumNights: number | null;
+  maxGuests?: number;
   heroImage: string;
   heroImageAlt: string;
   heroVideo: string | null;
@@ -72,6 +73,7 @@ export const aquanimity: ManagedYacht = {
   quickFacts: ["Dufour 48", "2021", "8 Guests", "4 Cabins", "2 Crew"],
   displayRate: "From $24,600",
   minimumNights: null,
+  maxGuests: 8,
   heroImage: "/images/aquanimity/Aquanimity-Dufour-48-Yacht-Charter-BVI.jpg",
   heroImageAlt: "Aquanimity yacht charter in the British Virgin Islands",
   heroVideo: "/video/aquanimity-hero.mp4",

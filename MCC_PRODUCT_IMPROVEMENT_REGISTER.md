@@ -91,6 +91,11 @@ Vercel reported commit `6dd1a52` on `collaborate` ready and assigned to the prod
 
 The calendar explains check-in, check-out, and month navigation. The orange block shows the first selected date, calls for a different checkout day, and reveals the form in place when both dates are selected. Its primary button reads **Request a hold**. Pricing and itinerary enquiries remain available through a text link to the proposal form. The calendar preserves the turnaround advisory. The build and desktop and 320 px mobile Chromium fixture checks passed. Vercel assigned commit `36c2b5b` on `collaborate` to the production hostname. A read-only fetch verified the revised calendar instructions, orange hold panel, and proposal link on the live OHANA page. The workspace browser could not connect for live interaction testing.
 
+### Fleet-wide hold requests
+
+
+Catalogue and managed-yacht detail pages offer broker-reviewed hold requests. The orange form carries dates from the calendar when records are available and provides check-in and check-out inputs otherwise. The server verifies the yacht, uses its published capacity when supplied, and includes its name and identifier in the request and emails. The migration preserves existing OHANA requests and keeps the original endpoint functional during rollout. Desktop and 320 px mobile fixture submissions passed for OHANA, another catalogue yacht, a catalogue yacht without calendar records, ATLAS, and Aquanimity. PostgreSQL checks verified the migration, duplicate handling, and service-role permissions. The owner reported applying the production migration. Deployment and verification are pending.
+
 ---
 
 ## Standing constraints

@@ -1,4 +1,7 @@
 import { TrackedCta } from "@/components/yacht/TrackedCta";
+import { YachtHoldRequestForm } from "@/components/yacht/YachtHoldRequestForm";
+import { MANAGED_YACHT_HOLD_PREFIX } from "@/lib/hold-request";
+import { holdRequestsEnabled } from "@/lib/hold-request-server";
 import { type ManagedYacht } from "@/lib/managed-yachts";
 
 export function YachtPricing({ yacht }: { yacht: ManagedYacht }) {
@@ -45,6 +48,13 @@ export function YachtPricing({ yacht }: { yacht: ManagedYacht }) {
             />
           </div>
         </div>
+        {holdRequestsEnabled() && (
+          <section className="mx-auto mt-6 max-w-4xl rounded-xl bg-[#EE9739] p-4 text-[#061625] sm:p-6" aria-labelledby="managed-hold-title">
+            <h2 id="managed-hold-title" className="font-display text-2xl italic">Request a hold</h2>
+            <p className="mt-2 text-sm">Choose your preferred dates and our charter team will check availability for {yacht.name}.</p>
+            <YachtHoldRequestForm yachtId={MANAGED_YACHT_HOLD_PREFIX + yacht.slug} yachtName={yacht.name} maxGuests={yacht.maxGuests} />
+          </section>
+        )}
       </div>
     </section>
   );

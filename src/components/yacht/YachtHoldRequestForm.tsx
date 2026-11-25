@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Input } from "@/components/ui/input";
-import { HOLD_BOOKINGS_EMAIL, HOLD_PILOT_MAX_GUESTS, type CharterDateSelection } from "@/lib/hold-request";
+import { formatHoldDate, HOLD_BOOKINGS_EMAIL, holdGuestLimit, holdRequestToday, type CharterDateSelection } from "@/lib/hold-request";
 
 type HoldRequest = {
   id: string;
@@ -19,7 +19,14 @@ type Receipt = { reference: string; emailsAccepted: boolean };
 
 const actionClass = "inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#061625] px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#061625]/85 focus-visible:ring-2 focus-visible:ring-[#061625] focus-visible:ring-offset-2 disabled:opacity-60 sm:w-auto";
 
-export function YachtHoldRequestForm({ yachtId, dates }: { yachtId: string; dates: CharterDateSelection }) {
+type Props = {
+  yachtId: string;
+  yachtName: string;
+  dates?: CharterDateSelection;
+  maxGuests?: number | null;
+};
+
+export function YachtHoldRequestForm({ yachtId, yachtName, dates, maxGuests }: Props) {
   const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState("");
@@ -46,7 +53,7 @@ export function YachtHoldRequestForm({ yachtId, dates }: { yachtId: string; date
       });
       const result = await response.json();
       if (!response.ok) {
-        if (response.status === 409) attemptedRequest.current = null;
+        if (response.status === 409 && !receipt) attemptedRequest.current = null;
         setError(receipt ? "We couldn’t check email delivery. Your request is already saved." : result.error ?? "We couldn’t confirm receipt. Please try again.");
         return;
       }
@@ -64,11 +71,17 @@ export function YachtHoldRequestForm({ yachtId, dates }: { yachtId: string; date
     event.preventDefault();
     if (sending) return;
     const data = new FormData(event.currentTarget);
+    const start = dates?.start ?? String(data.get("start") ?? "");
+    const end = dates?.end ?? String(data.get("end") ?? "");
+    if (!start || !end || end <= start) {
+      setError("Choose a check-out date after your check-in date.");
+      return;
+    }
     const payload = {
       id: attemptedRequest.current?.id ?? crypto.randomUUID(),
       yachtId,
-      start: dates.start,
-      end: dates.end,
+      start,
+      end,
       name: String(data.get("name") ?? "").trim(),
       email: String(data.get("email") ?? "").trim(),
       guests: Number(data.get("guests")),
@@ -78,12 +91,14 @@ export function YachtHoldRequestForm({ yachtId, dates }: { yachtId: string; date
     void submit(payload);
   }
 
-  if (receipt) {
+  if (receipt && attemptedRequest.current) {
+    const { start, end } = attemptedRequest.current;
+    const dateLabel = dates?.label ?? `${formatHoldDate(start)} to ${formatHoldDate(end)}`;
     return (
       <div ref={receiptRef} tabIndex={-1} className="mt-4 rounded-lg bg-white p-4 text-sm text-[#061625]">
         <div role="status">
           <p className="font-semibold">Hold request received</p>
-          <p className="mt-1">Our charter team will review {dates.label} and contact you. Your dates are subject to confirmation.</p>
+          <p className="mt-1">Our charter team will review {dateLabel} for {yachtName} and contact you. Your dates are subject to confirmation.</p>
           <p className="mt-2 break-all">Reference {receipt.reference}</p>
           {!receipt.emailsAccepted && <p className="mt-2">Email delivery is pending. Keep your reference for follow-up.</p>}
         </div>
@@ -104,13 +119,26 @@ export function YachtHoldRequestForm({ yachtId, dates }: { yachtId: string; date
     );
   }
 
+  const earliestDate = dates ? undefined : holdRequestToday();
   return (
     <form
-      aria-label="OHANA hold request"
+      aria-label={`${yachtName} hold request`}
       aria-busy={sending}
       onSubmit={handleSubmit}
       className="mt-4 space-y-3 rounded-xl bg-white p-4 text-sm text-[#061625]"
     >
+      {!dates && (
+        <div className="grid grid-cols-2 gap-3">
+          <label className="min-w-0">
+            <span className="mb-1 block font-medium">Check-in</span>
+            <Input name="start" type="date" min={earliestDate} required className="min-w-0" />
+          </label>
+          <label className="min-w-0">
+            <span className="mb-1 block font-medium">Check-out</span>
+            <Input name="end" type="date" min={earliestDate} required className="min-w-0" />
+          </label>
+        </div>
+      )}
       <label className="block">
         <span className="mb-1 block font-medium">Full name</span>
         <Input name="name" autoComplete="name" maxLength={120} required />
@@ -121,7 +149,7 @@ export function YachtHoldRequestForm({ yachtId, dates }: { yachtId: string; date
       </label>
       <label className="block">
         <span className="mb-1 block font-medium">Number of guests</span>
-        <Input name="guests" type="number" inputMode="numeric" min={1} max={HOLD_PILOT_MAX_GUESTS} required />
+        <Input name="guests" type="number" inputMode="numeric" min={1} max={holdGuestLimit(maxGuests)} required />
       </label>
       <label className="flex items-start gap-2">
         <input type="checkbox" name="privacyConsent" required className="mt-0.5 h-5 w-5 shrink-0 accent-[#061625]" />

@@ -11,6 +11,8 @@ import { useState } from "react";
 
 type Props = {
   yachtId: string;
+  yachtName: string;
+  maxGuests?: number | null;
   pricing: PricingSummary;
   availability: YachtAvailability;
   canRequestHold?: boolean;
@@ -47,7 +49,7 @@ function GuestRateTable({ season }: { season: SeasonRate }) {
   );
 }
 
-export function YachtPricingPanel({ yachtId, pricing, availability, canRequestHold = false }: Props) {
+export function YachtPricingPanel({ yachtId, yachtName, maxGuests, pricing, availability, canRequestHold = false }: Props) {
   const [showAllTerms, setShowAllTerms] = useState(false);
   const [holdDates, setHoldDates] = useState<CharterCalendarSelection | null>(null);
   const selectedRange = holdDates?.end ? holdDates : null;
@@ -186,17 +188,23 @@ export function YachtPricingPanel({ yachtId, pricing, availability, canRequestHo
             </h3>
             {canRequestHold && (
               <p className="mt-2 text-sm">
-                Our charter team will check your dates and let you know if OHANA can be held.
+                Our charter team will check your dates and let you know if {yachtName} can be held.
               </p>
             )}
-            <dl className="mt-3">
+            {(!canRequestHold || availability.ranges.length > 0) && <dl className="mt-3">
               <dt className="text-sm font-medium">Selected dates</dt>
               <dd className="mt-1 border-l-2 border-[#061625]/40 pl-3 text-sm font-medium">
                 {dateSummary}
               </dd>
-            </dl>
-            {canRequestHold && selectedRange && (
-              <YachtHoldRequestForm key={selectedRange.label} yachtId={yachtId} dates={selectedRange} />
+            </dl>}
+            {canRequestHold && (selectedRange || availability.ranges.length === 0) && (
+              <YachtHoldRequestForm
+                key={selectedRange?.label}
+                yachtId={yachtId}
+                yachtName={yachtName}
+                dates={selectedRange ?? undefined}
+                maxGuests={maxGuests}
+              />
             )}
             {canRequestHold ? (
               <p className="mt-3 text-sm">
