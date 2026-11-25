@@ -137,6 +137,8 @@ export default async function YachtDetailPage({
   const watersports = parseWatersports(yacht);
   const seasons = parseSeasons(yacht);
   const reviews = parseYachtReviews(yacht);
+  const guestQuote = reviews.find(({ comment }) => comment.length >= 20 && comment.length <= 180);
+  const chartersInTheBvi = seasons.some(({ area }) => area?.includes("Caribbean Virgin Islands (BVI)"));
   const length = lengthWithUnit(yacht);
   const beam = beamWithUnit(yacht);
   const draft = draftWithUnit(yacht);
@@ -219,7 +221,7 @@ export default async function YachtDetailPage({
 
       <main className="flex-1">
         {/* --- Yacht identity --- */}
-        <section id="yacht-hero" className="bg-[#061625] pb-5 pt-20 text-white md:pb-7 md:pt-24">
+        <section id="yacht-hero" className="bg-[#061625] pb-5 pt-20 text-white md:pb-7">
           <div className="container mx-auto px-4">
             <Link
               href={destination ? `/charter-yachts?destination=${encodeURIComponent(destination)}` : "/charter-yachts"}
@@ -233,6 +235,11 @@ export default async function YachtDetailPage({
                 <p className="mt-1 text-white/80">
                   {[builder, year !== null ? `Built ${year}` : null].filter(Boolean).join(" | ") || (yachtType ?? "Charter yacht")}
                 </p>
+                {chartersInTheBvi && (
+                  <p className="mt-2 max-w-lg text-sm leading-relaxed text-white/90">
+                    Explore the British Virgin Islands at your own pace on a private yacht charter.
+                  </p>
+                )}
                 <p className="mt-2 font-display text-2xl italic text-[#EE9739]">{heroPrice}</p>
                 <p className="mt-1 text-xs text-white/60">Indicative weekly rate — subject to confirmation</p>
               </div>
@@ -243,7 +250,7 @@ export default async function YachtDetailPage({
 
         {/* --- Plan Your Charter: rates & availability panel directly under
             the hero gallery, before all brochure content --- */}
-        <section className="container mx-auto px-4 pb-10 pt-6 md:py-10">
+        <section className="container mx-auto px-4 pb-10 pt-6 md:pt-5">
           <div id="gallery" className="scroll-mt-32">
             <YachtHeroGallery yachtId={id} yachtName={name} images={gallery} />
           </div>
@@ -353,21 +360,24 @@ export default async function YachtDetailPage({
             {specGroups.length > 0 && (
               <section className="mt-14">
                 <SectionHeading id="specifications" title="Specifications" />
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                  {specGroups.map((group) => (
-                    <div key={group.title} className="rounded-xl bg-white p-6 shadow-sm">
-                      <h3 className="mb-4 font-display text-xl italic text-[#061625]">{group.title}</h3>
-                      <dl className="space-y-2.5">
-                        {group.rows.map(([label, value]) => (
-                          <div key={label} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] items-baseline gap-3 border-b border-[#061625]/5 pb-2.5 last:border-0 last:pb-0">
-                            <dt className="text-sm text-[#061625]/60">{label}</dt>
-                            <dd className="min-w-0 text-right text-sm font-medium text-[#061625]">{value}</dd>
-                          </div>
-                        ))}
-                      </dl>
-                    </div>
-                  ))}
-                </div>
+                <details className="rounded-xl border border-[#061625]/15 bg-white p-4">
+                  <summary className="cursor-pointer font-semibold text-[#061625]">View detailed yacht specifications</summary>
+                  <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                    {specGroups.map((group) => (
+                      <div key={group.title} className="rounded-xl bg-white p-6 shadow-sm">
+                        <h3 className="mb-4 font-display text-xl italic text-[#061625]">{group.title}</h3>
+                        <dl className="space-y-2.5">
+                          {group.rows.map(([label, value]) => (
+                            <div key={label} className="grid grid-cols-2 items-baseline gap-3 border-b border-[#061625]/5 pb-2.5 last:border-0 last:pb-0">
+                              <dt className="text-sm text-[#061625]/60">{label}</dt>
+                              <dd className="min-w-0 text-right text-sm font-medium text-[#061625]">{value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      </div>
+                    ))}
+                  </div>
+                </details>
               </section>
             )}
           </div>
@@ -376,10 +386,9 @@ export default async function YachtDetailPage({
           <div className="min-w-0">
             <div id="enquire" tabIndex={-1} className="scroll-mt-32 lg:sticky lg:top-28">
               <div className="rounded-2xl bg-[#061625] p-6 text-white md:p-8">
-                <h2 className="mb-2 font-display text-3xl font-normal italic">Request Your Personal Charter Proposal</h2>
+                <h2 className="mb-2 font-display text-3xl font-normal italic">Request a charter proposal</h2>
                 <p className="mb-5 text-sm text-white/80">
-                  Tell us your preferred dates and guest details. Our charter team will confirm availability and
-                  prepare your personalized quotation.
+                  Share your preferred dates and group size. Our charter team will check availability and prepare a personalized charter proposal.
                 </p>
                 {(preferredDates || guests) && (
                   <p className="mb-5 flex items-start gap-2 rounded-lg bg-white/10 p-3 text-xs text-white/90">
@@ -404,11 +413,20 @@ export default async function YachtDetailPage({
                     : undefined}
                 />
               </div>
+              {guestQuote && (
+                <figure className="mt-6 border-l-2 border-[#EE9739] pl-4 text-[#061625]">
+                  <figcaption className="mb-2 text-sm font-semibold">From a guest aboard {name}</figcaption>
+                  <blockquote className="whitespace-pre-line text-sm leading-relaxed">“{guestQuote.comment}”</blockquote>
+                  <a href="#reviews" className="mt-2 inline-block text-sm font-medium underline underline-offset-4">Read guest reviews</a>
+                </figure>
+              )}
             </div>
           </div>
 
           {/* --- Crew, dining and watersports --- */}
           <div className="lg:col-span-2">
+            <YachtCrewSection crew={crew} yachtId={id} crewGeneral={crewGeneral} />
+
             {/* --- Watersports & Experiences --- */}
             {(watersports.tender || watersports.items.length > 0) && (
               <section className="mt-14">
@@ -435,7 +453,6 @@ export default async function YachtDetailPage({
               </section>
             )}
 
-            <YachtCrewSection crew={crew} yachtId={id} crewGeneral={crewGeneral} />
             <YachtDiningSection
               menus={menus}
               chefName={

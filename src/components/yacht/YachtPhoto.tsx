@@ -5,7 +5,7 @@ import { useState } from "react";
 // Renders CYA photographs directly from their original URLs (no rehosting or
 // server-side caching, per CYA media policy), with lazy loading and a
 // placeholder when a photo is genuinely unavailable.
-export function YachtPhoto({ src, alt }: { src: string; alt: string }) {
+export function YachtPhoto({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
   const [failed, setFailed] = useState(false);
 
   if (failed) {
@@ -20,7 +20,8 @@ export function YachtPhoto({ src, alt }: { src: string; alt: string }) {
     <img
       src={src}
       alt={alt}
-      loading="lazy"
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : undefined}
       decoding="async"
       onError={() => setFailed(true)}
       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"

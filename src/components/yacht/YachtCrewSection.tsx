@@ -168,34 +168,6 @@ export function YachtCrewSection({
         The professionals who turn a charter into a personal experience — introduced with the details they have
         confirmed for this yacht.
       </p>
-      {crewGeneral && (
-        <div className="mb-8 grid items-center gap-6 rounded-2xl bg-[#061625] p-6 text-white md:grid-cols-[minmax(0,220px)_1fr] md:p-8">
-          {crewGeneral.photoUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={crewGeneral.photoUrl}
-              alt="The crew of your charter yacht"
-              loading="lazy"
-              decoding="async"
-              className="h-56 w-full rounded-xl object-cover object-top md:h-64"
-            />
-          ) : (
-            <div className="flex h-56 items-center justify-center rounded-xl bg-white/10 md:h-64">
-              <Users className="h-14 w-14 text-[#EE9739]" aria-hidden="true" />
-            </div>
-          )}
-          {crewGeneral.descriptionHtml ? (
-            <div
-              className="space-y-3 text-sm leading-relaxed text-white/85 [&_b]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-3 [&_strong]:font-semibold"
-              dangerouslySetInnerHTML={{ __html: crewGeneral.descriptionHtml }}
-            />
-          ) : (
-            crewGeneral.descriptionText && (
-              <p className="whitespace-pre-line text-sm leading-relaxed text-white/85">{crewGeneral.descriptionText}</p>
-            )
-          )}
-        </div>
-      )}
       {crew.length > 0 && (
         <div className={`grid gap-6 ${gridCols}`}>
           {ordered.map((member, index) => (
@@ -203,10 +175,37 @@ export function YachtCrewSection({
           ))}
         </div>
       )}
+      {crewGeneral && (
+        <details className="mt-6 rounded-xl border border-[#061625]/15 bg-white p-4 sm:p-6">
+          <summary className="cursor-pointer font-semibold text-[#061625]">More about the crew</summary>
+          <div className={`mt-4 grid items-start gap-6 ${crewGeneral.photoUrl ? "md:grid-cols-[minmax(0,220px)_1fr]" : ""}`}>
+            {crewGeneral.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={crewGeneral.photoUrl}
+                alt="The crew of your charter yacht"
+                loading="lazy"
+                decoding="async"
+                className="h-56 w-full rounded-xl object-cover object-top md:h-64"
+              />
+            ) : null}
+            {crewGeneral.descriptionHtml ? (
+              <div
+                className="space-y-3 text-sm leading-relaxed text-[#061625]/85 [&_b]:font-semibold [&_li]:ml-4 [&_li]:list-disc [&_p]:mb-3 [&_strong]:font-semibold"
+                dangerouslySetInnerHTML={{ __html: crewGeneral.descriptionHtml }}
+              />
+            ) : (
+              crewGeneral.descriptionText && (
+                <p className="whitespace-pre-line text-sm leading-relaxed text-[#061625]/85">{crewGeneral.descriptionText}</p>
+              )
+            )}
+          </div>
+        </details>
+      )}
       <p className="mt-6 text-sm text-[#061625]/70">
         Questions about the crew, provisioning or your preferences on board?{" "}
         <a href="#enquire" className="font-medium text-[#061625] underline underline-offset-4">
-          Enquire about this yacht
+          Request a charter proposal
         </a>{" "}
         and our charter team will help. <span className="sr-only">Yacht reference: {yachtId}</span>
       </p>

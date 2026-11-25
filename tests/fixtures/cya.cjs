@@ -31,6 +31,7 @@ const yacht = {
     description: "<p>Wonderful crew &amp; sailing.</p><script>unexpected content</script>",
     updateDate: "2026-09-03T19:40:23.396000",
   }],
+  crewDetails: [{ crewName: "Fixture Captain", crewPosition: "Captain - Rotational" }],
   crewGeneral: {
     crewDescription: "<p>Fixture captain biography.</p><p>UnbrokenCrewProfileReferenceForNarrowScreenTesting</p>",
   },

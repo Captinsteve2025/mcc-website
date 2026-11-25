@@ -51,7 +51,7 @@ export function YachtPersistentBar({ yachtId, headline, hasRate }: Props) {
             Rates &amp; Dates
           </a>
           <a href="#enquire" className="inline-flex items-center gap-1.5 rounded-full bg-[#EE9739] px-4 py-2 text-xs font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]">
-            Enquire Now <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            Request a charter proposal <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </a>
         </div>
       </div>

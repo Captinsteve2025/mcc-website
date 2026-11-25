@@ -326,7 +326,7 @@ export function YachtAvailabilityCalendar({
                 href="#enquire"
                 className="mt-2 inline-block rounded-full bg-[#EE9739] px-4 py-2 text-sm font-semibold text-[#061625] transition-colors hover:bg-[#EA6F33]"
               >
-                Continue to proposal form
+                Request a charter proposal
               </a>
             </>
           ) : (

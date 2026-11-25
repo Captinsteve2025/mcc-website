@@ -512,7 +512,7 @@ const CREW_COLLECTION_KEYS = [
 // first among their candidates; the remaining candidates cover CYA's other
 // observed formats.
 const NAME_KEYS = ["crew_name", "crewName", "name", "full_name", "fullname", "crewName2", "member_name"] as const;
-const ROLE_KEYS = ["crew_position", "position", "crewRole", "role", "title", "job_title"] as const;
+const ROLE_KEYS = ["crew_position", "position", "crewRole", "role", "title", "job_title", "crewPosition"] as const;
 const BIO_KEYS = ["bio", "biography", "crew_bio", "crewBiography", "crewDescription", "about", "description", "comments", "text"] as const;
 const PHOTO_KEYS = ["crew_image", "crewImage", "image", "photo", "photo_url", "image_src", "picture", "crew_photo", "image_url"] as const;
 const NATIONALITY_KEYS = ["nationality", "crew_nationality", "crewNationality", "citizenship"] as const;

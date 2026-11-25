@@ -97,6 +97,11 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<"idle" | "submitting" | "saved" | "error">("idle");
   const [serverError, setServerError] = useState<string | null>(null);
+  const [submitted, setSubmitted] = useState<FormValues | null>(null);
+  const confirmation = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (status === "saved") confirmation.current?.focus();
+  }, [status]);
   const [requestId] = useState(() => crypto.randomUUID());
   const startTracked = useRef(false);
 
@@ -104,9 +109,10 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
   // form adopts them so calendar choices flow straight into the enquiry.
   useEffect(() => {
     const onDates = (event: Event) => {
-      const detail = (event as CustomEvent<{ dates?: string }>).detail;
-      if (detail && typeof detail.dates === "string" && detail.dates) {
-        setValues((prev) => ({ ...prev, preferredDates: detail.dates as string }));
+      const dates = (event as CustomEvent<{ dates?: string }>).detail?.dates;
+      if (typeof dates === "string" && dates) {
+        setValues((prev) => ({ ...prev, preferredDates: dates }));
+        setErrors((prev) => ({ ...prev, preferredDates: undefined }));
       }
     };
     window.addEventListener("mcc:yacht-dates", onDates);
@@ -131,9 +137,19 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
     const fieldErrors = validate(values, maxGuests);
     setErrors(fieldErrors);
     setServerError(null);
-    if (Object.keys(fieldErrors).length > 0) return;
+    const firstInvalid = (["preferredDates", "guestCount", "fullName", "email", "privacyConsent"] as const)
+      .find((field) => fieldErrors[field]);
+    if (firstInvalid) {
+      const form = event.currentTarget;
+      requestAnimationFrame(() => {
+        const field = form.elements.namedItem(firstInvalid);
+        if (field instanceof HTMLElement) field.focus();
+      });
+      return;
+    }
 
     if (values.website) {
+      setSubmitted(values);
       setStatus("saved");
       return;
     }
@@ -165,21 +181,28 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
       if (error && error.code !== DUPLICATE_KEY_ERROR) throw error;
     } catch {
       setStatus("error");
-      setServerError("We could not save your enquiry. Please try again or call us directly.");
+      setServerError("We couldn’t send your request. Your details are still here. Please try again or call");
       return;
     }
 
+    setSubmitted(values);
     setStatus("saved");
     trackEvent("yacht_enquiry_submit_success", { yacht_id: cyaYachtId ?? yachtSlug });
   };
 
-  if (status === "saved") {
+  if (status === "saved" && submitted) {
     return (
-      <div role="status" className="rounded-2xl bg-white p-8 text-center shadow-xl">
+      <div ref={confirmation} tabIndex={-1} role="status" className="rounded-2xl bg-white p-6 text-center shadow-xl sm:p-8">
         <CheckCircle2 className="mx-auto h-12 w-12 text-[#1F7A5A]" aria-hidden="true" />
-        <h3 className="mt-4 font-display text-2xl font-semibold text-[#061625]">Thank you, your enquiry has been received</h3>
-        <p className="mt-3 text-[#3D4B59]">
-          A charter specialist will review your dates and group details and contact you with availability and a personalized proposal.
+        <h3 className="mt-4 font-display text-2xl font-semibold text-[#061625]">Your charter proposal request is in</h3>
+        <dl className="mt-4 grid gap-3 rounded-lg bg-[#F8F7F4] p-4 text-left text-sm text-[#061625] sm:grid-cols-2">
+          <div className="sm:col-span-2"><dt className="font-semibold">Yacht</dt><dd>{yachtName}</dd></div>
+          <div><dt className="font-semibold">Requested dates</dt><dd>{submitted.preferredDates.trim()}{submitted.flexibleDates && " (flexible)"}</dd></div>
+          <div><dt className="font-semibold">Guests</dt><dd>{submitted.guestCount}</dd></div>
+        </dl>
+        <p className="mt-4 text-sm text-[#3D4B59]">
+          Our charter team will check availability and contact you at <strong className="break-words">{submitted.email.trim()}</strong> about your personalized proposal.
+          Your dates are subject to confirmation.
         </p>
         <p className="mt-4 text-sm text-[#3D4B59]">
           Need to speak sooner? Call us on{" "}
@@ -195,40 +218,8 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
   const submitting = status === "submitting";
 
   return (
-    <form onSubmit={handleSubmit} noValidate className="space-y-5 rounded-2xl bg-white p-6 shadow-xl sm:p-8" aria-labelledby="enquiry-form-title">
+    <form onSubmit={handleSubmit} noValidate className="space-y-5 rounded-2xl bg-white p-6 shadow-xl sm:p-8" aria-label="Charter proposal request" aria-busy={submitting} onFocus={trackStart}>
       <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="fullName" className={labelClass}>Full name <span aria-hidden="true">*</span></label>
-          <Input
-            id="fullName"
-            name="fullName"
-            autoComplete="name"
-            required
-            value={values.fullName}
-            onFocus={trackStart}
-            onChange={(e) => set("fullName", e.target.value)}
-            aria-invalid={!!errors.fullName}
-            aria-describedby={errors.fullName ? "fullName-error" : undefined}
-            className={inputClass}
-          />
-          {errors.fullName && <p id="fullName-error" className={errorClass}>{errors.fullName}</p>}
-        </div>
-        <div>
-          <label htmlFor="email" className={labelClass}>Email address <span aria-hidden="true">*</span></label>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={values.email}
-            onChange={(e) => set("email", e.target.value)}
-            aria-invalid={!!errors.email}
-            aria-describedby={errors.email ? "email-error" : undefined}
-            className={inputClass}
-          />
-          {errors.email && <p id="email-error" className={errorClass}>{errors.email}</p>}
-        </div>
         <div>
           <label htmlFor="preferredDates" className={labelClass}>Preferred charter dates <span aria-hidden="true">*</span></label>
           <Input
@@ -263,27 +254,35 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
           {errors.guestCount && <p id="guestCount-error" className={errorClass}>{errors.guestCount}</p>}
         </div>
         <div>
-          <label htmlFor="phone" className={labelClass}>Telephone / WhatsApp <span className="font-normal text-[#5B6B7A]">(optional)</span></label>
+          <label htmlFor="fullName" className={labelClass}>Full name <span aria-hidden="true">*</span></label>
           <Input
-            id="phone"
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            value={values.phone}
-            onChange={(e) => set("phone", e.target.value)}
+            id="fullName"
+            name="fullName"
+            autoComplete="name"
+            required
+            value={values.fullName}
+            onChange={(e) => set("fullName", e.target.value)}
+            aria-invalid={!!errors.fullName}
+            aria-describedby={errors.fullName ? "fullName-error" : undefined}
             className={inputClass}
           />
+          {errors.fullName && <p id="fullName-error" className={errorClass}>{errors.fullName}</p>}
         </div>
         <div>
-          <label htmlFor="specialOccasion" className={labelClass}>Special occasion <span className="font-normal text-[#5B6B7A]">(optional)</span></label>
+          <label htmlFor="email" className={labelClass}>Email address <span aria-hidden="true">*</span></label>
           <Input
-            id="specialOccasion"
-            name="specialOccasion"
-            placeholder="e.g. birthday, anniversary"
-            value={values.specialOccasion}
-            onChange={(e) => set("specialOccasion", e.target.value)}
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={values.email}
+            onChange={(e) => set("email", e.target.value)}
+            aria-invalid={!!errors.email}
+            aria-describedby={errors.email ? "email-error" : undefined}
             className={inputClass}
           />
+          {errors.email && <p id="email-error" className={errorClass}>{errors.email}</p>}
         </div>
       </div>
 
@@ -298,17 +297,45 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
         <span>My dates are flexible</span>
       </label>
 
-      <div>
-        <label htmlFor="additionalRequests" className={labelClass}>Additional requests <span className="font-normal text-[#5B6B7A]">(optional)</span></label>
-        <Textarea
-          id="additionalRequests"
-          name="additionalRequests"
-          rows={4}
-          value={values.additionalRequests}
-          onChange={(e) => set("additionalRequests", e.target.value)}
-          className="rounded-md border-[#CBD5DF] bg-white text-[#061625]"
-        />
-      </div>
+      <details className="rounded-lg border border-[#061625]/15 p-4">
+        <summary className="cursor-pointer text-sm font-semibold text-[#061625]">Add optional trip details</summary>
+        <div className="mt-4 grid gap-5 sm:grid-cols-2">
+          <div>
+            <label htmlFor="phone" className={labelClass}>Telephone / WhatsApp <span className="font-normal text-[#5B6B7A]">(optional)</span></label>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              value={values.phone}
+              onChange={(e) => set("phone", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label htmlFor="specialOccasion" className={labelClass}>Special occasion <span className="font-normal text-[#5B6B7A]">(optional)</span></label>
+            <Input
+              id="specialOccasion"
+              name="specialOccasion"
+              placeholder="e.g. birthday, anniversary"
+              value={values.specialOccasion}
+              onChange={(e) => set("specialOccasion", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <label htmlFor="additionalRequests" className={labelClass}>Additional requests <span className="font-normal text-[#5B6B7A]">(optional)</span></label>
+          <Textarea
+            id="additionalRequests"
+            name="additionalRequests"
+            rows={4}
+            value={values.additionalRequests}
+            onChange={(e) => set("additionalRequests", e.target.value)}
+            className="rounded-md border-[#CBD5DF] bg-white text-[#061625]"
+          />
+        </div>
+      </details>
 
       <div className="space-y-3 rounded-lg bg-[#F8F7F4] p-4">
         <label className="flex items-start gap-3 text-sm text-[#061625]">
@@ -353,7 +380,9 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
       </div>
 
       {serverError && (
-        <p role="alert" className="rounded-md bg-[#FEF3F2] p-3 text-sm text-[#B42318]">{serverError}</p>
+        <p role="alert" className="rounded-md bg-[#FEF3F2] p-3 text-sm text-[#B42318]">
+          {serverError} <a href={MCC_PHONE_HREF} className="font-semibold underline">{MCC_PHONE_DISPLAY}</a>.
+        </p>
       )}
 
       <button
@@ -361,10 +390,10 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
         disabled={submitting}
         className="flex h-12 w-full items-center justify-center gap-3 rounded-full bg-[#EE9739] px-6 text-base font-medium text-[#061625] shadow-lg transition-all duration-300 hover:bg-[#EA6F33] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739] focus-visible:ring-offset-2 focus-visible:ring-offset-[#061625] disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {submitting ? "Sending your enquiry..." : "Check availability & get my proposal"}
+        {submitting ? "Sending your request…" : "Request a charter proposal"}
       </button>
       <p className="text-center text-xs text-[#5B6B7A]">
-        Enquiries are reviewed by our charter team. Submitting this form does not create a booking or payment.
+        Our charter team will confirm availability before any booking or payment.
       </p>
     </form>
   );

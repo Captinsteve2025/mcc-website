@@ -27,6 +27,9 @@ test("browses the fixture catalogue and opens a yacht", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Rates & Availability" })).toBeVisible();
   await expect(page.locator("#rates").getByText("$12,000 / week", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: /^\d{4}-\d{2}-\d{2}: Booked$/ })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Fixture Captain" })).toBeVisible();
+  await expect(page.getByText("Captain - Rotational", { exact: true })).toBeVisible();
+  await page.getByText("More about the crew", { exact: true }).click();
   await expect(page.getByText("Fixture captain biography.")).toBeVisible();
 
   const dining = page.locator("section").filter({ has: page.getByRole("heading", { name: "Dining & Cuisine" }) });
@@ -78,6 +81,7 @@ test("keeps the gallery high on the page and the desktop calendar inside its pan
       return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1;
     });
   })).toBe(true);
+  await page.getByText("View detailed yacht specifications", { exact: true }).click();
   await expect(page.getByText("Engines", { exact: true })).toBeVisible();
   await expect(page.getByText("Fuel consumption", { exact: true })).toHaveCount(0);
 });
@@ -85,6 +89,7 @@ test("keeps the gallery high on the page and the desktop calendar inside its pan
 test("fits yacht brochure text and the training link at 320 pixels", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
+  await page.getByText("More about the crew", { exact: true }).click();
   const crewReference = page.getByText("UnbrokenCrewProfileReferenceForNarrowScreenTesting", { exact: true });
   await expect(crewReference).toBeVisible();
   expect(await crewReference.evaluate((element) => {
@@ -116,14 +121,15 @@ test("keeps the hold panel and proposal aligned and carries dates to the proposa
   await page.getByText("Charter rules & rate notes", { exact: true }).click();
   await expect(page.getByText("Minimum seven nights. Confirm holiday dates before booking.")).toBeVisible();
   await expect(page.getByRole("heading", { name: "A great week | May 1–8, 2026" })).toBeVisible();
-  await expect(page.getByText("Wonderful crew & sailing.")).toBeVisible();
+  await expect(page.locator("#enquire").getByText("From a guest aboard Fixture Catamaran")).toBeVisible();
+  await expect(page.locator("#enquire").getByText("Wonderful crew & sailing.")).toBeVisible();
   await expect(page.getByText("unexpected content")).toHaveCount(0);
   await expect(page.getByLabel("Number of guests")).toHaveAttribute("max", "10");
   await page.getByLabel("Number of guests").fill("11");
-  await page.getByRole("button", { name: "Check availability & get my proposal" }).click();
+  await page.getByRole("form", { name: "Charter proposal request" }).getByRole("button", { name: "Request a charter proposal" }).click();
   await expect(page.getByText("Please enter the number of guests (1 to 10).")).toBeVisible();
 
-  const hold = page.getByRole("region", { name: "Request a hold" });
+  const hold = page.getByRole("region", { name: "Ask about your charter dates" });
   const holdDates = hold.locator("dd");
   await expect(page.locator("#availability + section")).toHaveAttribute("aria-labelledby", "request-hold-title");
   await expect(holdDates).toHaveText("Choose dates in the calendar");
@@ -142,18 +148,17 @@ test("keeps the hold panel and proposal aligned and carries dates to the proposa
   const end = await selectDate(2);
   await expect(holdDates).toHaveText(`${start} to ${end}`);
   await expect(page.getByLabel(/Preferred charter dates/)).toHaveValue(`${start} to ${end}`);
-  await expect(hold.getByText("Direct hold requests are currently unavailable.")).toBeVisible();
-  await hold.getByRole("link", { name: "Ask about these dates" }).click();
+  await hold.getByRole("link", { name: "Request a charter proposal" }).click();
   await expect(page).toHaveURL(/#enquire$/);
   await expect(page.locator("#enquire")).toBeFocused();
   await expect(page.getByRole("status").filter({ hasText: "published 72-hour turnaround" })).toBeVisible();
-  await expect(page.getByRole("link", { name: "Continue to proposal form" })).toBeVisible();
+  await expect(page.locator("#availability").getByRole("link", { name: "Request a charter proposal" })).toBeVisible();
 
   const nextStart = await selectDate(3);
   await expect(holdDates).toHaveText("Choose dates in the calendar");
   const nextEnd = await selectDate(4);
   await expect(holdDates).toHaveText(`${nextStart} to ${nextEnd}`);
-  await expect(hold.getByRole("link", { name: "Ask about these dates" })).toBeVisible();
+  await expect(hold.getByRole("link", { name: "Request a charter proposal" })).toBeVisible();
   await page.evaluate(() => window.scrollTo(0, 0));
   await expect.poll(async () => page.evaluate(() => {
     const proposal = document.querySelector("#enquire")!.getBoundingClientRect();

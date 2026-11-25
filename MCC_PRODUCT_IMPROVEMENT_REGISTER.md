@@ -67,7 +67,11 @@ The yacht detail page displays a hold request panel immediately below the yacht 
 
 The follow-up layout and handoff fix aligns the proposal with the availability panel and replaces the inactive hold button with a link to the existing proposal form. The proposal receives the selected dates. The production build and desktop and 320 px mobile Chromium fixture checks passed for this follow-up. Vercel verified that commit `3660080` is serving the production hostname. Production browser verification is pending.
 
-The full hold request panel now uses MCC orange with navy text. The production build and desktop and mobile Chromium hold-to-proposal checks passed locally. Deployment is pending.
+The full hold request panel now uses MCC orange with navy text. The production build and desktop and mobile Chromium hold-to-proposal checks passed locally. Vercel verified that commit `a0684e8` is serving the production hostname. Production browser verification is pending.
+
+### Charter proposal journey and yacht page hierarchy (Implemented locally)
+
+The availability panel leads to a charter proposal with the selected dates. The form puts dates, party size, and contact details first, with optional trip details grouped separately. The confirmation summarizes the request and explains the availability check and follow-up. The yacht page gives the main photograph priority, places a CYA guest quote near the proposal, and leads with verified crew roles and portraits. Detailed specifications and the original crew notes remain available in expandable sections. The build and 12 desktop and mobile Chromium fixture checks passed. A mocked submission check verified failure, retry, and confirmation at desktop and 320 px mobile widths. Deployment is pending.
 
 ---
 

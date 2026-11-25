@@ -139,29 +139,31 @@ export function YachtHeroGallery({ yachtId, yachtName, images }: GalleryProps) {
 
   return (
     <>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className={`grid gap-3 ${secondary.length ? "md:grid-cols-[3fr_2fr]" : ""}`}>
         <button
           type="button"
           onClick={() => openGallery(0)}
           aria-label={`Open photo gallery — ${primary.title ?? yachtName}`}
-          className="group relative aspect-[4/3] overflow-hidden rounded-xl bg-[#061625]/10 md:aspect-auto md:min-h-[26rem]"
+          className={`group relative aspect-[4/3] overflow-hidden rounded-xl bg-[#061625]/10 ${secondary.length ? "md:aspect-auto md:min-h-[26rem]" : "md:aspect-[16/7] md:max-h-[33rem]"}`}
         >
-          <YachtPhoto src={primary.src} alt={primary.title ?? yachtName} />
+          <YachtPhoto src={primary.src} alt={primary.title ?? yachtName} priority />
         </button>
 
-        <div className="grid grid-cols-2 gap-3">
-          {secondary.map((img, i) => (
-            <button
-              key={img.src}
-              type="button"
-              onClick={() => openGallery(i + 1)}
-              aria-label={`Open photo gallery — ${img.title ?? `photo ${i + 2}`}`}
-              className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-[#061625]/10"
-            >
-              <YachtPhoto src={img.src} alt={img.title ?? `${yachtName} photo ${i + 2}`} />
-            </button>
-          ))}
-        </div>
+        {secondary.length > 0 && (
+          <div className="grid grid-cols-2 gap-3">
+            {secondary.map((img, i) => (
+              <button
+                key={img.src}
+                type="button"
+                onClick={() => openGallery(i + 1)}
+                aria-label={`Open photo gallery — ${img.title ?? `photo ${i + 2}`}`}
+                className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-[#061625]/10"
+              >
+                <YachtPhoto src={img.src} alt={img.title ?? `${yachtName} photo ${i + 2}`} />
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <button

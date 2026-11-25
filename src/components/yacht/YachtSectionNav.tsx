@@ -69,7 +69,7 @@ export function YachtSectionNav({ tabs, yachtId }: { tabs: SectionTab[]; yachtId
           }}
           className="ml-2 shrink-0 rounded-full bg-[#EE9739] px-4 py-2 text-sm font-semibold uppercase tracking-wide text-[#061625] transition-colors hover:bg-[#EA6F33]"
         >
-          Get My Charter Proposal
+          Request a charter proposal
         </button>
       </div>
     </nav>

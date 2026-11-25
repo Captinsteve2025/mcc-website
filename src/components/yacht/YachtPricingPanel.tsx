@@ -142,7 +142,7 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
             href="#enquire"
             className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#061625] px-6 py-3 text-sm font-medium text-white transition-colors hover:bg-[#061625]/85"
           >
-            Enquire About This Yacht <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            Request a charter proposal <ArrowRight className="h-4 w-4" aria-hidden="true" />
           </a>
         </div>
 
@@ -168,22 +168,22 @@ export function YachtPricingPanel({ yachtId, pricing, availability }: Props) {
             className="mt-4 rounded-xl border border-[#061625]/15 bg-[#EE9739] p-4 text-[#061625] sm:p-5"
             aria-labelledby="request-hold-title"
           >
-            <h3 id="request-hold-title" className="font-display text-xl italic">Request a hold</h3>
+            <h3 id="request-hold-title" className="font-display text-xl italic">Ask about your charter dates</h3>
             <dl className="mt-3">
               <dt className="text-sm font-medium">Selected dates</dt>
-              <dd className="mt-1 rounded-md border border-[#061625]/15 bg-white px-3 py-2 text-sm">
+              <dd className="mt-1 border-l-2 border-[#061625]/40 pl-3 text-sm font-medium">
                 {holdDates || (availability.ranges.length > 0 ? "Choose dates in the calendar" : "Calendar dates unavailable")}
               </dd>
             </dl>
             <p id="hold-submission-note" className="mt-3 text-sm">
-              Direct hold requests are currently unavailable. Our charter team can review your dates through a proposal request.
+              Our charter team will check availability and prepare a personalized proposal for your group.
             </p>
             <a
               href="#enquire"
               aria-describedby="hold-submission-note"
               className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#061625] px-5 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-[#061625]/85 focus-visible:ring-2 focus-visible:ring-[#061625] focus-visible:ring-offset-2 sm:w-auto"
             >
-              {holdDates ? "Ask about these dates" : "Open proposal form"}
+              Request a charter proposal
               <ArrowRight className="h-4 w-4 shrink-0" aria-hidden="true" />
             </a>
           </section>
