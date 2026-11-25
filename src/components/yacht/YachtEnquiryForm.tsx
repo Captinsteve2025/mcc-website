@@ -6,7 +6,6 @@ import { CheckCircle2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { trackEvent } from "@/lib/analytics";
-import { getSupabase } from "@/lib/supabase";
 import { MCC_PHONE_DISPLAY, MCC_PHONE_HREF } from "@/lib/managed-yachts";
 
 interface YachtEnquiryFormProps {
@@ -52,7 +51,6 @@ const EMPTY_VALUES: FormValues = {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const ATTRIBUTION_KEYS = ["utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "gclid"] as const;
-const DUPLICATE_KEY_ERROR = "23505";
 
 function validate(values: FormValues, maxGuests: number): FieldErrors {
   const errors: FieldErrors = {};
@@ -84,6 +82,17 @@ function readAttribution(): { utm: Record<string, string>; leadSource: string } 
   return { utm, leadSource: leadSource.slice(0, 200) };
 }
 
+async function submitProposal(body: string): Promise<boolean> {
+  const response = await fetch("/api/yacht-enquiries", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body,
+  });
+  const result = await response.json();
+  if (!response.ok || result.saved !== true) throw new Error();
+  return result.emailPending === true;
+}
+
 const inputClass = "h-11 rounded-md border-[#CBD5DF] bg-white text-[#061625] placeholder:text-[#5B6B7A]";
 const labelClass = "mb-1.5 block text-sm font-medium text-[#061625]";
 const errorClass = "mt-1.5 text-sm text-[#B42318]";
@@ -98,6 +107,9 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
   const [status, setStatus] = useState<"idle" | "submitting" | "saved" | "error">("idle");
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState<FormValues | null>(null);
+  const [emailPending, setEmailPending] = useState(false);
+  const [retryingEmail, setRetryingEmail] = useState(false);
+  const submittedBody = useRef<string | null>(null);
   const confirmation = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (status === "saved") confirmation.current?.focus();
@@ -156,29 +168,28 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
 
     setStatus("submitting");
     const { utm, leadSource } = readAttribution();
+    const body = JSON.stringify({
+      client_request_id: requestId,
+      yacht_slug: yachtSlug,
+      yacht_name: yachtName,
+      ...(cyaYachtId ? { cya_yacht_id: cyaYachtId } : {}),
+      full_name: values.fullName.trim(),
+      email: values.email.trim(),
+      phone: values.phone.trim() || null,
+      preferred_dates: values.preferredDates.trim(),
+      flexible_dates: values.flexibleDates,
+      guest_count: Number(values.guestCount),
+      special_occasion: values.specialOccasion.trim() || null,
+      additional_requests: values.additionalRequests.trim() || null,
+      marketing_opt_in: values.marketingOptIn,
+      privacy_consent: values.privacyConsent,
+      lead_source: leadSource,
+      utm_params: utm,
+      landing_page_url: `${window.location.origin}${window.location.pathname}`,
+    });
     try {
-      const { error } = await getSupabase()
-        .from("yacht_enquiries")
-        .insert({
-          client_request_id: requestId,
-          yacht_slug: yachtSlug,
-          yacht_name: yachtName,
-          ...(cyaYachtId ? { cya_yacht_id: cyaYachtId } : {}),
-          full_name: values.fullName.trim(),
-          email: values.email.trim(),
-          phone: values.phone.trim() || null,
-          preferred_dates: values.preferredDates.trim(),
-          flexible_dates: values.flexibleDates,
-          guest_count: Number(values.guestCount),
-          special_occasion: values.specialOccasion.trim() || null,
-          additional_requests: values.additionalRequests.trim() || null,
-          marketing_opt_in: values.marketingOptIn,
-          privacy_consent: values.privacyConsent,
-          lead_source: leadSource,
-          utm_params: utm,
-          landing_page_url: `${window.location.origin}${window.location.pathname}`,
-        });
-      if (error && error.code !== DUPLICATE_KEY_ERROR) throw error;
+      setEmailPending(await submitProposal(body));
+      submittedBody.current = body;
     } catch {
       setStatus("error");
       setServerError("We couldn’t send your request. Your details are still here. Please try again or call");
@@ -188,6 +199,18 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
     setSubmitted(values);
     setStatus("saved");
     trackEvent("yacht_enquiry_submit_success", { yacht_id: cyaYachtId ?? yachtSlug });
+  };
+
+  const retryEmail = async () => {
+    if (!submittedBody.current || retryingEmail) return;
+    setRetryingEmail(true);
+    try {
+      setEmailPending(await submitProposal(submittedBody.current));
+    } catch {
+      // The request was already saved. Leave the pending message visible.
+    } finally {
+      setRetryingEmail(false);
+    }
   };
 
   if (status === "saved" && submitted) {
@@ -204,6 +227,14 @@ export function YachtEnquiryForm({ yachtSlug, yachtName, cyaYachtId, initialDate
           Our charter team will check availability and contact you at <strong className="break-words">{submitted.email.trim()}</strong> about your personalized proposal.
           Your dates are subject to confirmation.
         </p>
+        {emailPending && (
+          <div className="mt-4 text-sm text-[#3D4B59]">
+            <p>Your request is saved. Email delivery is pending.</p>
+            <button type="button" disabled={retryingEmail} onClick={retryEmail} className="mt-1 min-h-11 font-semibold underline underline-offset-4">
+              {retryingEmail ? "Checking email delivery…" : "Retry email delivery"}
+            </button>
+          </div>
+        )}
         <p className="mt-4 text-sm text-[#3D4B59]">
           Need to speak sooner? Call us on{" "}
           <a href={MCC_PHONE_HREF} className="font-semibold text-[#061625] underline underline-offset-4">

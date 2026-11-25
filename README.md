@@ -30,6 +30,12 @@ The live suite is separate. Run `npm run test:browser:live` with `PLAYWRIGHT_BAS
 
 Open feature pull requests against `collaborate`. GitHub Actions runs the build and fixture checks for pull requests targeting `collaborate` or `main`. Confirm the configured production branch and Node version in Vercel before release. Use an approved Vercel preview for live-data checks against the exact commit. After an approved release, run the live checks and record the tested commit and results in the [product improvement register](MCC_PRODUCT_IMPROVEMENT_REGISTER.md).
 
+### Charter proposal emails
+
+Apply the [proposal email migration](supabase/migrations/20261125203000_add_yacht_proposal_email_delivery.sql) before deploying the form update. The server uses `SUPABASE_URL` (or `NEXT_PUBLIC_SUPABASE_URL`), `SUPABASE_SERVICE_ROLE_KEY`, and `RESEND_API_KEY`. Confirm the Resend sending domain and the bookings mailbox against the [OHANA hold pilot](#ohana-hold-pilot) settings below.
+
+The form saves the proposal in `yacht_enquiries` before sending the bookings notification and guest receipt. The two `proposal_*_email_id` fields record Resend acceptance. Guests can retry pending emails from the confirmation screen with the same reference. If delivery remains pending, use the saved proposal and Resend’s logs to reconcile it before sending manually. Existing proposals are preserved and do not trigger email automatically.
+
 ### OHANA hold pilot
 
 Apply the [hold request migration](supabase/migrations/20261125193000_create_yacht_hold_requests.sql) to the intended Supabase project. Verify the sending domain `mycaribbeancharters.com` in Resend and confirm that `bookings@mycaribbeancharters.com` receives mail. Add `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` as server-side secrets in the intended Vercel environment, and use `SUPABASE_URL` or the existing `NEXT_PUBLIC_SUPABASE_URL` for that database. Set `HOLD_REQUESTS_ENABLED=true` when those checks are complete.
