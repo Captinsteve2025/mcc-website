@@ -465,7 +465,7 @@ export default async function YachtDetailPage({
           </div>
         </div>
 
-        {/* --- Amenities, booking conditions and footer notes --- */}
+        {/* --- Amenities, reviews and footer notes --- */}
         <div className="container mx-auto px-4 pb-24">
             {/* --- Amenities --- */}
             {amenities.length > 0 && (
@@ -483,27 +483,6 @@ export default async function YachtDetailPage({
             )}
 
             <YachtReviewsSection reviews={reviews} />
-
-            {/* --- Booking conditions (rates panel above carries the seasons) --- */}
-            <section className="mt-14 rounded-xl bg-white p-6 shadow-sm">
-              <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-                <CalendarDays className="h-8 w-8 shrink-0 text-[#EE9739]" aria-hidden="true" />
-                <div className="flex-1">
-                  <h3 className="font-display text-xl italic text-[#061625]">Booking conditions</h3>
-                  <p className="text-sm text-[#061625]/70">
-                    Charter availability shown above reflects confirmed dates on record and is re-checked with you
-                    before any commitment. Select your dates on the calendar or in the form, and our team confirms
-                    everything personally with your proposal.
-                  </p>
-                </div>
-                <a
-                  href="#enquire"
-                  className="shrink-0 rounded-full border border-[#061625]/20 px-5 py-2.5 text-sm font-medium text-[#061625] transition-colors hover:bg-[#061625]/5"
-                >
-                  Ask about your dates
-                </a>
-              </div>
-            </section>
 
             <p className="mt-10 text-xs text-[#061625]/50">
               Yacht data and images provided by Central Yacht Agent. Rates shown are indicative only and subject to
