@@ -36,6 +36,8 @@ Apply the [proposal email migration](supabase/migrations/20261125203000_add_yach
 
 The form saves the proposal in `yacht_enquiries` before sending the bookings notification and guest receipt. The two `proposal_*_email_id` fields record Resend acceptance. Guests can retry pending emails from the confirmation screen with the same reference. If delivery remains pending, use the saved proposal and Resend’s logs to reconcile it before sending manually. Existing proposals are preserved and do not trigger email automatically.
 
+Guest proposal and hold receipts use the same HTML layout and include a plain-text version. Verify the sending domain’s SPF, DKIM, and DMARC alignment and check inbox placement with controlled Gmail, Outlook, and iCloud test recipients after deployment. Resend open and click tracking is set per sending domain. Review those settings in the Resend dashboard before changing them for a domain shared with other applications.
+
 ### Yacht hold requests
 
 Apply the [original hold migration](supabase/migrations/20261125193000_create_yacht_hold_requests.sql) on new databases and the [fleet hold migration](supabase/migrations/20261125210000_extend_hold_requests_to_all_yachts.sql) before deploying the expanded form. Verify the sending domain `mycaribbeancharters.com` in Resend and confirm that `bookings@mycaribbeancharters.com` receives mail. Add `SUPABASE_SERVICE_ROLE_KEY` and `RESEND_API_KEY` as server-side secrets in the intended Vercel environment, and use `SUPABASE_URL` or the existing `NEXT_PUBLIC_SUPABASE_URL` for that database. Set `HOLD_REQUESTS_ENABLED=true` when those checks are complete.

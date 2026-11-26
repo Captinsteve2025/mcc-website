@@ -2,9 +2,11 @@ import "server-only";
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { CyaApiError, getYachtDetail } from "@/lib/cya";
+import { formatHoldEmailDates, guestRequestReceipt } from "@/lib/guest-request-email";
 import { CYA_YACHT_ID_PATTERN, HOLD_BOOKINGS_EMAIL, holdGuestLimit, MANAGED_YACHT_HOLD_PREFIX } from "@/lib/hold-request";
 import { managedYachts } from "@/lib/managed-yachts";
 import { parseAccommodation, str } from "@/lib/yacht-detail";
+import { sendResendEmail } from "@/lib/resend-email";
 
 export function holdRequestsEnabled(): boolean {
   return process.env.HOLD_REQUESTS_ENABLED === "true" && Boolean(
@@ -116,16 +118,21 @@ export async function deliverHoldEmails(db: SupabaseClient, id: string): Promise
     const column = kind === "broker" ? "broker_email_id" : "guest_email_id";
     if (hold[column]) return true;
     try {
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
-          "Content-Type": "application/json",
-          "Idempotency-Key": `hold-request/${hold.id}/${kind}`,
-        },
-        body: JSON.stringify(emailFor(hold, kind)),
-        signal: AbortSignal.timeout(8_000),
+      const current = emailFor(hold, kind);
+      const receipt = kind === "guest" && guestRequestReceipt({
+        kind: "hold",
+        fullName: hold.full_name,
+        yachtName: hold.yacht_name ?? "OHANA",
+        dates: formatHoldEmailDates(hold.start_date, hold.end_date),
+        guests: hold.guest_count,
+        reference: hold.id,
       });
+      const response = await sendResendEmail(
+        process.env.RESEND_API_KEY!,
+        `hold-request/${hold.id}/${kind}`,
+        receipt ? { ...current, ...receipt } : current,
+        receipt ? current : undefined,
+      );
       if (!response.ok) {
         console.warn("[hold-request] email provider rejected a delivery attempt", { kind, status: response.status });
         return false;

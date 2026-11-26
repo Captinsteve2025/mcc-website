@@ -96,6 +96,10 @@ The calendar explains check-in, check-out, and month navigation. The orange bloc
 
 Catalogue and managed-yacht detail pages offer broker-reviewed hold requests. The orange form carries dates from the calendar when records are available and provides check-in and check-out inputs otherwise. The server verifies the yacht, uses its published capacity when supplied, and includes its name and identifier in the request and emails. The migration preserves existing OHANA requests and keeps the original endpoint functional during rollout. Desktop and 320 px mobile fixture submissions passed for OHANA, another catalogue yacht, a catalogue yacht without calendar records, ATLAS, and Aquanimity. PostgreSQL checks verified the migration, duplicate handling, and service-role permissions. The owner reported applying the production migration. Deployment and verification are pending.
 
+### Branded guest receipts (Implemented locally)
+
+Guest hold and proposal receipts use the MCC logo, navy header, and orange accent in a mobile-friendly layout with a plain-text version. The receipt summarises the yacht, dates, and guest count and keeps the same bookings reply address. The owner confirmed receipt of a live Shades of Grey hold email under the earlier template. The build and both mock delivery paths passed, including replay of a previously accepted plain-text receipt with the same Resend idempotency key. Local rendering passed with images blocked. Production deployment, domain tracking settings, authentication, and inbox placement for the new receipts remain unverified.
+
 ---
 
 ## Standing constraints

@@ -1,7 +1,9 @@
 import { createHmac } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
 import { NextResponse } from "next/server";
+import { guestRequestReceipt } from "@/lib/guest-request-email";
 import { HOLD_BOOKINGS_EMAIL as bookingsEmail } from "@/lib/hold-request";
+import { sendResendEmail } from "@/lib/resend-email";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -114,16 +116,21 @@ async function sendEmail(proposal: SavedProposal, broker: boolean): Promise<stri
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) return null;
   try {
-    const response = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "Idempotency-Key": `yacht-proposal/${proposal.client_request_id}/${broker ? "broker" : "guest"}`,
-      },
-      body: JSON.stringify(proposalEmail(proposal, broker)),
-      signal: AbortSignal.timeout(8_000),
+    const current = proposalEmail(proposal, broker);
+    const receipt = !broker && guestRequestReceipt({
+      kind: "proposal",
+      fullName: proposal.full_name,
+      yachtName: proposal.yacht_name,
+      dates: proposal.preferred_dates + (proposal.flexible_dates && proposal.preferred_dates !== "Flexible dates" ? " (flexible)" : ""),
+      guests: proposal.guest_count,
+      reference: proposal.client_request_id,
     });
+    const response = await sendResendEmail(
+      apiKey,
+      `yacht-proposal/${proposal.client_request_id}/${broker ? "broker" : "guest"}`,
+      receipt ? { ...current, ...receipt } : current,
+      receipt ? current : undefined,
+    );
     if (!response.ok) {
       console.warn("[yacht-proposal] email provider rejected notification", { broker, status: response.status });
       return null;
