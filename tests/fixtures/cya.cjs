@@ -11,6 +11,13 @@ const yacht = {
   lenght: 60,
   units: "ft",
   main_image: "https://fixture-images.invalid/yacht.png",
+  Images: [
+    { image_src: "https://fixture-images.invalid/salon.png", description: "An unrelated salon caption." },
+    {
+      image_src: "https://fixture-images.invalid/yacht.png",
+      description: "The yacht has a shaded flybridge, a spacious cockpit for dining outside, and panoramic views from the main salon.\r\n\r\nThe original brochure also includes notes about a previous charter crew.",
+    },
+  ],
   yachtEngines: "Fixture marine engine with onboard electric generator",
   fuel_consumption: 6,
   fuel_consumption_unit: "1",
@@ -21,6 +28,8 @@ const yacht = {
     ...futureDates,
     start_date: "2000-01-01",
     prices: [{ paxes: 2, price: 12000 }, { paxes: 10, price: 15500 }],
+    preferred_pickup: "Tortola - Manuel Reef",
+    location_details: "BVI Ports and BVI pick up/drop off only",
     has_apa: true,
     apa: 5,
     turnaround_hours: 72,

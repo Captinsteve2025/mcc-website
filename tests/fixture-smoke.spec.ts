@@ -86,6 +86,21 @@ test("keeps the gallery high on the page and the desktop calendar inside its pan
   await expect(page.getByText("Fuel consumption", { exact: true })).toHaveCount(0);
 });
 
+test("places the yacht description and cruising area just below the gallery", async ({ page }) => {
+  await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
+  const overview = page.locator("#gallery + section");
+  await expect(overview.getByRole("heading", { name: "Overview" })).toBeVisible();
+  await expect(overview.getByText(/The yacht has a shaded flybridge/).first()).toBeVisible();
+  await expect(overview.getByText("An unrelated salon caption.")).toHaveCount(0);
+  await expect(overview.getByRole("heading", { name: "Cruising area" })).toBeVisible();
+  await expect(overview.getByText("British Virgin Islands", { exact: true })).toBeVisible();
+  await expect(overview.getByText("Preferred pickup: Tortola - Manuel Reef")).toBeVisible();
+  const previousCrew = overview.getByText(/notes about a previous charter crew/);
+  await expect(previousCrew).toBeHidden();
+  await overview.getByText("Read the full yacht description").click();
+  await expect(previousCrew).toBeVisible();
+});
+
 test("fits yacht brochure text and the training link at 320 pixels", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");

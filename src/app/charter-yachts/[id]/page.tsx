@@ -8,7 +8,7 @@ import {
   BedDouble,
   Ruler,
   CalendarDays,
-  Anchor,
+  MapPin,
   Calendar,
   Ship,
   Waves,
@@ -28,7 +28,7 @@ import { YachtCrewSection } from "@/components/yacht/YachtCrewSection";
 import { YachtDiningSection } from "@/components/yacht/YachtDiningSection";
 import { YachtCtaButtons } from "@/components/yacht/YachtCtaButtons";
 import { YachtRecommendations } from "@/components/yacht/YachtRecommendations";
-import { getYachtDetail } from "@/lib/cya";
+import { getYachtDetail, yachtSeasonAreaNames } from "@/lib/cya";
 import { loadYachtRecommendations, subjectFromDetail } from "@/lib/similar-yachts";
 import { getYachtCrew, getYachtAvailability, mergeCrewProfiles } from "@/lib/yacht-content";
 import {
@@ -46,6 +46,7 @@ import {
   parseMenus,
   parseSeasons,
   parseWatersports,
+  parseYachtOverview,
   parseYachtReviews,
   str,
 } from "@/lib/yacht-detail";
@@ -134,6 +135,17 @@ export default async function YachtDetailPage({
   const amenities = parseAmenities(yacht);
   const watersports = parseWatersports(yacht);
   const seasons = parseSeasons(yacht);
+  const overview = parseYachtOverview(yacht);
+  const seasonalAreas = seasons.flatMap(({ areas }) => areas);
+  const bviOnly = seasons.length > 0 && seasons.every(({ details, additionalRateDetails }) =>
+    /\bBVI (?:charter and ports only|ports and BVI pick up\/drop off only)\b/i.test(`${details ?? ""} ${additionalRateDetails ?? ""}`),
+  );
+  const cruisingAreas = [...new Set(bviOnly ? ["British Virgin Islands"] :
+    (seasonalAreas.length > 0 ? seasonalAreas : yachtSeasonAreaNames(yacht)).map((area) =>
+      area === "Caribbean Virgin Islands (BVI)" ? "British Virgin Islands" : area,
+    ),
+  )];
+  const preferredPickups = [...new Set(seasons.map(({ pickup }) => pickup).filter(Boolean))];
   const reviews = parseYachtReviews(yacht);
   const guestQuote = reviews.find(({ comment }) => comment.length >= 20 && comment.length <= 180);
   const chartersInTheBvi = seasons.some(({ area }) => area?.includes("Caribbean Virgin Islands (BVI)"));
@@ -246,12 +258,51 @@ export default async function YachtDetailPage({
           </div>
         </section>
 
-        {/* --- Plan Your Charter: rates & availability panel directly under
-            the hero gallery, before all brochure content --- */}
+        {/* --- Gallery, yacht overview and quick specifications --- */}
         <section className="container mx-auto px-4 pb-10 pt-6 md:pt-5">
           <div id="gallery" className="scroll-mt-32">
             <YachtHeroGallery yachtId={id} yachtName={name} images={gallery} />
           </div>
+
+          <section aria-labelledby="overview" className="mt-7 max-w-3xl [overflow-wrap:anywhere]">
+            <div>
+              <h2 id="overview" className="mb-3 scroll-mt-32 font-display text-3xl font-normal italic text-[#061625]">Overview</h2>
+              <div className="max-w-prose leading-relaxed text-[#061625]/80">
+                {overview.introduction ? (
+                  <p className="whitespace-pre-line">{overview.introduction}</p>
+                ) : (
+                  <p>
+                    {name} is {yachtType ? `a ${yachtType.toLowerCase().replace(/_/g, " ")}` : "a charter yacht"}
+                    {builder ? ` built by ${builder}` : ""}
+                    {year !== null ? ` in ${year}` : ""}
+                    {length ? `, measuring ${length.value} ${length.unit}` : ""}
+                    {accommodation.pax !== null ? ` and welcoming ${guestCapacity.toLowerCase()}${restrictedGuests ? "" : " guests"}` : ""}.
+                  </p>
+                )}
+                {overview.more && (
+                  <details className="mt-3">
+                    <summary className="cursor-pointer text-sm font-semibold text-[#061625] underline underline-offset-4">
+                      Read the full yacht description
+                    </summary>
+                    {overview.fromBrochurePhoto && (
+                      <p className="mt-3 text-sm">Original CYA brochure text. Confirm current crew and activity details with our charter team.</p>
+                    )}
+                    <p className="mt-3 whitespace-pre-line">{overview.more}</p>
+                  </details>
+                )}
+              </div>
+              {(cruisingAreas.length > 0 || preferredPickups.length > 0) && (
+                <div className="mt-5 flex items-start gap-3 border-t border-[#061625]/10 pt-4 text-[#061625]">
+                  <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-[#a95626]" aria-hidden="true" />
+                  <div>
+                    <h3 className="text-sm font-semibold">Cruising area</h3>
+                    {cruisingAreas.length > 0 && <p className="mt-1 text-sm">{cruisingAreas.join(" · ")}</p>}
+                    {preferredPickups.length > 0 && <p className="mt-1 text-sm text-[#061625]/70">Preferred pickup: {preferredPickups.join(" · ")}</p>}
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
 
           {/* Quick specification strip */}
           {quickSpecs.length > 0 && (
@@ -283,30 +334,9 @@ export default async function YachtDetailPage({
         {/* Match the rates and availability columns above. */}
         <div className="container mx-auto grid grid-cols-1 gap-x-6 gap-y-12 px-4 pb-24 [overflow-wrap:anywhere] lg:grid-cols-2">
           <div>
-            {/* --- Overview --- */}
-            <SectionHeading id="overview" title="Overview" />
-            <div className="space-y-4 leading-relaxed text-[#061625]/80">
-              <p>
-                {name} is {yachtType ? `a ${yachtType.toLowerCase()}` : "a charter yacht"}
-                {builder ? ` built by ${builder}` : ""}
-                {year !== null ? ` in ${year}` : ""}
-                {length ? `, measuring ${length.value} ${length.unit}` : ""}
-                {accommodation.pax !== null ? ` and welcoming ${guestCapacity.toLowerCase()}${restrictedGuests ? "" : " guests"}` : ""}.
-              </p>
-              {accommodation.cabins !== null && accommodation.pax !== null && (
-                <p>
-                  Guest accommodation spans {accommodation.cabins} cabin{accommodation.cabins === 1 ? "" : "s"},
-                  giving every party space to relax aboard.
-                </p>
-              )}
-              {cleanText(yacht.description) && (
-                <p className="whitespace-pre-line">{cleanText(yacht.description)}</p>
-              )}
-            </div>
-
             {/* --- Accommodation --- */}
             {(accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0) && (
-              <section className="mt-14">
+              <section>
                 <SectionHeading id="accommodation" title="Accommodation" />
                 <dl className="grid gap-3 sm:grid-cols-3">
                   {accommodation.pax !== null && (

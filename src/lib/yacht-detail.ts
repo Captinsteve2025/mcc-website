@@ -161,6 +161,24 @@ export function cleanText(value: unknown): string | null {
   return cleaned.length > 0 ? cleaned : null;
 }
 
+// CYA can attach the yacht's brochure copy to the main photo. Only use
+// that specific image as a fallback, since the remaining images carry captions.
+export function parseYachtOverview(detail: Yacht) {
+  const mainImage = str(detail.main_image);
+  const photos = Array.isArray(detail.Images) ? detail.Images : [];
+  const brochurePhoto = photos.find((photo) => photo && typeof photo === "object" && mainImage && str(photo.image_src) === mainImage);
+  const description = cleanText(detail.description);
+  const galleryDescription = cleanText(brochurePhoto?.description);
+  const source = description ?? (galleryDescription && galleryDescription.length >= 100 ? galleryDescription : null);
+  const firstParagraph = source?.split(/\n\s*\n/, 1)[0] ?? null;
+  const introduction = firstParagraph && firstParagraph.length <= 650 ? firstParagraph : null;
+  return {
+    introduction,
+    more: source !== introduction ? source : null,
+    fromBrochurePhoto: !description && source !== null,
+  };
+}
+
 export type SeasonRate = {
   title: string;
   category: string | null;
@@ -174,6 +192,7 @@ export type SeasonRate = {
   turnaroundHours: number | null;
   additionalRateDetails: string | null;
   area: string | null;
+  areas: string[];
   details: string | null;
   pickup: string | null;
   basePort: string | null;
@@ -230,9 +249,7 @@ export function parseSeasons(detail: Yacht): SeasonRate[] {
                 : null
           )
           .filter((n): n is string => Boolean(n))
-          .slice(0, 4)
-          .join(", ")
-      : null;
+      : [];
     rows.push({
       title,
       category: str(obj.season_category),
@@ -245,7 +262,8 @@ export function parseSeasons(detail: Yacht): SeasonRate[] {
       apa: obj.has_apa !== false && apa !== null && apa > 0 ? apa : null,
       turnaroundHours: turnaroundHours !== null && turnaroundHours > 0 ? turnaroundHours : null,
       additionalRateDetails: cleanText(obj.additional_rate_details),
-      area: areaNames,
+      area: areaNames.slice(0, 4).join(", ") || null,
+      areas: areaNames,
       details: cleanText(obj.location_details),
       pickup: cleanText(obj.preferred_pickup),
       basePort: cleanText(obj.base_port),
