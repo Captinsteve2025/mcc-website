@@ -127,3 +127,7 @@ Desktop thumbnail rows fill the height of the hero image, with consistent gutter
 ### Yacht specifications default state
 
 Detailed specifications are open when the catalogue yacht page loads. Visitors can collapse and reopen the section. The build and all 18 desktop and mobile Chromium fixture checks passed. Production verification is pending.
+
+### BVI cabin charter landing page (Implemented)
+
+The British Virgin Islands destination page and Charter Styles menu link to the shared-cabin landing page. It describes scheduled departures and typical inclusions, features the Lagoon 620 and Ipanema 58, and uses the existing proposal form for availability requests. Preview verification and commercial review are pending.
