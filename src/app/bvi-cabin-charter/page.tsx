@@ -143,8 +143,8 @@ export default function BVICabinCharterPage() {
 
           <div id="charter-inclusions" className={styles.inclusions + " mt-10 scroll-mt-24 rounded-xl bg-[#F8F7F4] text-[#061625] shadow-sm"}>
             <div className={styles.diningBackdrop} aria-hidden="true">
-              <div><Image src="/images/cabin-charter/charter-breakfast.webp" alt="" fill sizes="(min-width: 1024px) 400px, 50vw" className={styles.food} /></div>
-              <div><Image src="/images/cabin-charter/charter-lunch.webp" alt="" fill sizes="(min-width: 1024px) 400px, 50vw" className={styles.food} /></div>
+              <div><Image src="/images/cabin-charter/eggs-benedict.webp" alt="" fill sizes="(min-width: 1024px) 360px, 50vw" className={styles.food} /></div>
+              <div><Image src="/images/cabin-charter/salmon-platter.webp" alt="" fill sizes="(min-width: 1024px) 360px, 50vw" className={styles.food + " " + styles.salmon} /></div>
             </div>
             <div className={styles.inclusionContent + " p-5 sm:p-8"}>
               <h3 className="font-display text-2xl font-normal italic md:text-3xl">What’s Included in Your Charter</h3>

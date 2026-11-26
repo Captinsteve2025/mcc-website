@@ -45,6 +45,10 @@
   object-position: center;
 }
 
+.salmon {
+  object-position: center 72%;
+}
+
 .inclusionContent {
   position: relative;
 }
