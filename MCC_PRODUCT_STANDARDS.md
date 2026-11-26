@@ -31,6 +31,7 @@ Every major component is assessed against all ten criteria. A component is not "
 
 ## Working rules
 
+- Apply the mandatory [MCC website styling packet](BRAND_GUIDE.md) to every page migration. Read it and inspect the existing site components before beginning the work.
 - Every change is verified in production after deployment before it is reported as working.
 - CYA (Central Yacht Agent) content is displayed exactly as supplied: nothing is invented, no stock photography, no fabricated fallback copy. When reliable extraction is impossible, complete original content is preserved inside a collapsed panel rather than forcing unreliable parsing.
 - When an interim solution is accepted, the intended premium solution is retained as an outstanding improvement in the register.

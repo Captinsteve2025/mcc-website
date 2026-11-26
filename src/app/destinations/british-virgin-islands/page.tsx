@@ -178,6 +178,12 @@ export default function BVIDestinationPage() {
               >
                 Get Expert Advice
               </Link>
+              <Link
+                href="/bvi-cabin-charter"
+                className="inline-flex items-center bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-full font-medium transition-all duration-300 border border-white/30"
+              >
+                Explore BVI Cabin Charters
+              </Link>
             </div>
           </div>
         </div>

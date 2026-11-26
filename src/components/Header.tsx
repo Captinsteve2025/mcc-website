@@ -10,10 +10,11 @@ import { destinations } from "@/lib/data";
 
 // Charter styles for menu
 const charterStylesMenu = [
-  { id: "luxury", name: "Luxury Yachts", slug: "luxury" },
-  { id: "crewed", name: "Crewed Charters", slug: "crewed" },
-  { id: "sail-stay", name: "Sail & Stay Experiences", slug: "sail-stay" },
-  { id: "bareboat", name: "Bareboat Charters", slug: "bareboat" },
+  { id: "luxury", name: "Luxury Yachts", href: "/#charter-styles" },
+  { id: "crewed", name: "Crewed Charters", href: "/#charter-styles" },
+  { id: "sail-stay", name: "Sail & Stay Experiences", href: "/#charter-styles" },
+  { id: "bareboat", name: "Bareboat Charters", href: "/#charter-styles" },
+  { id: "bvi-cabin", name: "BVI Cabin Charters", href: "/bvi-cabin-charter" },
 ] as const;
 
 // Map destination slugs to their dedicated page URLs
@@ -63,12 +64,12 @@ export function Header({ compact = false }: { compact?: boolean } = {}) {
               >
                 Charter Styles <ChevronDown className="w-4 h-4" aria-hidden="true" />
               </button>
-              <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all">
+              <div className="absolute top-full left-0 pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all">
                 <div className="bg-white rounded-lg shadow-lg p-4 min-w-[200px]" role="menu">
                   {charterStylesMenu.map((style) => (
                     <Link
                       key={style.id}
-                      href="/#charter-styles"
+                      href={style.href}
                       className="block px-4 py-2 text-sm text-[#061625] hover:bg-gray-100 rounded-md transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#EE9739]"
                       role="menuitem"
                     >
@@ -153,13 +154,13 @@ export function Header({ compact = false }: { compact?: boolean } = {}) {
                   <div className="p-6 border-b">
                     <Logo variant="dark" />
                   </div>
-                  <nav className="flex-1 p-6 space-y-6" role="navigation" aria-label="Mobile navigation">
+                  <nav className="flex-1 overflow-y-auto p-6 space-y-6" role="navigation" aria-label="Mobile navigation">
                     <div>
                       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">Charter Styles</h3>
                       {charterStylesMenu.map((style) => (
                         <Link
                           key={style.id}
-                          href="/#charter-styles"
+                          href={style.href}
                           onClick={() => setIsOpen(false)}
                           className="block py-2 text-[#061625] hover:text-[#EE9739] transition-colors focus:outline-none focus-visible:underline"
                         >

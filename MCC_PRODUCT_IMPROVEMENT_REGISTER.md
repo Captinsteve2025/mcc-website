@@ -127,3 +127,15 @@ Desktop thumbnail rows fill the height of the hero image, with consistent gutter
 ### Yacht specifications default state
 
 Detailed specifications are open when the catalogue yacht page loads. Visitors can collapse and reopen the section. The build and all 18 desktop and mobile Chromium fixture checks passed. Production verification is pending.
+
+### BVI cabin charter landing page (Implemented)
+
+The British Virgin Islands destination page and Charter Styles menu link to the shared-cabin landing page. It describes scheduled departures and typical inclusions, features the Lagoon 620 and Ipanema 58, and uses the existing proposal form for availability requests. The page uses the mandatory MCC styling packet, including the approved palette, Playfair Display and Inter, and shared buttons and cards. Compared with the live homepage and the BVI and Bahamas destination pages. Local Chromium checks passed at 1440, 768, 390 and 320 px, including button states and mobile navigation. The production build, type check and lint passed. Vercel preview review and commercial acceptance are pending.
+
+The cabin charter page includes a departure calendar, cabin pricing and a short enquiry with date and cabin carryover. MCC supplied the February 27–March 6, 2027 Ipanema 58 sailing and USD 7,400 double-cabin rate. Inventory is unconfirmed and MCC requested enquiries in the interim. Hold questions go to the broker through the existing proposal intake. A live inventory feed, confirmed courtesy holds and instant deposits are pending a verified source or booking provider.
+
+The production build, TypeScript and lint passed for the enquiry update. Chromium checks at 1440, 768, 390 and 320 px covered departure selection, rates, itinerary, callback and enquiry retry with a mocked response.
+
+The cabin charter page now opens with the Lagoon 51 hero and the updated welcome copy. A single section explains the cabin charter experience and inclusions, followed by yacht options and a panoramic image of The Baths. The calendar and enquiry close the page. The ferry inclusion applies to Scrub Island departures.
+
+The charter overview uses a White Bay backdrop and dining imagery from MCC’s media library. The layers move with scroll and respect reduced-motion preferences. The Lagoon 620 card uses the matching Arcachon photograph by Nicolas Claris. Yacht and trip-length preferences are selected before dates and carry through to flexible or date-specific enquiries. Published rates and availability records are preserved. The build, TypeScript and lint passed. Chromium verified the layout, backdrop movement and enquiry preferences at desktop and mobile sizes.
