@@ -7,6 +7,13 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_BUILD_TIMESTAMP: new Date().toISOString(),
   },
+  outputFileTracingIncludes: {
+    "/api/yacht-social-image/*": [
+      "./public/images/brand/mcc-logo-light.png",
+      "./public/images/caribbean-water-bg.webp",
+      "./public/images/aquanimity/Aquanimity-Dufour-48-Yacht-Charter-BVI.jpg",
+    ],
+  },
   images: {
     remotePatterns: [
       {

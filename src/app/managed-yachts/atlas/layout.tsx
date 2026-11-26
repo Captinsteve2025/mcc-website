@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
+import { atlas } from "@/lib/managed-yachts";
+import { buildYachtSocialMetadata } from "@/lib/yacht-social";
 
-const pageUrl = "https://www.mycaribbeancharters.com/managed-yachts/atlas";
-const shareImage = "https://www.mycaribbeancharters.com/images/caribbean-water-bg.webp";
+const title = "ATLAS Aquila 54 Luxury Crewed Charter | Virgin Islands";
+const description =
+  "Charter ATLAS, a luxury Aquila 54 power catamaran in the Virgin Islands. Discover the yacht, explore Caribbean itineraries and request availability.";
 
 export const metadata: Metadata = {
-  title: "ATLAS Aquila 54 Luxury Crewed Charter | Virgin Islands",
-  description:
-    "Charter ATLAS, a luxury Aquila 54 power catamaran in the Virgin Islands. Discover the yacht, explore Caribbean itineraries and request availability.",
+  ...buildYachtSocialMetadata(title, description, `/managed-yachts/${atlas.slug}`, atlas.slug, "Caribbean waters for ATLAS charters"),
   keywords: [
     "Aquila 54 crewed charter Virgin Islands",
     "ATLAS Aquila 54 charter",
@@ -17,24 +18,8 @@ export const metadata: Metadata = {
     "Luxury yacht charter USVI",
     "Crewed power catamaran BVI",
   ],
-  alternates: { canonical: pageUrl },
+  alternates: { canonical: `https://www.mycaribbeancharters.com/managed-yachts/${atlas.slug}` },
   robots: { index: true, follow: true },
-  openGraph: {
-    type: "website",
-    url: pageUrl,
-    siteName: "My Caribbean Charters",
-    title: "ATLAS Aquila 54 Luxury Crewed Charter | Virgin Islands",
-    description:
-      "Charter ATLAS, a luxury Aquila 54 power catamaran in the Virgin Islands. Discover the yacht, explore Caribbean itineraries and request availability.",
-    locale: "en_US",
-    images: [{ url: shareImage, width: 1200, height: 630, alt: "Caribbean waters for ATLAS charters" }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "ATLAS Aquila 54 Luxury Crewed Charter | Virgin Islands",
-    description: "Private crewed Aquila 54 power catamaran charters in the Virgin Islands.",
-    images: [shareImage],
-  },
 };
 
 export default function AtlasLayout({ children }: { children: React.ReactNode }) {

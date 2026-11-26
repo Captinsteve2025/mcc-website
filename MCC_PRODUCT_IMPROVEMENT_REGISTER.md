@@ -107,3 +107,7 @@ Guest hold and proposal receipts use the MCC logo, navy header, and orange accen
 - Deployment: user syncs to GitHub `mcc-website` `collaborate` branch → Vercel auto-deploy. Never deploy from the sandbox.
 - Enquiry system, database config, SMTP, CYA booking integration, SEO migration and credentials are out of bounds.
 - Managed-fleet preference (Aquanimity, Atlas) applies only after eligibility; commercial preference never overrides suitability.
+
+### Yacht social previews
+
+Each yacht listing publishes a title, description, canonical URL and 1200 × 630 JPEG for social sharing. Catalogue previews use the CYA listing and its main photo. Managed yachts use their published listing details and existing imagery. Production-build checks confirmed the Meta crawler receives listing metadata in the HTML head, with decoded social images at 1200 × 630. Production and Meta cache verification are pending.

@@ -49,6 +49,7 @@ import {
   parseYachtReviews,
   str,
 } from "@/lib/yacht-detail";
+import { CYA_YACHT_ID, cyaYachtSocialMetadata } from "@/lib/yacht-social";
 import { summarizePricing } from "@/lib/yacht-pricing";
 
 export const dynamic = "force-dynamic";
@@ -57,13 +58,9 @@ type Params = Promise<{ id: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { id } = await params;
+  if (!CYA_YACHT_ID.test(id)) return {};
   try {
-    const detail = await getYachtDetail(id);
-    const name = typeof detail.yachtName === "string" ? detail.yachtName : "Charter yacht";
-    return {
-      title: `${name} | Charter Yacht from My Caribbean Charters`,
-      description: `View specifications, photographs and indicative rates for ${name}, and enquire with My Caribbean Charters.`,
-    };
+    return cyaYachtSocialMetadata(id, await getYachtDetail(id));
   } catch {
     return { title: "Charter Yacht | My Caribbean Charters" };
   }
@@ -85,7 +82,7 @@ export default async function YachtDetailPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { id } = await params;
-  if (!/^[a-f0-9]{8,32}$/i.test(id)) notFound();
+  if (!CYA_YACHT_ID.test(id)) notFound();
 
   const query = await searchParams;
   const one = (key: string) => {
