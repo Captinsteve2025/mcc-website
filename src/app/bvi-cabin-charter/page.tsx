@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Check, Mail, Phone } from "lucide-react";
+import { Check } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
-import { YachtEnquiryForm } from "@/components/yacht/YachtEnquiryForm";
-import { MCC_PHONE_DISPLAY, MCC_PHONE_HREF } from "@/lib/managed-yachts";
+import { CabinBooking } from "./CabinBooking";
+import { publishedDepartures } from "./departures";
 
 const title = "BVI Cabin Charters | My Caribbean Charters";
 const description =
@@ -46,6 +46,9 @@ const yachts = [
 const sectionHeading = "font-display text-3xl font-normal italic md:text-4xl";
 
 export default function BVICabinCharterPage() {
+  const today = new Intl.DateTimeFormat("sv-SE", {
+    timeZone: "America/Tortola", year: "numeric", month: "2-digit", day: "2-digit",
+  }).format(new Date());
   return (
     <>
       <Header />
@@ -75,7 +78,7 @@ export default function BVICabinCharterPage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Button asChild size="lg" className="rounded-full px-6 text-[#061625] focus-visible:ring-offset-[#061625]">
-              <a href="#enquire">Check Availability</a>
+              <a href="#dates">Choose Dates &amp; Cabins</a>
             </Button>
             <Button
               asChild
@@ -89,16 +92,22 @@ export default function BVICabinCharterPage() {
         </div>
       </section>
 
+      <CabinBooking today={today} departures={publishedDepartures} />
+
       <section className="bg-[#F8F7F4] py-16 text-[#061625] md:py-24">
         <div className="container mx-auto grid items-center gap-8 px-4 md:grid-cols-2 lg:gap-12 xl:max-w-6xl">
           <div>
             <h2 className={sectionHeading}>How a Cabin Charter Works</h2>
             <p className="mt-5 text-lg leading-relaxed text-[#061625]/75">
-              Couples, solo travelers and small groups can book individual cabins on scheduled departures. You’ll have your own cabin and share the catamaran’s deck and dining areas. The crew handles the sailing.
+              Couples, solo travelers and small groups can book individual cabins on scheduled departures. You’ll share the deck, dining areas, and itinerary with other guests while the crew handles the sailing.
             </p>
             <p className="mt-4 text-lg leading-relaxed text-[#061625]/75">
               Short passages leave time to explore ashore or swim and snorkel. Depending on your route, you might walk among the granite boulders at The Baths on Virgin Gorda, visit White Bay on Jost Van Dyke or snorkel the caves at Norman Island.
             </p>
+            <p className="mt-4 text-lg leading-relaxed text-[#061625]/75">
+              Confirm your marina and check-in time before booking flights or ferries. The featured Ipanema 58 trip boards and returns at Soper’s Hole Marina in West End, Tortola.
+            </p>
+            <Button asChild variant="outline" className="mt-6"><a href="#dates">Choose Dates &amp; Cabins</a></Button>
           </div>
           <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
             <Image
@@ -166,29 +175,9 @@ export default function BVICabinCharterPage() {
         </div>
       </section>
 
-      <section id="enquire" className="scroll-mt-20 bg-[#061625] py-16 text-white md:py-24">
-        <div className="container mx-auto grid gap-10 px-4 lg:grid-cols-[1fr_1.1fr] lg:gap-16 xl:max-w-6xl">
-          <div>
-            <h2 id="enquiry-form-title" className={sectionHeading}>
-              Request BVI Cabin Charter Availability
-            </h2>
-            <p className="mt-5 text-lg leading-relaxed text-white/90">
-              Tell us when you’d like to sail and how many people are traveling. Our team can check available cabins, confirm the yacht and send you a quote.
-            </p>
-            <div className="mt-7 space-y-3">
-              <a href="mailto:bookings@mycaribbeancharters.com?subject=BVI%20Cabin%20Charter" className="flex w-fit max-w-full items-center gap-3 break-all underline underline-offset-4 hover:decoration-[#EE9739]">
-                <Mail className="h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
-                bookings@mycaribbeancharters.com
-              </a>
-              <a href={MCC_PHONE_HREF} className="flex w-fit items-center gap-3 underline underline-offset-4 hover:decoration-[#EE9739]">
-                <Phone className="h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
-                {MCC_PHONE_DISPLAY}
-              </a>
-            </div>
-          </div>
-          <YachtEnquiryForm yachtSlug="bvi-cabin-charter" yachtName="BVI Cabin Charter" />
-        </div>
-      </section>
+      <div className="border-t border-[#061625]/10 bg-[#F8F7F4] px-4 py-6 text-center md:hidden">
+        <Button asChild className="rounded-full text-[#061625]"><a href="#dates">Choose Dates &amp; Cabins</a></Button>
+      </div>
 
       <Footer />
     </>
