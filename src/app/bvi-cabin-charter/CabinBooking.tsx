@@ -38,7 +38,6 @@ export type CabinDeparture = {
   boarding: string;
   disembarkation: string;
   cabins: Cabin[];
-  included: string[];
   extras: string[];
   route: string[];
 };
@@ -93,8 +92,7 @@ export function CabinBooking({ today, departures }: { today: string; departures:
         <div className="container mx-auto px-4 xl:max-w-6xl">
           <div className="mb-8 max-w-2xl">
             <h2 id="dates-heading" className="font-display text-3xl font-normal italic md:text-4xl">Choose Dates &amp; Cabins</h2>
-            <p className="mt-3 text-[#061625]/80">Book your own cabin and bathroom on a crewed catamaran and share the voyage with other guests. A private yacht charter reserves the whole boat for your group.</p>
-            <p className="mt-2 text-[#061625]/80">
+            <p className="mt-3 text-[#061625]/80">
               {hasDepartures ? "Select a listed sailing to see cabin details and rates, or choose a preferred date for another trip." : "Choose a preferred sailing date and cabin type. Our crewed-charter team will check scheduled departures, cabin availability and the total price for your group."}
             </p>
           </div>
@@ -188,16 +186,13 @@ export function CabinBooking({ today, departures }: { today: string; departures:
               </div>
               {departure && (
                 <div className="mt-5 space-y-3 text-sm">
-                  <div className="grid gap-3 rounded-lg bg-[#F8F7F4] p-4 sm:grid-cols-2">
-                    {departure.included.length > 0 && <div>
-                      <h4 className="mb-1 font-semibold">Included</h4>
-                      <ul className="list-disc space-y-1 pl-4">{departure.included.map(item => <li key={item}>{item}</li>)}</ul>
-                    </div>}
-                    {departure.extras.length > 0 && <div>
+                  {departure.extras.length > 0 && (
+                    <div className="rounded-lg bg-[#F8F7F4] p-4">
                       <h4 className="mb-1 font-semibold">Budget separately</h4>
-                      <ul className="list-disc space-y-1 pl-4">{departure.extras.map(item => <li key={item}>{item}</li>)}</ul>
-                    </div>}
-                  </div>
+                      <p>{departure.extras.join(", ")}.</p>
+                    </div>
+                  )}
+                  <p><a href="#charter-inclusions" className="font-medium underline underline-offset-4">See what’s included</a></p>
                   <p>Ask whether mooring and marine park fees apply to this departure.</p>
                   {departure.route.length > 0 && <details className="rounded-lg border border-[#061625]/15 p-3">
                     <summary className="cursor-pointer font-semibold">Planned BVI itinerary</summary>

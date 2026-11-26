@@ -13,15 +13,6 @@ export const publishedDepartures: CabinDeparture[] = [
     boarding: "Soper’s Hole Marina, West End, Tortola · 27 Feb at 5:00 pm",
     disembarkation: "Soper’s Hole Marina, West End, Tortola · 6 Mar at 9:00 am",
     cabins: [{ id: "double", name: "Double cabin", remaining: null, occupancy: 2, rate: { amount: 7400, currency: "USD", unit: "cabin" } }],
-    included: [
-      "7 nights in a private double cabin with an ensuite bathroom and daytime air conditioning (8:00 am–10:00 pm, with overnight use by guest agreement)",
-      "captain and steward/cook",
-      "7 breakfasts, 6 lunches and 4 dinners",
-      "selected drinks with meals and local aperitifs",
-      "linens and towels",
-      "onboard Wi-Fi and water toys",
-      "yacht fuel, water and yacht/passenger insurance",
-    ],
     extras: ["flights", "transfers", "premium drinks", "additional meals ashore", "gratuities"],
     route: [
       "Norman Island for snorkeling at The Caves and an anchorage at The Bight",

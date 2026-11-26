@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Check } from "lucide-react";
+import { BedDouble, Check, ChefHat, Compass, Waves } from "lucide-react";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -19,13 +19,41 @@ export const metadata: Metadata = {
   openGraph: { title, description, type: "website", siteName: "My Caribbean Charters" },
 };
 
+const experience = [
+  {
+    icon: BedDouble,
+    title: "Your Private Sanctuary",
+    text: "Unwind in your own spacious, air-conditioned cabin complete with a private en-suite bathroom.",
+  },
+  {
+    icon: ChefHat,
+    title: "Dedicated Crew",
+    text: "Let your seasoned captain chart the course to hidden coves while your onboard chef prepares fresh, island-inspired meals.",
+  },
+  {
+    icon: Compass,
+    title: "Curated Island Hopping",
+    text: "Experience a thoughtfully crafted itinerary that perfectly balances sun-drenched relaxation with coastal exploration.",
+  },
+  {
+    icon: Waves,
+    title: "Play & Stay Connected",
+    text: "Dive straight into crystal-clear waters with onboard water toys, and share every golden-hour sunset with complimentary Wi-Fi.",
+  },
+];
+
 const inclusions = [
-  "Air-conditioned double cabin with a private bathroom",
-  "Professional captain and cook or chef",
-  "Breakfast, lunch and dinner on board",
-  "Selected drinks with meals and local aperitifs",
-  "Linens, bath towels and beach towels",
-  "Snorkeling gear, kayaks or paddleboards, depending on the yacht",
+  "Seven nights aboard a luxury catamaran (Lagoon on select sailings)",
+  "Private double cabin with an en-suite bathroom. Air conditioning runs from 8 am to 10 pm and can run overnight if everyone on board agrees.",
+  "Gourmet meals including seven breakfasts, six lunches, and four dinners",
+  "Table wine and water with meals, plus local aperitifs including punch, rum, and fruit juice",
+  "Two crew members, including a captain and a steward/cook",
+  "Two sets of linens, towels, and beach towels per guest per week",
+  "Yacht consumables, including diesel, fuel, and water",
+  "Insurance for the yacht and passengers",
+  "Snorkeling equipment, a sea scooter, paddleboards, a floating mat, and beach games",
+  "Onboard Wi-Fi",
+  "Trellis Bay to Scrub Island ferry for departures that board at Scrub Island",
 ];
 
 const yachts = [
@@ -53,16 +81,16 @@ export default function BVICabinCharterPage() {
     <>
       <Header />
 
-      <section className="relative flex min-h-[500px] items-end bg-[#061625] text-white md:min-h-[70vh]">
+      <section className="relative flex min-h-[580px] items-end bg-[#061625] text-white md:min-h-[70vh]">
         <Image
-          src="/images/cabin-charter/ipanema-58.webp"
-          alt=""
+          src="/images/cabin-charter/lagoon-51-hero.webp"
+          alt="Lagoon 51 catamaran at anchor in a rocky bay"
           fill
           priority
           sizes="100vw"
-          className="object-cover"
+          className="object-cover object-[center_54%]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#061625] via-[#061625]/45 to-[#061625]/60" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#061625] via-[#061625]/55 to-[#061625]/45" />
         <div className="container relative mx-auto px-4 pb-12 pt-28 md:pb-16">
           <Link
             href="/destinations/british-virgin-islands"
@@ -74,7 +102,10 @@ export default function BVICabinCharterPage() {
             BVI Cabin Charters
           </h1>
           <p className="mt-4 max-w-2xl text-lg leading-relaxed text-white/90 md:text-xl">
-            Reserve a private cabin on a crewed catamaran and sail the British Virgin Islands with a small group of fellow travelers.
+            Trade the resort crowds for the gentle rhythm of the Caribbean Sea.
+          </p>
+          <p className="mt-3 max-w-2xl text-base leading-relaxed text-white/90 md:text-lg">
+            Have you ever dreamed of waking up in a new turquoise bay every morning, without the commitment of booking an entire private yacht? A cabin charter is your effortless passport to the yachting lifestyle.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Button asChild size="lg" className="rounded-full px-6 text-[#061625] focus-visible:ring-offset-[#061625]">
@@ -86,61 +117,55 @@ export default function BVICabinCharterPage() {
               size="lg"
               className="rounded-full border border-white/30 bg-white/10 px-6 text-white shadow-none backdrop-blur-sm hover:bg-white/20 focus-visible:ring-offset-[#061625]"
             >
-              <a href="#charter-options">Explore the Yachts</a>
+              <a href="#how-it-works">How a Cabin Charter Works</a>
             </Button>
           </div>
         </div>
       </section>
 
-      <CabinBooking today={today} departures={publishedDepartures} />
-
-      <section className="bg-[#F8F7F4] py-16 text-[#061625] md:py-24">
-        <div className="container mx-auto grid items-center gap-8 px-4 md:grid-cols-2 lg:gap-12 xl:max-w-6xl">
-          <div>
-            <h2 className={sectionHeading}>How a Cabin Charter Works</h2>
-            <p className="mt-5 text-lg leading-relaxed text-[#061625]/75">
-              Couples, solo travelers and small groups can book individual cabins on scheduled departures. You’ll share the deck, dining areas, and itinerary with other guests while the crew handles the sailing.
-            </p>
+      <section id="how-it-works" aria-labelledby="how-it-works-heading" className="scroll-mt-20 bg-[#F8F7F4] py-16 text-[#061625] md:py-24">
+        <div className="container mx-auto px-4 xl:max-w-6xl">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 id="how-it-works-heading" className={sectionHeading}>How a Cabin Charter Works</h2>
             <p className="mt-4 text-lg leading-relaxed text-[#061625]/75">
-              Short passages leave time to explore ashore or swim and snorkel. Depending on your route, you might walk among the granite boulders at The Baths on Virgin Gorda, visit White Bay on Jost Van Dyke or snorkel the caves at Norman Island.
+              Step aboard for an all-inclusive island escape where every detail is taken care of.
+              You book a private cabin and share the boat and itinerary with other guests.
             </p>
-            <p className="mt-4 text-lg leading-relaxed text-[#061625]/75">
-              Confirm your marina and check-in time before booking flights or ferries. The featured Ipanema 58 trip boards and returns at Soper’s Hole Marina in West End, Tortola.
-            </p>
-            <Button asChild variant="outline" className="mt-6"><a href="#dates">Choose Dates &amp; Cabins</a></Button>
           </div>
-          <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
-            <Image
-              src="/images/bvi-the-baths.webp"
-              alt="Granite boulders and turquoise water at The Baths on Virgin Gorda"
-              fill
-              sizes="(min-width: 768px) 50vw, 100vw"
-              className="object-cover"
-            />
-          </div>
-        </div>
-      </section>
 
-      <section className="bg-white py-16 text-[#061625] md:py-24">
-        <div className="container mx-auto px-4 xl:max-w-5xl">
-          <h2 className={sectionHeading}>Typical Charter Inclusions</h2>
-          <p className="mt-4 max-w-2xl text-lg text-[#061625]/75">
-            Your package depends on the yacht and departure. We’ll confirm what’s included, the itinerary and the booking terms before you reserve.
-          </p>
-          <ul className="mt-8 grid gap-4 sm:grid-cols-2">
-            {inclusions.map((inclusion) => (
-              <li key={inclusion} className="flex items-start gap-3 rounded-xl bg-[#F8F7F4] p-4">
-                <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#061625]">
-                  <Check className="h-4 w-4 text-[#EE9739]" aria-hidden="true" />
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:gap-5">
+            {experience.map(({ icon: Icon, title, text }) => (
+              <Card key={title} className="flex items-start gap-4 rounded-xl border-0 bg-white p-5 text-[#061625] sm:p-6">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#061625] text-[#EE9739]">
+                  <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
-                <span>{inclusion}</span>
-              </li>
+                <div>
+                  <CardTitle className="font-display text-xl font-normal italic leading-normal tracking-normal">{title}</CardTitle>
+                  <p className="mt-2 leading-relaxed text-[#061625]/75">{text}</p>
+                </div>
+              </Card>
             ))}
-          </ul>
+          </div>
+
+          <p className="mt-7 text-center text-lg leading-relaxed text-[#061625]/75">
+            Just pack your swimwear and a sense of adventure—the islands are calling.
+          </p>
+
+          <div id="charter-inclusions" className="mt-10 scroll-mt-24 rounded-xl bg-white p-5 shadow-sm sm:p-8">
+            <h3 className="font-display text-2xl font-normal italic md:text-3xl">What’s Included in Your Charter</h3>
+            <ul className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+              {inclusions.map((inclusion) => (
+                <li key={inclusion} className="flex items-start gap-3 leading-relaxed">
+                  <Check className="mt-1 h-4 w-4 shrink-0 text-[#061625]" aria-hidden="true" />
+                  <span>{inclusion}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </section>
 
-      <section id="charter-options" className="scroll-mt-20 bg-[#F8F7F4] py-16 text-[#061625] md:py-24">
+      <section id="charter-options" className="scroll-mt-20 bg-white py-16 text-[#061625] md:py-24">
         <div className="container mx-auto px-4 xl:max-w-6xl">
           <div className="mb-10 text-center md:mb-12">
             <h2 className={sectionHeading}>Cabin Charter Yachts</h2>
@@ -150,7 +175,7 @@ export default function BVICabinCharterPage() {
           </div>
           <div className="grid gap-6 md:grid-cols-2">
             {yachts.map((yacht) => (
-              <Card key={yacht.name} className="flex flex-col overflow-hidden rounded-xl border-0 bg-white text-[#061625]">
+              <Card key={yacht.name} className="flex flex-col overflow-hidden rounded-xl border-0 bg-[#F8F7F4] text-[#061625]">
                 <div className="relative aspect-[4/3]">
                   <Image
                     src={yacht.image}
@@ -175,9 +200,17 @@ export default function BVICabinCharterPage() {
         </div>
       </section>
 
-      <div className="border-t border-[#061625]/10 bg-[#F8F7F4] px-4 py-6 text-center md:hidden">
-        <Button asChild className="rounded-full text-[#061625]"><a href="#dates">Choose Dates &amp; Cabins</a></Button>
-      </div>
+      <figure className="relative m-0 h-52 overflow-hidden bg-[#F8F7F4] sm:h-64 lg:h-96">
+        <Image
+          src="/images/bvi-the-baths.webp"
+          alt="Sandy beach and turquoise water at The Baths, Virgin Gorda"
+          fill
+          sizes="100vw"
+          className="object-cover object-[center_68%]"
+        />
+      </figure>
+
+      <CabinBooking today={today} departures={publishedDepartures} />
 
       <Footer />
     </>
