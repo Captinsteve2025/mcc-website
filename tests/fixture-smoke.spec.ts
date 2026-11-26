@@ -86,6 +86,34 @@ test("keeps the gallery high on the page and the desktop calendar inside its pan
   await expect(page.getByText("Fuel consumption", { exact: true })).toHaveCount(0);
 });
 
+test("aligns the desktop gallery tiles with the hero and retains the mobile thumbnails", async ({ page, isMobile }) => {
+  await page.setViewportSize({ width: isMobile ? 390 : 1280, height: 900 });
+  await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
+  const buttons = page.locator("#gallery").getByRole("button", { name: /Open photo gallery/ });
+  await expect(buttons).toHaveCount(5);
+  const boxes = await buttons.evaluateAll((elements) => elements.map((element) => element.getBoundingClientRect().toJSON()));
+  const [hero, first, second, third, fourth] = boxes;
+  expect(second.left - first.right).toBeCloseTo(12, 0);
+  expect(third.top - first.bottom).toBeCloseTo(12, 0);
+
+  if (isMobile) {
+    expect(first.top - hero.bottom).toBeCloseTo(12, 0);
+    expect(first.width / first.height).toBeCloseTo(4 / 3, 2);
+  } else {
+    expect(first.top).toBeCloseTo(hero.top, 0);
+    expect(third.bottom).toBeCloseTo(hero.bottom, 0);
+    expect(fourth.bottom).toBeCloseTo(hero.bottom, 0);
+    expect(first.height).toBeCloseTo(third.height, 0);
+  }
+
+  await buttons.nth(4).click();
+  const lightbox = page.getByRole("dialog", { name: "Fixture Catamaran photo gallery" });
+  await expect(lightbox.getByText("5 / 5")).toBeVisible();
+  await expect(lightbox.getByRole("img", { name: "Cabin" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(lightbox).toHaveCount(0);
+});
+
 test("places the yacht description and cruising area just below the gallery", async ({ page }) => {
   await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
   const overview = page.locator("#gallery + section");

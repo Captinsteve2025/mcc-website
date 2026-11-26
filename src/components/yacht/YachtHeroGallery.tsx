@@ -144,22 +144,24 @@ export function YachtHeroGallery({ yachtId, yachtName, images }: GalleryProps) {
           type="button"
           onClick={() => openGallery(0)}
           aria-label={`Open photo gallery — ${primary.title ?? yachtName}`}
-          className={`group relative aspect-[4/3] overflow-hidden rounded-xl bg-[#061625]/10 ${secondary.length ? "md:aspect-auto md:min-h-[26rem]" : "md:aspect-[16/7] md:max-h-[33rem]"}`}
+          className={`group relative aspect-[4/3] overflow-hidden rounded-xl bg-[#061625]/10 ${secondary.length ? "md:aspect-[7/5] md:min-h-[26rem]" : "md:aspect-[16/7] md:max-h-[33rem]"}`}
         >
           <YachtPhoto src={primary.src} alt={primary.title ?? yachtName} priority />
         </button>
 
         {secondary.length > 0 && (
-          <div className="grid grid-cols-2 gap-3">
+          <div className={`grid grid-cols-2 gap-3 ${secondary.length > 2 ? "md:grid-rows-2" : "md:grid-rows-1"}`}>
             {secondary.map((img, i) => (
               <button
                 key={img.src}
                 type="button"
                 onClick={() => openGallery(i + 1)}
                 aria-label={`Open photo gallery — ${img.title ?? `photo ${i + 2}`}`}
-                className="group relative aspect-[4/3] overflow-hidden rounded-lg bg-[#061625]/10"
+                className={`group relative aspect-[4/3] overflow-hidden rounded-lg bg-[#061625]/10 md:aspect-auto ${secondary.length % 2 === 1 && i === secondary.length - 1 ? "md:col-span-2" : ""}`}
               >
-                <YachtPhoto src={img.src} alt={img.title ?? `${yachtName} photo ${i + 2}`} />
+                <span className="block h-full w-full md:absolute md:inset-0">
+                  <YachtPhoto src={img.src} alt={img.title ?? `${yachtName} photo ${i + 2}`} />
+                </span>
               </button>
             ))}
           </div>
