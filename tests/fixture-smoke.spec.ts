@@ -101,6 +101,41 @@ test("places the yacht description and cruising area just below the gallery", as
   await expect(previousCrew).toBeVisible();
 });
 
+test("uses both booking columns on desktop and stacks them on mobile", async ({ page, isMobile }) => {
+  await page.setViewportSize({ width: isMobile ? 390 : 1280, height: 900 });
+  await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
+  const layout = await page.evaluate(() => {
+    const bounds = (selector: string) => document.querySelector(selector)!.getBoundingClientRect();
+    const calendar = document.querySelector("#availability")!.parentElement!.getBoundingClientRect();
+    const overview = document.querySelector("#overview")!.closest("section")!;
+    const description = overview.querySelector("p")!.getBoundingClientRect();
+    return {
+      galleryWidth: bounds("#gallery").width,
+      descriptionWidth: description.width,
+      descriptionBottom: description.bottom,
+      areaTop: overview.querySelector("h3")!.getBoundingClientRect().top,
+      calendarLeft: calendar.left,
+      calendarEnd: calendar.bottom,
+      accommodationLeft: bounds("#accommodation").left,
+      accommodationStart: bounds("#accommodation").top,
+      proposalLeft: bounds("#enquire").left,
+      proposalStart: bounds("#enquire").top,
+    };
+  });
+  expect(layout.descriptionWidth).toBeCloseTo(layout.galleryWidth, 0);
+  expect(layout.areaTop).toBeGreaterThan(layout.descriptionBottom);
+  expect(layout.proposalLeft).toBeCloseTo(layout.calendarLeft, 0);
+  expect(layout.proposalStart).toBeGreaterThan(layout.calendarEnd);
+  if (isMobile) {
+    expect(layout.accommodationStart).toBeGreaterThan(layout.calendarEnd);
+    expect(layout.proposalStart).toBeGreaterThan(layout.accommodationStart);
+  } else {
+    expect(layout.accommodationLeft).toBeLessThan(layout.calendarLeft);
+    expect(layout.accommodationStart).toBeLessThan(layout.calendarEnd);
+    expect(layout.proposalStart - layout.calendarEnd).toBeLessThanOrEqual(25);
+  }
+});
+
 test("fits yacht brochure text and the training link at 320 pixels", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 800 });
   await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
