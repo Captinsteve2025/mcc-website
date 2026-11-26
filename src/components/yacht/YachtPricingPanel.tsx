@@ -55,12 +55,13 @@ export function YachtPricingPanel({ yachtId, yachtName, maxGuests, pricing, avai
   const [showAllTerms, setShowAllTerms] = useState(false);
   const [holdDates, setHoldDates] = useState<CharterCalendarSelection | null>(null);
   const selectedRange = holdDates?.end ? holdDates : null;
-  let dateSummary = availability.ranges.length > 0 ? "Choose dates in the calendar" : "Calendar dates unavailable";
+  const canSelectDates = availability.ranges.length > 0 || availability.liveError === null;
+  let dateSummary = canSelectDates ? "Choose dates in the calendar" : "Calendar dates unavailable";
   if (selectedRange) {
     dateSummary = selectedRange.label;
   } else if (canRequestHold && holdDates) {
     dateSummary = `Check-in selected for ${holdDates.label}. Select your check-out date above.`;
-  } else if (canRequestHold && availability.ranges.length > 0) {
+  } else if (canRequestHold && canSelectDates) {
     dateSummary = "Select your check-in and check-out dates in the calendar above.";
   }
   const priced = pricing.seasons.filter((s) => s.price !== null || s.guestRates.length > 0);
@@ -169,8 +170,12 @@ export function YachtPricingPanel({ yachtId, yachtName, maxGuests, pricing, avai
             <div className="mb-6 flex items-start gap-3">
               <CalendarDays className="mt-1 h-5 w-5 shrink-0 text-[#EE9739]" aria-hidden="true" />
               <div>
-                <p className="font-display text-2xl italic text-[#061625]">Live availability</p>
-                <p className="mt-1 text-xs text-[#061625]/60">Confirmed bookings and holds from the yacht&apos;s calendar</p>
+                <p className="font-display text-2xl italic text-[#061625]">
+                  {availability.hasLiveData ? "Live availability" : "Check charter dates"}
+                </p>
+                {availability.hasLiveData && (
+                  <p className="mt-1 text-xs text-[#061625]/60">Confirmed bookings and holds from the yacht&apos;s calendar</p>
+                )}
               </div>
             </div>
             <div id="availability" className="scroll-mt-32">
@@ -178,6 +183,7 @@ export function YachtPricingPanel({ yachtId, yachtName, maxGuests, pricing, avai
                 yachtId={yachtId}
                 ranges={availability.ranges}
                 lastUpdated={availability.lastUpdated}
+                canSelectDates={canSelectDates}
                 hasLiveData={availability.hasLiveData}
                 canRequestHold={canRequestHold}
                 onSelectedDatesChange={setHoldDates}
@@ -196,13 +202,13 @@ export function YachtPricingPanel({ yachtId, yachtName, maxGuests, pricing, avai
                   Our charter team will check your dates and let you know if {yachtName} can be held.
                 </p>
               )}
-              {(!canRequestHold || availability.ranges.length > 0) && <dl className="mt-3">
+              {(!canRequestHold || canSelectDates) && <dl className="mt-3">
                 <dt className="text-sm font-medium">Selected dates</dt>
                 <dd className="mt-1 border-l-2 border-[#061625]/40 pl-3 text-sm font-medium">
                   {dateSummary}
                 </dd>
               </dl>}
-              {canRequestHold && (selectedRange || availability.ranges.length === 0) && (
+              {canRequestHold && (selectedRange || !canSelectDates) && (
                 <YachtHoldRequestForm
                   key={selectedRange?.label}
                   yachtId={yachtId}
@@ -249,10 +255,10 @@ export function YachtPricingPanel({ yachtId, yachtName, maxGuests, pricing, avai
               </details>
             )}
             <ul className="mt-6 space-y-2 text-xs text-[#061625]/70">
-              <li className="flex items-start gap-2">
+              {availability.hasLiveData && <li className="flex items-start gap-2">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#EE9739]" aria-hidden="true" />
                 Confirmed bookings show as booked; active holds show as held.
-              </li>
+              </li>}
               <li className="flex items-start gap-2">
                 <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-[#061625]/30" aria-hidden="true" />
                 Availability is re-checked with you personally before any commitment.

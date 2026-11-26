@@ -86,6 +86,7 @@ type Props = {
   yachtId: string;
   ranges: AvailabilityRange[];
   lastUpdated: string | null;
+  canSelectDates: boolean;
   /** True when at least one range comes from CYA's live bookings feed. */
   hasLiveData?: boolean;
   seasons: TurnaroundSeason[];
@@ -94,7 +95,7 @@ type Props = {
 };
 
 export function YachtAvailabilityCalendar({
-  yachtId, ranges, lastUpdated, hasLiveData = false, seasons, onSelectedDatesChange, canRequestHold = false,
+  yachtId, ranges, lastUpdated, canSelectDates, hasLiveData = false, seasons, onSelectedDatesChange, canRequestHold = false,
 }: Props) {
   const today = new Date();
   const [monthOffset, setMonthOffset] = useState(0); // months from the current month
@@ -160,9 +161,7 @@ export function YachtAvailabilityCalendar({
   const canGoBack = monthOffset > 0;
   const canGoForward = monthOffset < 11;
 
-  if (ranges.length === 0) {
-    // Honest empty state: no fabricated calendar. Compact by design — no
-    // oversized panel — with a clear enquiry action.
+  if (!canSelectDates) {
     return (
       <div className="rounded-xl bg-white p-5 shadow-sm sm:p-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -191,7 +190,9 @@ export function YachtAvailabilityCalendar({
   return (
     <div className="rounded-xl bg-white p-5 shadow-sm [container-type:inline-size] sm:p-6">
       <div className="mb-4 flex items-center justify-between">
-        <h3 className="font-display text-xl italic text-[#061625]">Charter availability</h3>
+        <h3 className="font-display text-xl italic text-[#061625]">
+          {ranges.length > 0 ? "Charter availability" : "Choose your dates"}
+        </h3>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -214,6 +215,11 @@ export function YachtAvailabilityCalendar({
         </div>
       </div>
 
+      {ranges.length === 0 && (
+        <p className="mb-2 text-sm text-[#061625]/80">
+          The calendar shows no booking records for this yacht. Our charter team will confirm availability for your dates.
+        </p>
+      )}
       <p className="mb-4 text-sm text-[#061625]/80">
         Select your check-in date, then your check-out date. Use the arrows to change months.
       </p>
@@ -288,7 +294,7 @@ export function YachtAvailabilityCalendar({
           <span className="inline-block h-2.5 w-2.5 rounded-full bg-[#EE9739]" aria-hidden="true" />
           Your selected dates
         </li>
-        {(Object.keys(STATUS_STYLES) as Array<keyof typeof STATUS_STYLES>).map((key) => (
+        {ranges.length > 0 && (Object.keys(STATUS_STYLES) as Array<keyof typeof STATUS_STYLES>).map((key) => (
           <li key={key} className="flex items-center gap-1.5">
             <span className={`inline-block h-2.5 w-2.5 rounded-full ${STATUS_STYLES[key].dot}`} aria-hidden="true" />
             {STATUS_STYLES[key].label}

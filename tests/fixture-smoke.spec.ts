@@ -257,3 +257,29 @@ test("keeps the hold panel and proposal aligned and carries dates to the proposa
   })).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
+
+test("lets guests request unconfirmed dates when the CYA bookings response is empty", async ({ page }) => {
+  await page.goto("/charter-yachts/6af35196bf0715879cfe009e");
+  const calendar = page.locator("#availability");
+  await expect(calendar.getByRole("heading", { name: "Choose your dates" })).toBeVisible();
+  await expect(calendar.getByText(/no booking records/)).toBeVisible();
+  await expect(calendar.getByText("Available", { exact: true })).toHaveCount(0);
+  await expect(calendar.getByText("Availability data currently unavailable")).toHaveCount(0);
+
+  const dates = [];
+  for (const offset of [1, 2]) {
+    const date = new Date(Date.now() + offset * 86_400_000);
+    const day = calendar.getByRole("button", {
+      name: `${date.toISOString().slice(0, 10)}: contact us to confirm`, exact: true,
+    });
+    if (!(await day.isVisible())) await calendar.getByRole("button", { name: "Next month" }).click();
+    await day.click();
+    dates.push(date.toLocaleDateString("en-US", { timeZone: "UTC", day: "numeric", month: "short", year: "numeric" }));
+  }
+  await expect(page.getByLabel(/Preferred charter dates/)).toHaveValue(dates.join(" to "));
+  await expect(calendar.getByText("Our charter team will check availability for these dates.")).toBeVisible();
+
+  await page.goto("/charter-yachts/eeeeeeeeeeeeeeeeeeeeeeee");
+  await expect(calendar.getByText("Availability data currently unavailable")).toBeVisible();
+  await expect(calendar.getByRole("grid")).toHaveCount(0);
+});

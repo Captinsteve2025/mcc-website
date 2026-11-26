@@ -83,6 +83,7 @@ const catalogue = [
 ];
 
 const originalFetch = globalThis.fetch;
+const escapadeId = "6af35196bf0715879cfe009e";
 globalThis.fetch = (input, init) => {
   const url = new URL(input instanceof Request ? input.url : input, "http://localhost");
   if (!upstreamHost.test(url.hostname)) return originalFetch(input, init);
@@ -95,6 +96,9 @@ globalThis.fetch = (input, init) => {
   }
   if (url.pathname === `/yachts_get/${yacht.id}`) {
     return Promise.resolve(Response.json(yacht));
+  }
+  if (url.pathname === `/yachts_get/${escapadeId}`) {
+    return Promise.resolve(Response.json({ ...yacht, id: escapadeId, yachtName: "ESCAPADE" }));
   }
   if (url.pathname.startsWith("/yachts_get/")) {
     const listing = catalogue.find((record) => url.pathname.endsWith(`/${record.id}`));
@@ -120,6 +124,9 @@ globalThis.fetch = (input, init) => {
       event_start_date: today,
       event_end_date: today,
     }]));
+  }
+  if (url.pathname === "/bookings" && url.searchParams.get("yacht_id") === escapadeId) {
+    return Promise.resolve(Response.json({ bookings: [] }));
   }
   return Promise.resolve(Response.json({ message: "Fixture record not found" }, { status: 404 }));
 };

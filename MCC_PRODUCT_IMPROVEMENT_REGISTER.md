@@ -128,6 +128,10 @@ Desktop thumbnail rows fill the height of the hero image, with consistent gutter
 
 Detailed specifications are open when the catalogue yacht page loads. Visitors can collapse and reopen the section. The build and all 18 desktop and mobile Chromium fixture checks passed. Production verification is pending.
 
-### Catalogue yacht accommodation descriptions
+### Catalogue yacht accommodation descriptions (Deployed)
 
-The shared catalogue template shows the published CYA accommodation description once in a card that spans the Accommodation section. The stabilizers fields are hidden on all catalogue listings. The build and 18 desktop and mobile Chromium fixture checks passed. A check against ESCAPADE’s CYA record confirmed that the complete description is retained. Production verification is pending.
+The shared catalogue template shows the published CYA accommodation description once in a card that spans the Accommodation section. The stabilizers fields are hidden on all catalogue listings. The build and 18 desktop and mobile Chromium fixture checks passed. A check against ESCAPADE’s CYA record confirmed that the complete description is retained. Vercel assigned commit `d252bcb` to the production hostname on November 26, 2026. The live ESCAPADE HTML returned HTTP 200 and contained the full description once in Accommodation, with no stabilizers field. Production browser verification is pending.
+
+### Yacht calendar with zero booking records
+
+When CYA responds successfully without booking records, the yacht page offers a calendar for selecting dates. Every date requires confirmation by MCC. A failed request with no calendar records still shows the direct enquiry fallback. ESCAPADE’s CYA response contained zero records, while OHANA returned records through the same connection. The production build and 20 desktop and mobile Chromium fixture checks passed. Separate 1280 px and 320 px Chromium checks confirmed that choosing dates opens the hold form. Production verification is pending.
