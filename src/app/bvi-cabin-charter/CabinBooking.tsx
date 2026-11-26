@@ -170,9 +170,10 @@ export function CabinBooking({ today, departures }: { today: string; departures:
                     Cabin
                     <select className={selectClass} value={cabin?.id ?? ""} onChange={event => setCabinId(event.target.value)}>
                       {!cabin && <option value="" disabled>No cabins open</option>}
-                      {cabinOptions.map(item => <option key={item.id} value={item.id} disabled={item.remaining === 0}>{item.name} · {item.remaining === null ? "availability to confirm" : item.remaining + (item.remaining === 1 ? " cabin left" : " cabins left")}</option>)}
+                      {cabinOptions.map(item => <option key={item.id} value={item.id} disabled={item.remaining === 0}>{item.name}{item.remaining === null ? "" : " · " + item.remaining + (item.remaining === 1 ? " cabin left" : " cabins left")}</option>)}
                     </select>
                   </label>}
+                  {cabin?.remaining === null && <p>Remaining cabins to be confirmed.</p>}
                   {formattedRate && rate && <p className="rounded-lg bg-[#F8F7F4] p-3"><strong className="text-lg">{formattedRate} {rate.currency}</strong> per {rate.unit} for this sailing{rate.unit === "cabin" && cabin ? " · up to " + cabin.occupancy + " guests" : ""}</p>}
                 </div>
               )}
