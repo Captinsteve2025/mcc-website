@@ -1,0 +1,85 @@
+.overview {
+  position: relative;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: clip;
+  z-index: -1;
+}
+
+.backdrop::after {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(6 22 37 / 76%), rgb(6 22 37 / 42%) 52%, rgb(6 22 37 / 72%));
+  content: "";
+}
+
+.beach {
+  object-fit: cover;
+  object-position: 68% center;
+}
+
+.inclusions {
+  overflow: clip;
+  position: relative;
+  isolation: isolate;
+}
+
+.diningBackdrop {
+  display: grid;
+  height: clamp(9rem, 40vw, 16rem);
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  background: #061625;
+}
+
+.diningBackdrop > div {
+  position: relative;
+  overflow: clip;
+}
+
+.food {
+  object-fit: cover;
+  object-position: center;
+}
+
+.inclusionContent {
+  position: relative;
+}
+
+@media (min-width: 1024px) {
+  .diningBackdrop {
+    position: absolute;
+    inset: 0 0 0 auto;
+    width: 32%;
+    height: auto;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr 1fr;
+  }
+
+  .inclusionContent {
+    max-width: 68%;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .beach,
+    .food {
+      animation: backdrop-drift linear both;
+      animation-timeline: view();
+      animation-range: entry 0% exit 100%;
+    }
+
+    .food {
+      animation-direction: reverse;
+    }
+  }
+}
+
+@keyframes backdrop-drift {
+  from { transform: translateY(-5%) scale(1.13); }
+  to { transform: translateY(5%) scale(1.13); }
+}

@@ -137,3 +137,5 @@ The cabin charter page includes a departure calendar, cabin pricing and a short 
 The production build, TypeScript and lint passed for the enquiry update. Chromium checks at 1440, 768, 390 and 320 px covered departure selection, rates, itinerary, callback and enquiry retry with a mocked response.
 
 The cabin charter page now opens with the Lagoon 51 hero and the updated welcome copy. A single section explains the cabin charter experience and inclusions, followed by yacht options and a panoramic image of The Baths. The calendar and enquiry close the page. The ferry inclusion applies to Scrub Island departures.
+
+The charter overview uses a White Bay backdrop and dining imagery from MCC’s media library. The layers move with scroll and respect reduced-motion preferences. The Lagoon 620 card uses the matching Arcachon photograph by Nicolas Claris. Yacht and trip-length preferences are selected before dates and carry through to flexible or date-specific enquiries. Published rates and availability records are preserved. The build, TypeScript and lint passed. Chromium verified the layout, backdrop movement and enquiry preferences at desktop and mobile sizes.

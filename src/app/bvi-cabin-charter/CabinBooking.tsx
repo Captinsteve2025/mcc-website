@@ -5,6 +5,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, MessageCircle, Phone } from "l
 import { Button } from "@/components/ui/button";
 import { MCC_PHONE_HREF } from "@/lib/managed-yachts";
 import { CabinEnquiry } from "./CabinEnquiry";
+import { cabinYachts } from "./yachts";
 
 const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const monthFormat = new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric", timeZone: "UTC" });
@@ -30,6 +31,7 @@ type Cabin = {
 
 export type CabinDeparture = {
   id: string;
+  yachtId: (typeof cabinYachts)[number]["id"];
   name: string;
   startsOn: string;
   endsOn: string;
@@ -50,23 +52,22 @@ export function CabinBooking({ today, departures }: { today: string; departures:
   const upcoming = departures.find(item => item.startsOn >= today);
   const [month, setMonth] = useState((upcoming?.startsOn ?? today).slice(0, 7) + "-01");
   const [nights, setNights] = useState("");
-  const [cabinType, setCabinType] = useState("");
+  const [yachtId, setYachtId] = useState<string>(upcoming?.yachtId ?? "");
   const [date, setDate] = useState(upcoming?.startsOn ?? "");
   const [departureId, setDepartureId] = useState("");
   const [cabinId, setCabinId] = useState("");
   const [mode, setMode] = useState<"enquiry" | "hold" | "callback">("enquiry");
-  const hasDepartures = !!upcoming;
   const currentMonth = new Date(month + "T12:00:00Z");
   const numberOfDays = new Date(Date.UTC(currentMonth.getUTCFullYear(), currentMonth.getUTCMonth() + 1, 0)).getUTCDate();
   const futureDepartures = departures.filter(item => item.startsOn >= today);
-  const options = Array.from(new Set(futureDepartures.map(item => item.nights))).sort((a, b) => a - b);
-  const cabins = Array.from(new Set(futureDepartures.flatMap(item => item.cabins.map(cabin => cabin.name)))).sort();
+  const options = Array.from(new Set([5, 7, ...futureDepartures.map(item => item.nights)])).sort((a, b) => a - b);
+  const yacht = cabinYachts.find(item => item.id === yachtId);
   const matching = futureDepartures.filter(item =>
     (!nights || item.nights === Number(nights)) &&
-    (!cabinType || item.cabins.some(cabin => cabin.name === cabinType)));
+    (!yachtId || item.yachtId === yachtId));
   const selectedDay = matching.filter(item => item.startsOn === date);
   const departure = selectedDay.find(item => item.id === departureId) ?? selectedDay[0];
-  const cabinOptions = departure?.cabins.filter(item => !cabinType || item.name === cabinType) ?? [];
+  const cabinOptions = departure?.cabins ?? [];
   const cabin = cabinOptions.find(item => item.id === cabinId) ?? cabinOptions.find(item => item.remaining !== 0);
   const rate = cabin?.rate;
   const formattedRate = rate ? new Intl.NumberFormat("en-US", { style: "currency", currency: rate.currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(rate.amount) : null;
@@ -78,6 +79,21 @@ export function CabinBooking({ today, departures }: { today: string; departures:
     setDepartureId("");
     setCabinId("");
     setMode("enquiry");
+  }
+
+  function changeTrip(nextYachtId: string, nextNights: string) {
+    setYachtId(nextYachtId);
+    setNights(nextNights);
+    const matches = futureDepartures.filter(item =>
+      (!nextYachtId || item.yachtId === nextYachtId) &&
+      (!nextNights || item.nights === Number(nextNights)));
+    const next = matches.find(item => item.startsOn === date) ?? matches[0];
+    resetSelection();
+    if (next) {
+      setDate(next.startsOn);
+      setDepartureId(next.id);
+      setMonth(next.startsOn.slice(0, 7) + "-01");
+    }
   }
 
   function changeMonth(offset: number) {
@@ -93,29 +109,30 @@ export function CabinBooking({ today, departures }: { today: string; departures:
           <div className="mb-8 max-w-2xl">
             <h2 id="dates-heading" className="font-display text-3xl font-normal italic md:text-4xl">Choose Dates &amp; Cabins</h2>
             <p className="mt-3 text-[#061625]/80">
-              {hasDepartures ? "Select a listed sailing to see cabin details and rates, or choose a preferred date for another trip." : "Choose a preferred sailing date and cabin type. Our crewed-charter team will check scheduled departures, cabin availability and the total price for your group."}
+              Choose a yacht and trip length first. Then select a listed sailing, add a preferred date, or leave your dates flexible.
             </p>
           </div>
+          <fieldset className="mb-6 grid gap-3 rounded-xl border border-[#061625]/10 bg-white px-4 pb-5 pt-2 shadow-sm sm:grid-cols-2 sm:px-6">
+            <legend className="px-2 font-display text-xl font-normal italic">Plan your trip</legend>
+            <label className="text-sm font-medium">
+              Preferred yacht
+              <select className={selectClass} value={yachtId} onChange={event => changeTrip(event.target.value, nights)}>
+                <option value="">Any yacht</option>
+                {cabinYachts.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
+              </select>
+            </label>
+            <label className="text-sm font-medium">
+              Preferred trip length
+              <select className={selectClass} value={nights} onChange={event => changeTrip(yachtId, event.target.value)}>
+                <option value="">Any length</option>
+                {options.map(option => <option key={option} value={option}>{option} nights</option>)}
+              </select>
+            </label>
+          </fieldset>
+
           <div className="grid items-start gap-6 lg:grid-cols-[1.15fr_1fr]">
             <div className="min-w-0 rounded-xl border border-[#061625]/10 bg-white p-4 shadow-sm sm:p-6">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <label className="text-sm font-medium">
-                  {hasDepartures ? "Trip length" : "Preferred trip length"}
-                  <select className={selectClass} value={nights} onChange={event => { setNights(event.target.value); resetSelection(); }}>
-                    <option value="">Any length</option>
-                    {(hasDepartures ? options : [5, 7]).map(option => <option key={option} value={option}>{option} nights</option>)}
-                  </select>
-                </label>
-                <label className="text-sm font-medium">
-                  {hasDepartures ? "Cabin type" : "Preferred cabin type"}
-                  <select className={selectClass} value={cabinType} onChange={event => { setCabinType(event.target.value); resetSelection(); }}>
-                    <option value="">Any cabin</option>
-                    {(hasDepartures ? cabins : ["Double", "Twin"]).map(option => <option key={option}>{option}</option>)}
-                  </select>
-                </label>
-              </div>
-
-              <div className="my-5 flex items-center justify-between gap-2 border-t border-[#061625]/10 pt-4">
+              <div className="mb-5 flex items-center justify-between gap-2">
                 <Button type="button" variant="outline" size="icon" aria-label="Previous month" disabled={month <= today.slice(0, 7) + "-01"} onClick={() => changeMonth(-1)}><ChevronLeft aria-hidden="true" /></Button>
                 <h3 aria-live="polite" className="font-display text-xl font-normal italic sm:text-2xl">{monthFormat.format(currentMonth)}</h3>
                 <Button type="button" variant="outline" size="icon" aria-label="Next month" onClick={() => changeMonth(1)}><ChevronRight aria-hidden="true" /></Button>
@@ -140,7 +157,7 @@ export function CabinBooking({ today, departures }: { today: string; departures:
                   ) : <span key={iso} className="flex h-11 items-center justify-center text-sm text-[#061625]/55">{day}</span>;
                 })}
               </div>
-              {hasDepartures && <ul aria-label="Departure statuses" className="mt-5 flex flex-wrap gap-2 text-xs">
+              {matching.length > 0 && <ul aria-label="Departure statuses" className="mt-5 flex flex-wrap gap-2 text-xs">
                 {Object.values(statuses).map(status => <li key={status.label} className={"rounded-full px-3 py-1 " + status.style.replace(" line-through", "")}>{status.label}</li>)}
               </ul>}
             </div>
@@ -150,7 +167,7 @@ export function CabinBooking({ today, departures }: { today: string; departures:
               <div aria-live="polite">
                 <h3 className="font-display text-2xl font-normal italic">{departure?.name ?? (date ? "Your preferred departure" : "Select a departure date")}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#061625]/80">
-                  {selectedDates || (hasDepartures ? "Select a marked day to see its departures and cabin options." : "Live cabin availability isn’t posted yet. Select a preferred date to include it in your enquiry.")}
+                  {selectedDates || (matching.length ? "Select a marked day to see its departures and cabin options." : "No departure is listed for these preferences. You can enquire with flexible dates.")}
                 </p>
               </div>
               {date && !departure && <p className="mt-2 text-sm">No sailing is listed for this date. You can still ask us to check it.</p>}
@@ -175,7 +192,7 @@ export function CabinBooking({ today, departures }: { today: string; departures:
                   {formattedRate && rate && <p className="rounded-lg bg-[#F8F7F4] p-3"><strong className="text-lg">{formattedRate} {rate.currency}</strong> per {rate.unit} for this sailing{rate.unit === "cabin" && cabin ? " · up to " + cabin.occupancy + " guests" : ""}</p>}
                 </div>
               )}
-              {!departure && (nights || cabinType) && <p className="mt-3 text-sm">{[nights && nights + " nights", cabinType].filter(Boolean).join(" · ")}</p>}
+              {!departure && (nights || yacht) && <p className="mt-3 text-sm">{[yacht?.name, nights && nights + " nights"].filter(Boolean).join(" · ")}</p>}
               <div className="mt-5 flex flex-wrap gap-3">
                 {canEnquire && <Button asChild className="text-[#061625]"><a href="#enquire" onClick={() => setMode("enquiry")}>Quick Enquiry</a></Button>}
                 {(departure?.status === "hold" || departure?.status === "unconfirmed") && (
@@ -184,6 +201,7 @@ export function CabinBooking({ today, departures }: { today: string; departures:
                   </a></Button>
                 )}
               </div>
+              {date && <button type="button" className="mt-2 text-sm font-medium underline underline-offset-4" onClick={resetSelection}>Leave dates flexible</button>}
               {departure && (
                 <div className="mt-5 space-y-3 text-sm">
                   {departure.extras.length > 0 && (
@@ -221,7 +239,8 @@ export function CabinBooking({ today, departures }: { today: string; departures:
             <p className="mt-2 text-sm"><a className="break-all underline underline-offset-4" href="mailto:bookings@mycaribbeancharters.com?subject=BVI%20Cabin%20Charter">bookings@mycaribbeancharters.com</a></p>
           </div>
           <CabinEnquiry mode={mode} dates={canEnquire ? selectedDates : ""} departureId={canEnquire ? departure?.id : undefined}
-            cabin={canEnquire ? cabin?.name ?? cabinType : ""} nights={canEnquire ? departure?.nights.toString() ?? nights : ""} />
+            cabin={canEnquire ? cabin?.name ?? "" : ""} nights={canEnquire ? departure?.nights.toString() ?? nights : nights}
+            yacht={cabinYachts.find(item => item.id === departure?.yachtId)?.name ?? yacht?.name ?? ""} />
         </div>
       </section>
     </>

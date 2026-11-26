@@ -7,12 +7,13 @@ import { Textarea } from "@/components/ui/textarea";
 
 type Mode = "enquiry" | "hold" | "callback";
 
-export function CabinEnquiry({ mode, dates, departureId, cabin, nights }: {
+export function CabinEnquiry({ mode, dates, departureId, cabin, nights, yacht }: {
   mode: Mode;
   dates: string;
   departureId?: string;
   cabin: string;
   nights: string;
+  yacht: string;
 }) {
   const [status, setStatus] = useState<"idle" | "sending" | "saved" | "error">("idle");
   const attempt = useRef<{ data: string; id: string }>();
@@ -28,6 +29,7 @@ export function CabinEnquiry({ mode, dates, departureId, cabin, nights }: {
     const details = [
       "Request: " + (callback ? "Callback" : mode === "hold" ? "Broker-reviewed cabin hold" : "Cabin availability"),
       departureId && "Departure: " + departureId,
+      yacht && "Preferred yacht: " + yacht,
       value("cabin") && "Cabin: " + value("cabin"),
       nights && "Trip length: " + nights + " nights",
       value("notes") && "Notes: " + value("notes"),
@@ -76,6 +78,9 @@ export function CabinEnquiry({ mode, dates, departureId, cabin, nights }: {
   return (
     <form aria-label="Cabin charter enquiry" aria-busy={status === "sending"} onSubmit={submit} className="space-y-4 rounded-xl bg-white p-5 text-[#061625] shadow-sm sm:p-8">
       <h3 className="font-display text-2xl font-normal italic">{callback ? "Request a callback" : mode === "hold" ? "Request a cabin hold" : "Quick enquiry"}</h3>
+      {(yacht || nights) && <p className="rounded-md bg-[#F8F7F4] px-3 py-2 text-sm font-medium">
+        {[yacht, nights && nights + " nights"].filter(Boolean).join(" · ")}
+      </p>}
       {mode === "hold" && <p className="text-sm">Our team will confirm whether a hold is available and when it expires.</p>}
       <fieldset disabled={status === "sending"} className="space-y-4">
         <div className="grid gap-4 sm:grid-cols-2">

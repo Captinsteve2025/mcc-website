@@ -5,6 +5,7 @@ import type { CabinDeparture } from "./CabinBooking";
 export const publishedDepartures: CabinDeparture[] = [
   {
     id: "ipanema-58-2027-02-27",
+    yachtId: "ipanema-58",
     name: "Ipanema 58 · BVI Island Hopping",
     startsOn: "2027-02-27",
     endsOn: "2027-03-06",

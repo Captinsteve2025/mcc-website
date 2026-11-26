@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { CabinBooking } from "./CabinBooking";
 import { publishedDepartures } from "./departures";
+import { cabinYachts } from "./yachts";
+import styles from "./CabinBackdrop.module.css";
 
 const title = "BVI Cabin Charters | My Caribbean Charters";
 const description =
@@ -54,21 +56,6 @@ const inclusions = [
   "Snorkeling equipment, a sea scooter, paddleboards, a floating mat, and beach games",
   "Onboard Wi-Fi",
   "Trellis Bay to Scrub Island ferry for departures that board at Scrub Island",
-];
-
-const yachts = [
-  {
-    name: "Lagoon 620",
-    image: "/images/cabin-charter/lagoon-620.webp",
-    description: "A crewed sailing catamaran with space to relax on deck between island stops.",
-    href: "https://www.mycaribbeancharters.com/lagoon-620-cabin-charter/",
-  },
-  {
-    name: "Ipanema 58",
-    image: "/images/cabin-charter/ipanema-58.webp",
-    description: "A crewed sailing catamaran with private cabins and shared spaces for dining and unwinding.",
-    href: "https://www.mycaribbeancharters.com/ipanema-58-cabin-charter/",
-  },
 ];
 
 const sectionHeading = "font-display text-3xl font-normal italic md:text-4xl";
@@ -123,11 +110,14 @@ export default function BVICabinCharterPage() {
         </div>
       </section>
 
-      <section id="how-it-works" aria-labelledby="how-it-works-heading" className="scroll-mt-20 bg-[#F8F7F4] py-16 text-[#061625] md:py-24">
-        <div className="container mx-auto px-4 xl:max-w-6xl">
+      <section id="how-it-works" aria-labelledby="how-it-works-heading" className={styles.overview + " isolate scroll-mt-20 bg-[#061625] py-16 text-white md:py-24"}>
+        <div className={styles.backdrop} aria-hidden="true">
+          <Image src="/images/cabin-charter/white-bay-backdrop.webp" alt="" fill sizes="100vw" className={styles.beach} />
+        </div>
+        <div className="container relative mx-auto px-4 xl:max-w-6xl">
           <div className="mx-auto max-w-3xl text-center">
             <h2 id="how-it-works-heading" className={sectionHeading}>How a Cabin Charter Works</h2>
-            <p className="mt-4 text-lg leading-relaxed text-[#061625]/75">
+            <p className="mt-4 text-lg leading-relaxed text-white/95">
               Step aboard for an all-inclusive island escape where every detail is taken care of.
               You book a private cabin and share the boat and itinerary with other guests.
             </p>
@@ -147,20 +137,26 @@ export default function BVICabinCharterPage() {
             ))}
           </div>
 
-          <p className="mt-7 text-center text-lg leading-relaxed text-[#061625]/75">
+          <p className="mt-7 text-center text-lg leading-relaxed text-white">
             Just pack your swimwear and a sense of adventure—the islands are calling.
           </p>
 
-          <div id="charter-inclusions" className="mt-10 scroll-mt-24 rounded-xl bg-white p-5 shadow-sm sm:p-8">
-            <h3 className="font-display text-2xl font-normal italic md:text-3xl">What’s Included in Your Charter</h3>
-            <ul className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
-              {inclusions.map((inclusion) => (
-                <li key={inclusion} className="flex items-start gap-3 leading-relaxed">
-                  <Check className="mt-1 h-4 w-4 shrink-0 text-[#061625]" aria-hidden="true" />
-                  <span>{inclusion}</span>
-                </li>
-              ))}
-            </ul>
+          <div id="charter-inclusions" className={styles.inclusions + " mt-10 scroll-mt-24 rounded-xl bg-[#F8F7F4] text-[#061625] shadow-sm"}>
+            <div className={styles.diningBackdrop} aria-hidden="true">
+              <div><Image src="/images/cabin-charter/charter-breakfast.webp" alt="" fill sizes="(min-width: 1024px) 400px, 50vw" className={styles.food} /></div>
+              <div><Image src="/images/cabin-charter/charter-lunch.webp" alt="" fill sizes="(min-width: 1024px) 400px, 50vw" className={styles.food} /></div>
+            </div>
+            <div className={styles.inclusionContent + " p-5 sm:p-8"}>
+              <h3 className="font-display text-2xl font-normal italic md:text-3xl">What’s Included in Your Charter</h3>
+              <ul className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+                {inclusions.map((inclusion) => (
+                  <li key={inclusion} className="flex items-start gap-3 leading-relaxed">
+                    <Check className="mt-1 h-4 w-4 shrink-0 text-[#061625]" aria-hidden="true" />
+                    <span>{inclusion}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -174,15 +170,15 @@ export default function BVICabinCharterPage() {
             </p>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
-            {yachts.map((yacht) => (
-              <Card key={yacht.name} className="flex flex-col overflow-hidden rounded-xl border-0 bg-[#F8F7F4] text-[#061625]">
+            {cabinYachts.map((yacht) => (
+              <Card key={yacht.id} className="flex flex-col overflow-hidden rounded-xl border-0 bg-[#F8F7F4] text-[#061625]">
                 <div className="relative aspect-[4/3]">
                   <Image
                     src={yacht.image}
                     alt={yacht.name + " catamaran"}
                     fill
                     sizes="(min-width: 1152px) 548px, (min-width: 768px) 50vw, 100vw"
-                    className="object-cover"
+                    className={yacht.id === "lagoon-620" ? "object-contain bg-[#061625]" : "object-cover"}
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col items-start p-6">
