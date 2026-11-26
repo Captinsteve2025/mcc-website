@@ -130,4 +130,4 @@ Detailed specifications are open when the catalogue yacht page loads. Visitors c
 
 ### BVI cabin charter landing page (Implemented)
 
-The British Virgin Islands destination page and Charter Styles menu link to the shared-cabin landing page. It describes scheduled departures and typical inclusions, features the Lagoon 620 and Ipanema 58, and uses the existing proposal form for availability requests. Preview verification and commercial review are pending.
+The British Virgin Islands destination page and Charter Styles menu link to the shared-cabin landing page. It describes scheduled departures and typical inclusions, features the Lagoon 620 and Ipanema 58, and uses the existing proposal form for availability requests. The page uses the mandatory MCC styling packet, including the approved palette, Playfair Display and Inter, and shared buttons and cards. Compared with the live homepage and the BVI and Bahamas destination pages. Local Chromium checks passed at 1440, 768, 390 and 320 px, including button states and mobile navigation. The production build, type check and lint passed. Vercel preview review and commercial acceptance are pending.
