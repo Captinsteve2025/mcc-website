@@ -24,7 +24,12 @@ const yacht = {
   yachtEngines: "Fixture marine engine with onboard electric generator",
   fuel_consumption: 6,
   fuel_consumption_unit: "1",
-  accommodations: { details: "For 9 and 10 pax, guests must be under the age of 10 upon prior approval is gained." },
+  accommodations: {
+    accommodations_details: "<p>Enjoy the shaded aft deck and a private ensuite in every guest cabin.</p><p>Relax in the salon after a day on the water.</p>",
+    details: "For 9 and 10 pax, guests must be under the age of 10 upon prior approval is gained.",
+    stabilizers: "No",
+    stabilizers_code: "none",
+  },
   seasons: [{
     title: "Fixture season", base_price: 12000, currency: "USD",
     charter_type: "all inclusive", location_areas: ["Caribbean Virgin Islands (BVI)"],

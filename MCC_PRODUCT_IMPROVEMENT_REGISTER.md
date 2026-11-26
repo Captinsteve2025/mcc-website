@@ -127,3 +127,7 @@ Desktop thumbnail rows fill the height of the hero image, with consistent gutter
 ### Yacht specifications default state
 
 Detailed specifications are open when the catalogue yacht page loads. Visitors can collapse and reopen the section. The build and all 18 desktop and mobile Chromium fixture checks passed. Production verification is pending.
+
+### Catalogue yacht accommodation descriptions
+
+The shared catalogue template shows the published CYA accommodation description once in a card that spans the Accommodation section. The stabilizers fields are hidden on all catalogue listings. The build and 18 desktop and mobile Chromium fixture checks passed. A check against ESCAPADE’s CYA record confirmed that the complete description is retained. Production verification is pending.

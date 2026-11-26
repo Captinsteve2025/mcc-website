@@ -130,6 +130,8 @@ export default async function YachtDetailPage({
   const name = str(yacht.yachtName) ?? "Unnamed yacht";
   const gallery = collectGallery(yacht);
   const accommodation = parseAccommodation(yacht);
+  const hasAccommodationFacts = accommodation.pax !== null || accommodation.cabins !== null || Boolean(accommodation.bathrooms);
+  const hasAccommodation = hasAccommodationFacts || Boolean(accommodation.configLine || accommodation.description || accommodation.otherFields.length);
   const restrictedGuests = guestAgeRestriction(accommodation);
   const guestCapacity = restrictedGuests ? `Up to ${restrictedGuests.adults} adults` : `Up to ${accommodation.pax}`;
   const amenities = parseAmenities(yacht);
@@ -205,8 +207,7 @@ export default async function YachtDetailPage({
   // Only render tabs for sections that have real data for this yacht.
   const tabs: SectionTab[] = [{ id: "overview", label: "Overview" }];
   tabs.push({ id: "rates", label: "Rates & Availability" });
-  if (accommodation.cabins !== null || accommodation.pax !== null || accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0)
-    tabs.push({ id: "accommodation", label: "Accommodation" });
+  if (hasAccommodation) tabs.push({ id: "accommodation", label: "Accommodation" });
   if (crew.length > 0 || crewGeneral) tabs.push({ id: "crew", label: "Crew" });
   if (menus.categories.length > 0 || menus.photos.length > 0 || menus.general)
     tabs.push({ id: "dining", label: "Dining" });
@@ -332,32 +333,34 @@ export default async function YachtDetailPage({
             yachtDetails={
               <div className="space-y-8">
                 {/* --- Accommodation --- */}
-                {(accommodation.configLine || accommodation.description || accommodation.otherFields.length > 0) && (
+                {hasAccommodation && (
                   <section>
                     <SectionHeading id="accommodation" title="Accommodation" />
-                    <dl className="grid gap-3 sm:grid-cols-3">
-                      {accommodation.pax !== null && (
-                        <div className="rounded-lg bg-white p-4 shadow-sm">
-                          <Users className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
-                          <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Guests</dt>
-                          <dd className="text-[#061625]">{guestCapacity}</dd>
-                        </div>
-                      )}
-                      {accommodation.cabins !== null && (
-                        <div className="rounded-lg bg-white p-4 shadow-sm">
-                          <BedDouble className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
-                          <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Cabins</dt>
-                          <dd className="text-[#061625]">{accommodation.cabins}</dd>
-                        </div>
-                      )}
-                      {accommodation.bathrooms && (
-                        <div className="rounded-lg bg-white p-4 shadow-sm">
-                          <Snowflake className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
-                          <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Bathrooms</dt>
-                          <dd className="text-[#061625]">{accommodation.bathrooms}</dd>
-                        </div>
-                      )}
-                    </dl>
+                    {hasAccommodationFacts && (
+                      <dl className="grid gap-3 sm:grid-cols-3">
+                        {accommodation.pax !== null && (
+                          <div className="rounded-lg bg-white p-4 shadow-sm">
+                            <Users className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
+                            <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Guests</dt>
+                            <dd className="text-[#061625]">{guestCapacity}</dd>
+                          </div>
+                        )}
+                        {accommodation.cabins !== null && (
+                          <div className="rounded-lg bg-white p-4 shadow-sm">
+                            <BedDouble className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
+                            <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Cabins</dt>
+                            <dd className="text-[#061625]">{accommodation.cabins}</dd>
+                          </div>
+                        )}
+                        {accommodation.bathrooms && (
+                          <div className="rounded-lg bg-white p-4 shadow-sm">
+                            <Snowflake className="h-5 w-5 text-[#EE9739]" aria-hidden="true" />
+                            <dt className="mt-2 text-xs uppercase tracking-wide text-[#061625]/60">Bathrooms</dt>
+                            <dd className="text-[#061625]">{accommodation.bathrooms}</dd>
+                          </div>
+                        )}
+                      </dl>
+                    )}
                     {restrictedGuests && (
                       <p className="mt-3 text-sm text-[#061625]/80">
                         Guests {restrictedGuests.adults + 1} and {restrictedGuests.maximum} are subject to the under-{restrictedGuests.age} rule. Please confirm approval requirements with our charter team.
@@ -369,7 +372,10 @@ export default async function YachtDetailPage({
                       </p>
                     )}
                     {accommodation.description && (
-                      <p className="mt-4 whitespace-pre-line leading-relaxed text-[#061625]/80">{accommodation.description}</p>
+                      <div className="mt-4 rounded-lg bg-white p-4 shadow-sm">
+                        <h3 className="mb-2 text-sm font-semibold text-[#061625]">Accommodation details</h3>
+                        <p className="whitespace-pre-line leading-relaxed text-[#061625]/80">{accommodation.description}</p>
+                      </div>
                     )}
                     {accommodation.otherFields.length > 0 && (
                       <dl className="mt-4 grid gap-3 sm:grid-cols-2">

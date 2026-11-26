@@ -137,6 +137,12 @@ test("places the yacht description and cruising area just below the gallery", as
 test("uses both booking columns on desktop and stacks them on mobile", async ({ page, isMobile }) => {
   await page.setViewportSize({ width: isMobile ? 390 : 1280, height: 900 });
   await page.goto("/charter-yachts/aaaaaaaaaaaaaaaaaaaaaaaa");
+  const accommodation = page.getByRole("heading", { name: "Accommodation", exact: true }).locator("..");
+  const copy = accommodation.getByRole("heading", { name: "Accommodation details" }).locator("..");
+  await expect(copy.getByText(/Enjoy the shaded aft deck/)).toBeVisible();
+  await expect(copy.getByText(/Relax in the salon/)).toBeVisible();
+  await expect(accommodation.getByText(/stabilizers/i)).toHaveCount(0);
+  expect((await copy.boundingBox())!.width).toBeCloseTo((await accommodation.boundingBox())!.width, 0);
   const layout = await page.evaluate(() => {
     const bounds = (selector: string) => document.querySelector(selector)!.getBoundingClientRect();
     const calendar = document.querySelector("#availability")!.parentElement!.getBoundingClientRect();

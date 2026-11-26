@@ -341,6 +341,12 @@ export function parseAccommodation(detail: Yacht): AccommodationSummary {
   if (headCount !== null && headCount > 0) bathParts.push(`${headCount} bathroom${headCount > 1 ? "s" : ""}`);
   if (bathParts.length > 0) result.bathrooms = bathParts.join(" \u00b7 ");
 
+  const descriptionKeys = ["accommodations_details", "description", "details", "text", "accommodation"];
+  for (const key of descriptionKeys) {
+    result.description = cleanText(obj[key]);
+    if (result.description) break;
+  }
+
   const shown = new Set([
     "king_cabins",
     "queen_cabins",
@@ -351,21 +357,18 @@ export function parseAccommodation(detail: Yacht): AccommodationSummary {
     "showers",
     "heads",
     "electrics_heads",
+    "accommodations_details",
+    "stabilizers",
+    "stabilizers_code",
   ]);
   for (const [key, value] of Object.entries(obj)) {
     if (shown.has(key)) continue;
     const text = cleanText(value);
-    if (text === null) continue;
+    if (text === null || (descriptionKeys.includes(key) && text === result.description)) continue;
     if (/^(true|false|0|no)$/i.test(text)) continue;
     result.otherFields.push({ label: key.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), value: text });
   }
 
-  const desc =
-    cleanText(obj.description) ??
-    cleanText(obj.details) ??
-    cleanText(obj.text) ??
-    cleanText(obj.accommodation);
-  if (desc) result.description = desc;
   return result;
 }
 
