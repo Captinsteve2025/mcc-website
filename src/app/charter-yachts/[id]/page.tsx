@@ -388,8 +388,8 @@ export default async function YachtDetailPage({
                 {specGroups.length > 0 && (
                   <section>
                     <SectionHeading id="specifications" title="Specifications" />
-                    <details className="rounded-xl border border-[#061625]/15 bg-white p-4">
-                      <summary className="cursor-pointer font-semibold text-[#061625]">View detailed yacht specifications</summary>
+                    <details open className="rounded-xl border border-[#061625]/15 bg-white p-4">
+                      <summary className="cursor-pointer font-semibold text-[#061625]">Detailed yacht specifications</summary>
                       <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
                         {specGroups.map((group) => (
                           <div key={group.title} className="rounded-xl bg-white p-6 shadow-sm">

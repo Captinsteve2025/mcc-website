@@ -123,3 +123,7 @@ The description spans the full gallery width, with the cruising area and pickup 
 ### Yacht photo gallery alignment
 
 Desktop thumbnail rows fill the height of the hero image, with consistent gutters. A single photo in the last row spans both thumbnail columns. Mobile keeps the stacked hero and thumbnail grid. All 18 desktop and mobile fixture checks passed, including gallery opening and keyboard dismissal. A C’est La Vie feed replay confirmed equal desktop gutters and aligned edges across 768–1920 px, plus the stacked layout at 390 px. Production verification is pending.
+
+### Yacht specifications default state
+
+Detailed specifications are open when the catalogue yacht page loads. Visitors can collapse and reopen the section. The build and all 18 desktop and mobile Chromium fixture checks passed. Production verification is pending.

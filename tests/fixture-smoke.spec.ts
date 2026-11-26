@@ -81,8 +81,13 @@ test("keeps the gallery high on the page and the desktop calendar inside its pan
       return rect.left >= bounds.left - 1 && rect.right <= bounds.right + 1;
     });
   })).toBe(true);
-  await page.getByText("View detailed yacht specifications", { exact: true }).click();
-  await expect(page.getByText("Engines", { exact: true })).toBeVisible();
+  const specifications = page.getByText("Detailed yacht specifications", { exact: true });
+  const engines = page.getByText("Engines", { exact: true });
+  await expect(engines).toBeVisible();
+  await specifications.click();
+  await expect(engines).toBeHidden();
+  await specifications.click();
+  await expect(engines).toBeVisible();
   await expect(page.getByText("Fuel consumption", { exact: true })).toHaveCount(0);
 });
 
