@@ -10,7 +10,7 @@ export const publishedDepartures: CabinDeparture[] = [
     startsOn: "2027-02-27",
     endsOn: "2027-03-06",
     nights: 7,
-    status: "unconfirmed",
+    status: "available",
     boarding: "Soper’s Hole Marina, West End, Tortola · 27 Feb at 5:00 pm",
     disembarkation: "Soper’s Hole Marina, West End, Tortola · 6 Mar at 9:00 am",
     cabins: [{ id: "double", name: "Double cabin", remaining: null, occupancy: 2, rate: { amount: 7400, currency: "USD", unit: "cabin" } }],

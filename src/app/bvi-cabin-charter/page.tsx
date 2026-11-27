@@ -7,6 +7,8 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { CabinBooking } from "./CabinBooking";
+import { cabinCalendarToday } from "./calendar";
+import { loadCabinCalendar } from "./calendar-server";
 import { publishedDepartures } from "./departures";
 import { cabinYachts } from "./yachts";
 import styles from "./CabinBackdrop.module.css";
@@ -45,10 +47,10 @@ const experience = [
 ];
 
 const inclusions = [
-  "Seven nights aboard a luxury catamaran (Lagoon on select sailings)",
-  "Private double cabin with an en-suite bathroom. Air conditioning runs from 8 am to 10 pm and can run overnight if everyone on board agrees.",
+  "Seven nights aboard a luxury catamaran",
+  "Private double cabin with an en-suite bathroom, air-conditioned throughout.",
   "Gourmet meals including seven breakfasts, six lunches, and four dinners",
-  "Table wine and water with meals, plus local aperitifs including punch, rum, and fruit juice",
+  "Table wine and water with meals, plus local light aperitifs and other drink options.",
   "Two crew members, including a captain and a steward/cook",
   "Two sets of linens, towels, and beach towels per guest per week",
   "Yacht consumables, including diesel, fuel, and water",
@@ -60,10 +62,11 @@ const inclusions = [
 
 const sectionHeading = "font-display text-3xl font-normal italic md:text-4xl";
 
-export default function BVICabinCharterPage() {
-  const today = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "America/Tortola", year: "numeric", month: "2-digit", day: "2-digit",
-  }).format(new Date());
+export const dynamic = "force-dynamic";
+
+export default async function BVICabinCharterPage() {
+  const today = cabinCalendarToday();
+  const calendarDays = await loadCabinCalendar(today);
   return (
     <>
       <Header />
@@ -96,7 +99,7 @@ export default function BVICabinCharterPage() {
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <Button asChild size="lg" className="rounded-full px-6 text-[#061625] focus-visible:ring-offset-[#061625]">
-              <a href="#dates">Choose Dates &amp; Cabins</a>
+              <a href="#charter-inclusions">What’s Included</a>
             </Button>
             <Button
               asChild
@@ -104,7 +107,7 @@ export default function BVICabinCharterPage() {
               size="lg"
               className="rounded-full border border-white/30 bg-white/10 px-6 text-white shadow-none backdrop-blur-sm hover:bg-white/20 focus-visible:ring-offset-[#061625]"
             >
-              <a href="#how-it-works">How a Cabin Charter Works</a>
+              <a href="#dates">Choose Dates &amp; Cabins</a>
             </Button>
           </div>
         </div>
@@ -148,9 +151,9 @@ export default function BVICabinCharterPage() {
             </div>
             <div className={styles.inclusionContent + " p-5 sm:p-8"}>
               <h3 className="font-display text-2xl font-normal italic md:text-3xl">What’s Included in Your Charter</h3>
-              <ul className="mt-5 grid gap-x-8 gap-y-4 sm:grid-cols-2">
+              <ul className="mt-5 space-y-3 sm:columns-2 sm:gap-8">
                 {inclusions.map((inclusion) => (
-                  <li key={inclusion} className="flex items-start gap-3 leading-relaxed">
+                  <li key={inclusion} className="flex break-inside-avoid items-start gap-3 leading-relaxed">
                     <Check className="mt-1 h-4 w-4 shrink-0 text-[#061625]" aria-hidden="true" />
                     <span>{inclusion}</span>
                   </li>
@@ -178,7 +181,7 @@ export default function BVICabinCharterPage() {
                     alt={yacht.name + " catamaran"}
                     fill
                     sizes="(min-width: 1152px) 548px, (min-width: 768px) 50vw, 100vw"
-                    className={yacht.id === "lagoon-620" ? "object-contain bg-[#061625]" : "object-cover"}
+                    className="object-cover"
                   />
                 </div>
                 <CardContent className="flex flex-1 flex-col items-start p-6">
@@ -206,7 +209,7 @@ export default function BVICabinCharterPage() {
         />
       </figure>
 
-      <CabinBooking today={today} departures={publishedDepartures} />
+      <CabinBooking today={today} departures={publishedDepartures} calendarDays={calendarDays} />
 
       <Footer />
     </>

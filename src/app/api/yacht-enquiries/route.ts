@@ -4,6 +4,8 @@ import { NextResponse } from "next/server";
 import { guestRequestReceipt } from "@/lib/guest-request-email";
 import { HOLD_BOOKINGS_EMAIL as bookingsEmail } from "@/lib/hold-request";
 import { sendResendEmail } from "@/lib/resend-email";
+import { cabinBookingEmail } from "@/app/bvi-cabin-charter/calendar";
+import { cabinYachts } from "@/app/bvi-cabin-charter/yachts";
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
@@ -34,6 +36,8 @@ function validateProposal(body: Record<string, unknown>) {
     typeof guests !== "number" || !Number.isInteger(guests) || guests < 1 || guests > 100 ||
     body.privacy_consent !== true
   ) return null;
+
+  if (slug === "bvi-cabin-charter" && (!phone || !cabinYachts.some(option => option.name === yacht))) return null;
 
   const inputUtm = body.utm_params as Record<string, unknown> | null;
   const utm: Record<string, string> = {};
@@ -70,9 +74,11 @@ type SavedProposal = NonNullable<ReturnType<typeof validateProposal>> & {
 };
 
 function proposalEmail(proposal: SavedProposal, broker: boolean) {
+  const cabin = proposal.yacht_slug === "bvi-cabin-charter";
+  const recipient = cabin ? cabinBookingEmail : bookingsEmail;
   const base = {
     from: `My Caribbean Charters <${bookingsEmail}>`,
-    reply_to: bookingsEmail,
+    reply_to: recipient,
   };
   const details = [
     `Yacht: ${proposal.yacht_name}`,
@@ -84,8 +90,8 @@ function proposalEmail(proposal: SavedProposal, broker: boolean) {
   if (broker) {
     return {
       ...base,
-      to: [bookingsEmail],
-      subject: "New charter proposal request",
+      to: [recipient],
+      subject: cabin ? "New BVI cabin charter request" : "New charter proposal request",
       text: [
         details,
         `Guest: ${proposal.full_name} <${proposal.email}>`,
@@ -186,11 +192,11 @@ export async function POST(request: Request) {
   }
 
   const { data: saved, error: readError } = await db.from("yacht_enquiries")
-    .select("client_request_id,yacht_name,cya_yacht_id,full_name,email,phone,preferred_dates,flexible_dates,guest_count,special_occasion,additional_requests,created_at,proposal_broker_email_id,proposal_guest_email_id")
+    .select("client_request_id,yacht_slug,yacht_name,cya_yacht_id,full_name,email,phone,preferred_dates,flexible_dates,guest_count,special_occasion,additional_requests,created_at,proposal_broker_email_id,proposal_guest_email_id")
     .eq("client_request_id", id).single();
   if (readError || !saved) {
     console.error("[yacht-proposal] saved request could not be read for email", { code: readError?.code });
-    return NextResponse.json({ saved: true, emailPending: true }, { status: 202 });
+    return NextResponse.json({ saved: true, emailPending: true, brokerEmailPending: proposal.yacht_slug === "bvi-cabin-charter" ? true : undefined }, { status: 202 });
   }
 
   const record = saved as SavedProposal;
@@ -206,5 +212,9 @@ export async function POST(request: Request) {
     return !error;
   }));
   const emailPending = accepted.some((sent) => !sent);
-  return NextResponse.json({ saved: true, emailPending }, { status: emailPending ? 202 : 200 });
+  return NextResponse.json({
+    saved: true,
+    emailPending,
+    brokerEmailPending: record.yacht_slug === "bvi-cabin-charter" ? !accepted[0] : undefined,
+  }, { status: emailPending ? 202 : 200 });
 }

@@ -5,6 +5,7 @@ import { CalendarDays, ChevronLeft, ChevronRight, MessageCircle, Phone } from "l
 import { Button } from "@/components/ui/button";
 import { MCC_PHONE_HREF } from "@/lib/managed-yachts";
 import { CabinEnquiry } from "./CabinEnquiry";
+import { cabinBookingEmail, calendarStatuses, type CalendarDay } from "./calendar";
 import { cabinYachts } from "./yachts";
 
 const weekdayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -12,12 +13,13 @@ const monthFormat = new Intl.DateTimeFormat("en-US", { month: "long", year: "num
 const dateFormat = new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 const dayFormat = new Intl.DateTimeFormat("en-US", { dateStyle: "full", timeZone: "UTC" });
 
+const unconfirmedStatus = { label: "Check With MCC", style: "border border-[#061625]/35 bg-white text-[#061625]" };
+
 const statuses = {
-  unconfirmed: { label: "Enquire for Availability", style: "border border-[#061625]/35 bg-[#F8F7F4] text-[#061625]" },
-  available: { label: "Available", style: "bg-[#061625] text-white" },
-  limited: { label: "Limited Cabins", style: "bg-[#EE9739] text-[#061625]" },
-  hold: { label: "Request Hold", style: "border border-dashed border-[#D85F2D] bg-white text-[#061625]" },
-  booked: { label: "Booked", style: "bg-[#061625]/10 text-[#061625] line-through" },
+  available: { label: calendarStatuses.available, style: "border border-[#061625]/15 bg-[#F8F7F4] text-[#061625]" },
+  limited: { label: calendarStatuses.limited, style: "bg-[#EE9739] text-[#061625]" },
+  hold: { label: calendarStatuses.hold, style: "border border-dashed border-[#D85F2D] bg-white text-[#061625]" },
+  booked: { label: calendarStatuses.booked, style: "bg-[#061625]/10 text-[#061625] line-through" },
 } as const;
 
 type Cabin = {
@@ -48,11 +50,11 @@ const formatDate = (value: string) => dateFormat.format(new Date(value + "T12:00
 const whatsappHref = "https://wa.me/" + MCC_PHONE_HREF.replace(/\D/g, "");
 const selectClass = "mt-1 block h-11 w-full rounded-md border border-[#061625]/25 bg-white px-3 text-base";
 
-export function CabinBooking({ today, departures }: { today: string; departures: CabinDeparture[] }) {
+export function CabinBooking({ today, departures, calendarDays }: { today: string; departures: CabinDeparture[]; calendarDays: CalendarDay[] | null }) {
   const upcoming = departures.find(item => item.startsOn >= today);
   const [month, setMonth] = useState((upcoming?.startsOn ?? today).slice(0, 7) + "-01");
   const [nights, setNights] = useState("");
-  const [yachtId, setYachtId] = useState<string>(upcoming?.yachtId ?? "");
+  const [yachtId, setYachtId] = useState<string>(upcoming?.yachtId ?? cabinYachts[0].id);
   const [date, setDate] = useState(upcoming?.startsOn ?? "");
   const [departureId, setDepartureId] = useState("");
   const [cabinId, setCabinId] = useState("");
@@ -60,8 +62,15 @@ export function CabinBooking({ today, departures }: { today: string; departures:
   const currentMonth = new Date(month + "T12:00:00Z");
   const numberOfDays = new Date(Date.UTC(currentMonth.getUTCFullYear(), currentMonth.getUTCMonth() + 1, 0)).getUTCDate();
   const futureDepartures = departures.filter(item => item.startsOn >= today);
-  const options = Array.from(new Set([5, 7, ...futureDepartures.map(item => item.nights)])).sort((a, b) => a - b);
+  const staffDates = calendarDays ?? [];
+  const options = Array.from(new Set([5, 7, ...futureDepartures.map(item => item.nights), ...staffDates.flatMap(day => day.rate_nights ?? [])])).sort((a, b) => a - b);
   const yacht = cabinYachts.find(item => item.id === yachtId);
+  const calendarByDate = new Map(staffDates.map(day => [day.yacht_id + "/" + day.starts_on, day]));
+  function statusOn(yachtId: string, day: string) {
+    return calendarByDate.get(yachtId + "/" + day)?.status
+      ?? futureDepartures.find(item => item.yachtId === yachtId && item.startsOn === day)?.status
+      ?? "available";
+  }
   const matching = futureDepartures.filter(item =>
     (!nights || item.nights === Number(nights)) &&
     (!yachtId || item.yachtId === yachtId));
@@ -69,9 +78,15 @@ export function CabinBooking({ today, departures }: { today: string; departures:
   const departure = selectedDay.find(item => item.id === departureId) ?? selectedDay[0];
   const cabinOptions = departure?.cabins ?? [];
   const cabin = cabinOptions.find(item => item.id === cabinId) ?? cabinOptions.find(item => item.remaining !== 0);
-  const rate = cabin?.rate;
+  const dayStatus = date ? statusOn(yachtId, date) : null;
+  const override = calendarByDate.get(yachtId + "/" + date);
+  const duration = departure?.nights ?? (Number(nights) || override?.rate_nights || undefined);
+  const rate = override?.rate_usd && override.rate_nights === duration
+    ? { amount: override.rate_usd, currency: "USD", unit: "cabin" }
+    : cabin?.rate;
   const formattedRate = rate ? new Intl.NumberFormat("en-US", { style: "currency", currency: rate.currency, minimumFractionDigits: 0, maximumFractionDigits: 2 }).format(rate.amount) : null;
-  const canEnquire = departure?.status !== "booked" && (!departure || !!cabin || departure.status === "hold");
+  const canRequestDate = dayStatus !== "booked" && dayStatus !== "hold";
+  const canHold = Boolean(calendarDays && date && canRequestDate && (!departure || cabin));
   const selectedDates = departure ? formatDate(departure.startsOn) + " – " + formatDate(departure.endsOn) : date ? formatDate(date) : "";
 
   function resetSelection() {
@@ -81,19 +96,16 @@ export function CabinBooking({ today, departures }: { today: string; departures:
     setMode("enquiry");
   }
 
-  function changeTrip(nextYachtId: string, nextNights: string) {
+  function changeTrip(nextYachtId: string, nextNights: string, keepMode = false) {
     setYachtId(nextYachtId);
     setNights(nextNights);
     const matches = futureDepartures.filter(item =>
       (!nextYachtId || item.yachtId === nextYachtId) &&
       (!nextNights || item.nights === Number(nextNights)));
-    const next = matches.find(item => item.startsOn === date) ?? matches[0];
-    resetSelection();
-    if (next) {
-      setDate(next.startsOn);
-      setDepartureId(next.id);
-      setMonth(next.startsOn.slice(0, 7) + "-01");
-    }
+    const next = matches.find(item => item.startsOn === date);
+    setCabinId("");
+    if (!keepMode || (mode === "hold" && ["booked", "hold"].includes(statusOn(nextYachtId, date)))) setMode("enquiry");
+    setDepartureId(next?.id ?? "");
   }
 
   function changeMonth(offset: number) {
@@ -109,7 +121,7 @@ export function CabinBooking({ today, departures }: { today: string; departures:
           <div className="mb-8 max-w-2xl">
             <h2 id="dates-heading" className="font-display text-3xl font-normal italic md:text-4xl">Choose Dates &amp; Cabins</h2>
             <p className="mt-3 text-[#061625]/80">
-              Choose a yacht and trip length first. Then select a listed sailing, add a preferred date, or leave your dates flexible.
+              Choose a yacht and trip length, then select a date to request a cabin. Our team confirms availability, any hold, and the final rate.
             </p>
           </div>
           <fieldset className="mb-6 grid gap-3 rounded-xl border border-[#061625]/10 bg-white px-4 pb-5 pt-2 shadow-sm sm:grid-cols-2 sm:px-6">
@@ -117,7 +129,6 @@ export function CabinBooking({ today, departures }: { today: string; departures:
             <label className="text-sm font-medium">
               Preferred yacht
               <select className={selectClass} value={yachtId} onChange={event => changeTrip(event.target.value, nights)}>
-                <option value="">Any yacht</option>
                 {cabinYachts.map(option => <option key={option.id} value={option.id}>{option.name}</option>)}
               </select>
             </label>
@@ -130,6 +141,7 @@ export function CabinBooking({ today, departures }: { today: string; departures:
             </label>
           </fieldset>
 
+          {calendarDays === null && <p role="status" className="mb-4 text-sm">The calendar could not load staff updates. Please ask us to confirm your preferred dates.</p>}
           <div className="grid items-start gap-6 lg:grid-cols-[1.15fr_1fr]">
             <div className="min-w-0 rounded-xl border border-[#061625]/10 bg-white p-4 shadow-sm sm:p-6">
               <div className="mb-5 flex items-center justify-between gap-2">
@@ -144,22 +156,22 @@ export function CabinBooking({ today, departures }: { today: string; departures:
                   const day = index + 1;
                   const iso = month.slice(0, 8) + String(day).padStart(2, "0");
                   const onDate = matching.filter(item => item.startsOn === iso);
-                  const status = onDate.length === 1 ? statuses[onDate[0].status] : undefined;
+                  const status = calendarDays ? statuses[statusOn(yachtId, iso)] : unconfirmedStatus;
                   const enabled = iso >= today;
                   const label = dayFormat.format(new Date(iso + "T12:00:00Z"));
                   return enabled ? (
                     <button key={iso} type="button" aria-pressed={date === iso}
-                      aria-label={label + (status ? ", " + status.label : onDate.length > 1 ? ", " + onDate.length + " departures" : ", preferred date")}
+                      aria-label={label + ", " + status.label + (onDate.length > 1 ? ", " + onDate.length + " departures" : "")}
                       className="mx-auto flex h-11 w-11 min-w-0 max-w-full items-center justify-center rounded-full text-sm font-semibold hover:bg-[#F8F7F4] aria-pressed:ring-2 aria-pressed:ring-[#EE9739]"
                       onClick={() => { setDate(iso); setDepartureId(""); setCabinId(""); setMode("enquiry"); }}>
-                      <span className={"flex h-8 w-8 items-center justify-center rounded-full " + (status?.style ?? (onDate.length ? statuses.unconfirmed.style : "hover:bg-[#F8F7F4]"))}>{day}</span>
+                      <span className={"flex h-8 w-8 items-center justify-center rounded-full " + status.style}>{day}</span>
                     </button>
                   ) : <span key={iso} className="flex h-11 items-center justify-center text-sm text-[#061625]/55">{day}</span>;
                 })}
               </div>
-              {matching.length > 0 && <ul aria-label="Departure statuses" className="mt-5 flex flex-wrap gap-2 text-xs">
-                {Object.values(statuses).map(status => <li key={status.label} className={"rounded-full px-3 py-1 " + status.style.replace(" line-through", "")}>{status.label}</li>)}
-              </ul>}
+              <ul aria-label="Departure statuses" className="mt-5 flex flex-wrap gap-2 text-xs">
+                {(calendarDays ? Object.values(statuses) : [unconfirmedStatus]).map(status => <li key={status.label} className={"rounded-full px-3 py-1 " + status.style.replace(" line-through", "")}>{status.label}</li>)}
+              </ul>
             </div>
 
             <div className="min-w-0 rounded-xl border border-[#061625]/10 bg-white p-5 shadow-sm sm:p-6">
@@ -167,10 +179,10 @@ export function CabinBooking({ today, departures }: { today: string; departures:
               <div aria-live="polite">
                 <h3 className="font-display text-2xl font-normal italic">{departure?.name ?? (date ? "Your preferred departure" : "Select a departure date")}</h3>
                 <p className="mt-2 text-sm leading-relaxed text-[#061625]/80">
-                  {selectedDates || (matching.length ? "Select a marked day to see its departures and cabin options." : "No departure is listed for these preferences. You can enquire with flexible dates.")}
+                  {selectedDates || (matching.length ? "Select a date to see its sailing or request your preferred dates." : "Select a date or enquire with flexible dates.")}
                 </p>
               </div>
-              {date && !departure && <p className="mt-2 text-sm">No sailing is listed for this date. You can still ask us to check it.</p>}
+              {date && !departure && dayStatus && <p className="mt-2 text-sm"><strong>{calendarDays ? statuses[dayStatus].label : unconfirmedStatus.label}</strong>{canRequestDate && " · Ask us to confirm a sailing for this date."}</p>}
               {selectedDay.length > 1 && <label className="mt-4 block text-sm font-medium">
                 Departure
                 <select className={selectClass} value={departure?.id ?? ""} onChange={event => { setDepartureId(event.target.value); setCabinId(""); setMode("enquiry"); }}>
@@ -179,7 +191,7 @@ export function CabinBooking({ today, departures }: { today: string; departures:
               </label>}
               {departure && (
                 <div className="mt-4 space-y-3 text-sm">
-                  <p><strong>{statuses[departure.status].label}</strong> · {departure.nights} nights</p>
+                  <p><strong>{calendarDays ? statuses[dayStatus ?? departure.status].label : unconfirmedStatus.label}</strong> · {departure.nights} nights</p>
                   <p><strong>Board</strong> {departure.boarding}<br /><strong>Disembark</strong> {departure.disembarkation}<br /><span>Times are local to the BVI.</span></p>
                   {cabinOptions.length > 0 && <label className="block font-medium">
                     Cabin
@@ -189,17 +201,16 @@ export function CabinBooking({ today, departures }: { today: string; departures:
                     </select>
                   </label>}
                   {cabin?.remaining === null && <p>Remaining cabins to be confirmed.</p>}
-                  {formattedRate && rate && <p className="rounded-lg bg-[#F8F7F4] p-3"><strong className="text-lg">{formattedRate} {rate.currency}</strong> per {rate.unit} for this sailing{rate.unit === "cabin" && cabin ? " · up to " + cabin.occupancy + " guests" : ""}</p>}
                 </div>
               )}
               {!departure && (nights || yacht) && <p className="mt-3 text-sm">{[yacht?.name, nights && nights + " nights"].filter(Boolean).join(" · ")}</p>}
+              {formattedRate && rate && <p className="mt-4 rounded-lg bg-[#F8F7F4] p-3 text-sm"><strong className="text-lg">{formattedRate} {rate.currency}</strong> per {rate.unit}{duration ? " · " + duration + " nights" : ""}{rate.unit === "cabin" && cabin ? " · up to " + cabin.occupancy + " guests" : ""}</p>}
+              {date && !rate && canRequestDate && <p className="mt-3 text-sm">Ask for a quote for this trip.</p>}
               <div className="mt-5 flex flex-wrap gap-3">
-                {canEnquire && <Button asChild className="text-[#061625]"><a href="#enquire" onClick={() => setMode("enquiry")}>Quick Enquiry</a></Button>}
-                {(departure?.status === "hold" || departure?.status === "unconfirmed") && (
-                  <Button asChild variant="outline"><a href="#enquire" onClick={() => setMode("hold")}>
-                    {departure.status === "hold" ? "Request a Hold" : "Ask About a Hold"}
-                  </a></Button>
-                )}
+                {canRequestDate && <Button asChild className="text-[#061625]"><a href="#enquire" onClick={() => setMode("enquiry")}>Quick Enquiry</a></Button>}
+                {canHold && <Button asChild variant="outline">
+                  <a href="#enquire" onClick={() => setMode("hold")}>Request a Hold</a>
+                </Button>}
               </div>
               {date && <button type="button" className="mt-2 text-sm font-medium underline underline-offset-4" onClick={resetSelection}>Leave dates flexible</button>}
               {departure && (
@@ -236,11 +247,11 @@ export function CabinBooking({ today, departures }: { today: string; departures:
               <Button asChild variant="outline" className="border-white/40 text-white hover:bg-white/10"><a href={whatsappHref}><MessageCircle aria-hidden="true" /> WhatsApp</a></Button>
             </div>
             <button className="mt-3 text-sm font-medium underline underline-offset-4" type="button" aria-pressed={mode === "callback"} onClick={() => setMode(mode === "callback" ? "enquiry" : "callback")}>Request a callback</button>
-            <p className="mt-2 text-sm"><a className="break-all underline underline-offset-4" href="mailto:bookings@mycaribbeancharters.com?subject=BVI%20Cabin%20Charter">bookings@mycaribbeancharters.com</a></p>
+            <p className="mt-2 text-sm"><a className="break-all underline underline-offset-4" href={"mailto:" + cabinBookingEmail + "?subject=BVI%20Cabin%20Charter"}>{cabinBookingEmail}</a></p>
           </div>
-          <CabinEnquiry mode={mode} dates={canEnquire ? selectedDates : ""} departureId={canEnquire ? departure?.id : undefined}
-            cabin={canEnquire ? cabin?.name ?? "" : ""} nights={canEnquire ? departure?.nights.toString() ?? nights : nights}
-            yacht={cabinYachts.find(item => item.id === departure?.yachtId)?.name ?? yacht?.name ?? ""} />
+          <CabinEnquiry mode={mode} dates={canRequestDate ? selectedDates : ""} departureId={canRequestDate ? departure?.id : undefined}
+            cabin={canRequestDate ? cabin?.name ?? "" : ""} nights={canRequestDate ? duration?.toString() ?? "" : nights}
+            yachtId={yachtId} onYachtChange={nextYachtId => changeTrip(nextYachtId, nights, true)} />
         </div>
       </section>
     </>
